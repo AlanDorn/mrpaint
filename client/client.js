@@ -7,19 +7,20 @@ const imageData = ctx.createImageData(canvas.width, canvas.height);
 // Function to set a specific pixel to blue
 function setPixel(x, y) {
   const index = (y * imageData.width + x) * 4; // Calculate pixel index
-  imageData.data[index] = 0; // Red
-  imageData.data[index + 1] = 0; // Green
-  imageData.data[index + 2] = 255; // Blue
+  imageData.data[index] = 165; // Red
+  imageData.data[index + 1] = 142; // Green
+  imageData.data[index + 2] = 245; // Blue
   imageData.data[index + 3] = 255; // Alpha (fully opaque)
 }
 
 let mousedown = false;
 
-canvas.addEventListener("mousedown", (event) => {
+// Set mousedown and mouseup events only on the canvas
+document.addEventListener("mousedown", () => {
   mousedown = true;
 });
 
-canvas.addEventListener("mouseup", (event) => {
+document.addEventListener("mouseup", () => {
   mousedown = false;
 });
 
@@ -49,22 +50,28 @@ function setLine(x1, y1, x2, y2) {
   }
 }
 
-// Update mousemove to draw lines instead of just points
+// Update mousemove to draw lines only when on the canvas
 let lastX = null;
 let lastY = null;
 
-canvas.addEventListener("mousemove", (event) => {
-  const rect = canvas.getBoundingClientRect();
-  const x = Math.floor(event.clientX - rect.left);
-  const y = Math.floor(event.clientY - rect.top);
-
+document.addEventListener("mousemove", (event) => {
   if (mousedown) {
-    if (lastX !== null && lastY !== null) {
-      setLine(lastX, lastY, x, y); // Draw a line between the previous and current mouse positions
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.floor(event.clientX - rect.left);
+    const y = Math.floor(event.clientY - rect.top);
+
+    if (x >= 0 && x < canvas.width && y >= 0 && y < canvas.height) {
+      if (lastX !== null && lastY !== null) {
+        setLine(lastX, lastY, x, y); // Draw a line between the previous and current mouse positions
+      }
+      ctx.putImageData(imageData, 0, 0); // Render the changes
+      lastX = x;
+      lastY = y;
     }
-    lastX = x;
-    lastY = y;
-    ctx.putImageData(imageData, 0, 0); // Render the changes
+    else {
+      lastX = null;
+      lastY = null;
+    }
   } else {
     lastX = null;
     lastY = null;
