@@ -1,3 +1,4 @@
+const ws = new WebSocket("ws://localhost:3001/");
 const canvas = document.getElementById("myCanvas");
 const ctx = canvas.getContext("2d");
 
@@ -17,6 +18,7 @@ let mousedown = false;
 
 // Set mousedown and mouseup events only on the canvas
 document.addEventListener("mousedown", () => {
+  ws.send("Sup bitch");
   mousedown = true;
 });
 
@@ -51,29 +53,39 @@ function setLine(x1, y1, x2, y2) {
 }
 
 // Update mousemove to draw lines only when on the canvas
-let lastX = null;
-let lastY = null;
+const lastX = [];
+const lastY = [];
 
 document.addEventListener("mousemove", (event) => {
   if (mousedown) {
     const rect = canvas.getBoundingClientRect();
     const x = Math.floor(event.clientX - rect.left);
     const y = Math.floor(event.clientY - rect.top);
-
-    if (x >= 0 && x < canvas.width && y >= 0 && y < canvas.height) {
-      if (lastX !== null && lastY !== null) {
-        setLine(lastX, lastY, x, y); // Draw a line between the previous and current mouse positions
-      }
-      ctx.putImageData(imageData, 0, 0); // Render the changes
-      lastX = x;
-      lastY = y;
-    }
-    else {
-      lastX = null;
-      lastY = null;
-    }
+    ws.send("" + x + "," + y);
+    renderData("me", x,y);
   } else {
-    lastX = null;
-    lastY = null;
+    lastX['me'] = null;
+    lastY['me'] = null;
   }
 });
+
+ws.onmessage = (event) => {
+  const output = JSON.parse(event.data);
+  renderData(output.userId, output.x, output.y);
+  console.log(event.data);
+};
+
+
+function renderData(id, x, y) {
+  if (x >= 0 && x < canvas.width && y >= 0 && y < canvas.height) {
+    if (lastX[id] !== null && lastY[id] !== null) {
+      setLine(lastX[id], lastY[id], x, y); // Draw a line between the previous and current mouse positions
+    }
+    ctx.putImageData(imageData, 0, 0); // Render the changes
+    lastX[id] = x;
+    lastY[id] = y;
+  } else {
+    lastX[id] = x;
+    lastY[id] = y;
+  }
+}
