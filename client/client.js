@@ -8,12 +8,11 @@ let mousedown = false;
 document.addEventListener("mousedown", () => (mousedown = true));
 document.addEventListener("mouseup", () => (mousedown = false));
 
-
 //last mouse position of not just current user but all users, indexed by id
 const lastX = [];
 const lastY = [];
 
-//The polling rate of the mouse is less than the dpi of the screen and 
+//The polling rate of the mouse is less than the dpi of the screen and
 //thus renderData renders a line between the last position and the current position of the mouse
 function renderData(id, x, y) {
   if (lastX[id] !== null && lastY[id] !== null) {
@@ -46,10 +45,13 @@ function setLine(x1, y1, x2, y2) {
   }
 }
 
+const canvasChanges = []
+
 //Sets the color of a pixel unless it is outside of the bounds
-function setPixel(x, y) {
+function setPixel(x, y, send = true) {
   if (x >= 0 && x < canvas.width && y >= 0 && y < canvas.height) {
-    ws.send(x + "," + y);
+    if(send)
+      canvasChanges.push(x,y);
     const index = (y * imageData.width + x) * 4; // Calculate pixel index
     imageData.data[index] = 165; // Red
     imageData.data[index + 1] = 142; // Green
@@ -73,10 +75,14 @@ document.addEventListener("mousemove", (event) => {
 
 // When a message is sent to this client it is received here
 ws.onmessage = (event) => {
-  const output = JSON.parse(event.data);
-  setPixel(output.x, output.y);
-  //renderData(output.userId, output.x, output.y);
-  console.log(output);
+  if(canvasChanges.length)
+    ws.send(canvasChanges.join(","));
+  canvasChanges.length = 0;
+
+  const data = event.data.split(",").map((str) => Number.parseInt(str));
+  console.log(data.length);
+  for (let index = 0; index < data.length; index += 2)
+    setPixel(data[index], data[index + 1], false);
 };
 
 // This is a loop which updates the screen every 32 ms or ~30 fps.
