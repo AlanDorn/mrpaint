@@ -3,9 +3,18 @@ const canvas = document.getElementById("myCanvas");
 const ctx = canvas.getContext("2d");
 const imageData = ctx.createImageData(canvas.width, canvas.height);
 
+//Mouse button input listener
+let mousedown = false;
+document.addEventListener("mousedown", () => (mousedown = true));
+document.addEventListener("mouseup", () => (mousedown = false));
+
+
+//last mouse position of not just current user but all users, indexed by id
 const lastX = [];
 const lastY = [];
 
+//The polling rate of the mouse is less than the dpi of the screen and 
+//thus renderData renders a line between the last position and the current position of the mouse
 function renderData(id, x, y) {
   if (lastX[id] !== null && lastY[id] !== null) {
     setLine(lastX[id], lastY[id], x, y); // Draw a line between the previous and current mouse positions
@@ -24,11 +33,8 @@ function setLine(x1, y1, x2, y2) {
 
   while (true) {
     setPixel(x1, y1); // Set the current pixel to blue
-
     if (x1 === x2 && y1 === y2) break; // Break the loop when the line is complete
-
     const e2 = err * 2;
-
     if (e2 > -dy) {
       err -= dy;
       x1 += sx;
@@ -40,6 +46,7 @@ function setLine(x1, y1, x2, y2) {
   }
 }
 
+//Sets the color of a pixel unless it is outside of the bounds
 function setPixel(x, y) {
   if (x >= 0 && x < canvas.width && y >= 0 && y < canvas.height) {
     ws.send(x + "," + y);
@@ -51,21 +58,7 @@ function setPixel(x, y) {
   }
 }
 
-let mousedown = false;
-
-// Set mousedown and mouseup events only on the canvas
-document.addEventListener("mousedown", () => {
-  mousedown = true;
-});
-
-document.addEventListener("mouseup", () => {
-  mousedown = false;
-});
-
-// Update mousemove to draw lines only when on the canvas
-
-const mouseData = [];
-
+//A mouse move consitutes a mouse poll, this triggers a render if the mouse is down
 document.addEventListener("mousemove", (event) => {
   if (mousedown) {
     const rect = canvas.getBoundingClientRect();
@@ -78,6 +71,7 @@ document.addEventListener("mousemove", (event) => {
   }
 });
 
+// When a message is sent to this client it is received here
 ws.onmessage = (event) => {
   const output = JSON.parse(event.data);
   setPixel(output.x, output.y);
@@ -85,6 +79,8 @@ ws.onmessage = (event) => {
   console.log(output);
 };
 
-setInterval(()=>{
+// This is a loop which updates the screen every 32 ms or ~30 fps.
+// Image data stores the new canvas and is updated in other parts of the program.
+setInterval(() => {
   ctx.putImageData(imageData, 0, 0); // Render the changes
-}, 100)
+}, 32);
