@@ -86,8 +86,8 @@ document.addEventListener("mousemove", (event) => {
 
 ws.onmessage = (event) => {
   const output = JSON.parse(event.data);
-  renderData(output.userId, output.x, output.y);
-  //console.log(output);
+  //renderData(output.userId, output.x, output.y);
+  console.log(output);
 };
 
 
