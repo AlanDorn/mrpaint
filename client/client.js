@@ -7,16 +7,11 @@ const lastX = [];
 const lastY = [];
 
 function renderData(id, x, y) {
-  if (x >= 0 && x < canvas.width && y >= 0 && y < canvas.height) {
-    if (lastX[id] !== null && lastY[id] !== null) {
-      setLine(lastX[id], lastY[id], x, y); // Draw a line between the previous and current mouse positions
-    }
-    lastX[id] = x;
-    lastY[id] = y;
-  } else {
-    lastX[id] = x;
-    lastY[id] = y;
+  if (lastX[id] !== null && lastY[id] !== null) {
+    setLine(lastX[id], lastY[id], x, y); // Draw a line between the previous and current mouse positions
   }
+  lastX[id] = x;
+  lastY[id] = y;
 }
 
 // Function to set a line between two points (x1, y1) and (x2, y2)
@@ -46,11 +41,14 @@ function setLine(x1, y1, x2, y2) {
 }
 
 function setPixel(x, y) {
-  const index = (y * imageData.width + x) * 4; // Calculate pixel index
-  imageData.data[index] = 165; // Red
-  imageData.data[index + 1] = 142; // Green
-  imageData.data[index + 2] = 245; // Blue
-  imageData.data[index + 3] = 255; // Alpha 
+  if (x >= 0 && x < canvas.width && y >= 0 && y < canvas.height) {
+    ws.send(x + "," + y);
+    const index = (y * imageData.width + x) * 4; // Calculate pixel index
+    imageData.data[index] = 165; // Red
+    imageData.data[index + 1] = 142; // Green
+    imageData.data[index + 2] = 245; // Blue
+    imageData.data[index + 3] = 255; // Alpha
+  }
 }
 
 let mousedown = false;
@@ -64,7 +62,6 @@ document.addEventListener("mouseup", () => {
   mousedown = false;
 });
 
-
 // Update mousemove to draw lines only when on the canvas
 
 const mouseData = [];
@@ -74,20 +71,20 @@ document.addEventListener("mousemove", (event) => {
     const rect = canvas.getBoundingClientRect();
     const x = Math.floor(event.clientX - rect.left);
     const y = Math.floor(event.clientY - rect.top);
-    ws.send("" + x + "," + y);
-    renderData("me", x,y);
-    ctx.putImageData(imageData, 0, 0); // Render the changes
-
+    renderData("me", x, y);
   } else {
-    lastX['me'] = null;
-    lastY['me'] = null;
+    lastX["me"] = null;
+    lastY["me"] = null;
   }
 });
 
 ws.onmessage = (event) => {
   const output = JSON.parse(event.data);
+  setPixel(output.x, output.y);
   //renderData(output.userId, output.x, output.y);
   console.log(output);
 };
 
-
+setInterval(()=>{
+  ctx.putImageData(imageData, 0, 0); // Render the changes
+}, 100)
