@@ -6,7 +6,7 @@
     <title>Canvas Click to Draw</title>
     <style>
       :root {
-        --toolheight: 2.25rem; /* Define the variable */
+        --toolheight: 2rem; /* Define the variable */
       }
 
       * {
@@ -31,11 +31,26 @@
         width: var(--toolheight);
         height: var(--toolheight);
       }
+
+      input[type="number"] {
+        width: 4rem;
+      }
+      canvas {
+        image-rendering: pixelated;
+        image-rendering: crisp-edges; /* Fallback for older browsers */
+      }
     </style>
   </head>
   <body>
     <div id="toolbar">
       <input type="color" id="colorPicker" />
+      <input id="brush-size" type="number" min="0" value="1" step="1" />
+      <select id="default-sizes">
+        <option value="1">1 px</option>
+        <option value="2">2 px</option>
+        <option value="3">3 px</option>
+        <option value="4">4 px</option>
+      </select>
     </div>
     <div id="drawingarea">
       <canvas id="myCanvas" width="500" height="500"></canvas>

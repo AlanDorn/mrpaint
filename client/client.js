@@ -1,3 +1,4 @@
+// CALM: refactor this into seperate classes
 const ws = new WebSocket("wss://5r83l7fz-3001.use.devtunnels.ms/"); // replace this with yours
 const canvas = document.getElementById("myCanvas");
 const drawingarea = document.getElementById("drawingarea");
@@ -12,7 +13,12 @@ document.addEventListener("mouseup", () => (mousedown = false));
 //Color input listener
 //           r  g  b
 let color = [0, 0, 0];
-
+const colorPicker = document.getElementById("colorPicker");
+// Update on color change
+colorPicker.addEventListener(
+  "input",
+  () => (color = hexToRgb(colorPicker.value))
+);
 function hexToRgb(hex) {
   const bigint = parseInt(hex.slice(1), 16);
   const r = (bigint >> 16) & 255;
@@ -21,52 +27,35 @@ function hexToRgb(hex) {
   return [r, g, b];
 }
 
-const colorPicker = document.getElementById("colorPicker");
-// Update on color change
-colorPicker.addEventListener(
-  "input",
-  () => (color = hexToRgb(colorPicker.value))
-);
-
 //last mouse position of not just current user but all users, indexed by id
-const lastX = [];
-const lastY = [];
-
+let lastX = null;
+let lastY = null;
 //The polling rate of the mouse is less than the dpi of the screen and
 //thus renderData renders a line between the last position and the current position of the mouse
-function renderData(id, x, y) {
-  if (lastX[id] !== null && lastY[id] !== null) {
-    setLine(lastX[id], lastY[id], x, y); // Draw a line between the previous and current mouse positions
-  }
-  lastX[id] = x;
-  lastY[id] = y;
+function renderData(x, y) {
+  if (lastX !== null && lastY !== null) 
+    setLine(lastX, lastY, x, y); // Draw a line between the previous and current mouse positions
+  lastX = x;
+  lastY = y;
 }
 
 // Function to set a line between two points (x1, y1) and (x2, y2)
 function setLine(x1, y1, x2, y2) {
-  const dx = Math.abs(x2 - x1);
-  const dy = Math.abs(y2 - y1);
-  const sx = x1 < x2 ? 1 : -1;
-  const sy = y1 < y2 ? 1 : -1;
-  let err = dx - dy;
-
-  while (true) {
-    setPixel(x1, y1, color[0], color[1], color[2]); // Set the current pixel to blue
-    if (x1 === x2 && y1 === y2) break; // Break the loop when the line is complete
-    const e2 = err * 2;
-    if (e2 > -dy) {
-      err -= dy;
-      x1 += sx;
-    }
-    if (e2 < dx) {
-      err += dx;
-      y1 += sy;
-    }
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const steps = Math.max(Math.abs(dx), Math.abs(dy));
+  const xIncrement = dx / steps;
+  const yIncrement = dy / steps;
+  let x = x1;
+  let y = y1;
+  for (let i = 0; i <= steps; i++) {
+    setPixel(Math.round(x), Math.round(y), color[0], color[1], color[2]); // Plot pixel
+    x += xIncrement; // Increment x
+    y += yIncrement; // Increment y
   }
 }
 
 const canvasChanges = [];
-
 //Sets the color of a pixel unless it is outside of the bounds
 function setPixel(x, y, r, g, b, send = true) {
   if (x >= 0 && x < canvas.width && y >= 0 && y < canvas.height) {
@@ -85,10 +74,10 @@ document.addEventListener("mousemove", (event) => {
     const rect = canvas.getBoundingClientRect();
     const x = Math.floor(event.clientX - rect.left);
     const y = Math.floor(event.clientY - rect.top);
-    renderData("me", x, y);
+    renderData(x, y);
   } else {
-    lastX["me"] = null;
-    lastY["me"] = null;
+    lastX = null;
+    lastY = null;
   }
 });
 
@@ -98,7 +87,6 @@ ws.onmessage = (event) => {
   canvasChanges.length = 0;
 
   const data = event.data.split(",").map((str) => Number.parseInt(str));
-  console.log(data.length);
   for (let index = 0; index < data.length; index += 5)
     setPixel(
       data[index],
