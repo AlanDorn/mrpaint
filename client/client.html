@@ -5,21 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Canvas Click to Draw</title>
     <style>
-      body {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        margin: 0;
-        background-color: #f0f0f0;
+      :root {
+        --toolheight: 2.25rem; /* Define the variable */
       }
-      canvas {
-        border: 1px solid black;
+
+      * {
+        margin: 0;
+        overflow: hidden;
+      }
+      body {
+        height: 100svh;
+        width: 100svw;
+      }
+      #toolbar {
+        width: 100svw;
+        height: var(--toolheight);
+        background-color: #ddd;
+      }
+      #drawingarea {
+        width: 100svw;
+        height: calc(100svh - var(--toolheight));
+      }
+
+      input[type="color"] {
+        width: var(--toolheight);
+        height: var(--toolheight);
       }
     </style>
   </head>
   <body>
-    <canvas id="myCanvas" width="500" height="500"></canvas>
+    <div id="toolbar">
+      <input type="color" id="colorPicker" />
+    </div>
+    <div id="drawingarea">
+      <canvas id="myCanvas" width="500" height="500"></canvas>
+    </div>
   </body>
 
   <script src="client.js"></script>

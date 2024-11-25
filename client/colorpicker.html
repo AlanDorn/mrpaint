@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Color Picker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+    }
+    .color-box {
+      width: 100px;
+      height: 100px;
+      margin: 20px auto;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h1>HTML Color Picker</h1>
+  <input type="color" id="colorPicker">
+  <div class="color-box" id="colorBox"></div>
+  <p>RGB: <span id="rgbValue">255, 255, 255</span></p>
+
+  <script>
+    const colorPicker = document.getElementById('colorPicker');
+    const colorBox = document.getElementById('colorBox');
+    const rgbValue = document.getElementById('rgbValue');
+
+    // Function to convert hex to RGB
+    function hexToRgb(hex) {
+      const bigint = parseInt(hex.slice(1), 16);
+      const r = (bigint >> 16) & 255;
+      const g = (bigint >> 8) & 255;
+      const b = bigint & 255;
+      return `${r}, ${g}, ${b}`;
+    }
+
+    // Update on color change
+    colorPicker.addEventListener('input', () => {
+      const hexColor = colorPicker.value;
+      const rgbColor = hexToRgb(hexColor);
+      colorBox.style.backgroundColor = hexColor;
+      rgbValue.textContent = rgbColor;
+    });
+  </script>
+</body>
+</html>

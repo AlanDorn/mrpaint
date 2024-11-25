@@ -44,7 +44,7 @@ setInterval(() => {
   activeUsers.forEach((socket) => socket.send(canvasChanges));
   canvasChanges = "";
 
-}, 32);
+}, 16);
 
 server.listen(3001, () => console.log("WebSocket server running on port 3001"));
 
