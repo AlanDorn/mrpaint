@@ -1,31 +1,31 @@
 // CALM: refactor this into seperate classes
-const ws = new WebSocket("wss://5r83l7fz-3001.use.devtunnels.ms/"); // replace this with yours
+// replace this with yours
+const ws = new WebSocket("wss://5r83l7fz-3001.use.devtunnels.ms/"); 
 const canvas = document.getElementById("myCanvas");
 const drawingarea = document.getElementById("drawingarea");
 const ctx = canvas.getContext("2d");
 let imageData = ctx.createImageData(canvas.width, canvas.height);
 
 //Mouse button input listener
-let mousedown = false;
-document.addEventListener("mousedown", () => (mousedown = true));
-document.addEventListener("mouseup", () => (mousedown = false));
+import Input from "./input.js";
+const input = new Input();
 
 //Color input listener
-//           r  g  b
-let color = [0, 0, 0];
-const colorPicker = document.getElementById("colorPicker");
-// Update on color change
-colorPicker.addEventListener(
-  "input",
-  () => (color = hexToRgb(colorPicker.value))
-);
-function hexToRgb(hex) {
-  const bigint = parseInt(hex.slice(1), 16);
-  const r = (bigint >> 16) & 255;
-  const g = (bigint >> 8) & 255;
-  const b = bigint & 255;
-  return [r, g, b];
-}
+import ColorPicker from "./colorpicker.js";
+const colorpicker = new ColorPicker();
+
+//A mouse move consitutes a mouse poll, this triggers a render if the mouse is down
+document.addEventListener("mousemove", (event) => {
+  if (input.mousedown) {
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.floor(event.clientX - rect.left);
+    const y = Math.floor(event.clientY - rect.top);
+    renderData(x, y);
+  } else {
+    lastX = null;
+    lastY = null;
+  }
+});
 
 //last mouse position of not just current user but all users, indexed by id
 let lastX = null;
@@ -33,8 +33,7 @@ let lastY = null;
 //The polling rate of the mouse is less than the dpi of the screen and
 //thus renderData renders a line between the last position and the current position of the mouse
 function renderData(x, y) {
-  if (lastX !== null && lastY !== null) 
-    setLine(lastX, lastY, x, y); // Draw a line between the previous and current mouse positions
+  if (lastX !== null && lastY !== null) setLine(lastX, lastY, x, y); // Draw a line between the previous and current mouse positions
   lastX = x;
   lastY = y;
 }
@@ -49,7 +48,13 @@ function setLine(x1, y1, x2, y2) {
   let x = x1;
   let y = y1;
   for (let i = 0; i <= steps; i++) {
-    setPixel(Math.round(x), Math.round(y), color[0], color[1], color[2]); // Plot pixel
+    setPixel(
+      Math.round(x),
+      Math.round(y),
+      colorpicker.color[0],
+      colorpicker.color[1],
+      colorpicker.color[2]
+    ); // Plot pixel
     x += xIncrement; // Increment x
     y += yIncrement; // Increment y
   }
@@ -67,19 +72,6 @@ function setPixel(x, y, r, g, b, send = true) {
     imageData.data[index + 3] = 255; // Alpha
   }
 }
-
-//A mouse move consitutes a mouse poll, this triggers a render if the mouse is down
-document.addEventListener("mousemove", (event) => {
-  if (mousedown) {
-    const rect = canvas.getBoundingClientRect();
-    const x = Math.floor(event.clientX - rect.left);
-    const y = Math.floor(event.clientY - rect.top);
-    renderData(x, y);
-  } else {
-    lastX = null;
-    lastY = null;
-  }
-});
 
 // When a message is sent to this client it is received here
 ws.onmessage = (event) => {
