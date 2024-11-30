@@ -107,7 +107,7 @@ class Pencil {
   
 
   setPixel(x, y) {
-    this.virtualCanvas.setPixel(
+    this.virtualCanvas.setPixelClient(
       Math.round(x),
       Math.round(y),
       this.colorpicker.color[0],

@@ -40,10 +40,14 @@ wss.on("connection", (ws) => {
 });
 
 setInterval(() => {
-  canvasChanges = canvasChanges.slice(0, -1) 
+  if (!canvasChanges) {
+    activeUsers.forEach((socket) => socket.send("none"));
+    return;
+  }
+  
+  canvasChanges = canvasChanges.slice(0, -1);
   activeUsers.forEach((socket) => socket.send(canvasChanges));
   canvasChanges = "";
-
 }, 16);
 
 server.listen(3001, () => console.log("WebSocket server running on port 3001"));
