@@ -21,6 +21,7 @@ const activeUsers: Map<number, WebSocket> = new Map(); // a map of all active us
 let cursorPositions = "";
 let canvasChanges = "";
 
+//CALM: There needs to be some start up mechanism for each client. This will give them their userId and the current canvas state.
 wss.on("connection", (ws) => {
   const userId = userIdCounter++;
   console.log("new user " + userId);
