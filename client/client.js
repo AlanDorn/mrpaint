@@ -10,36 +10,65 @@ const pencil = new Pencil(virtualCanvas, colorpicker);
 //ALAN: is this the correct location for this?
 
 // AGI: This should get turned into a little class like color picker, eventually if enough of these little classes come around we will make a class that has them all as field members
-const brushSizeDropdown = document.getElementById('default-sizes');
-  brushSizeDropdown.addEventListener('change', (event) => {
-    const newBrushSize = parseInt(event.target.value, 10);
-    pencil.setBrushSize(newBrushSize);
-  });
+const brushSizeDropdown = document.getElementById("default-sizes");
+brushSizeDropdown.addEventListener("change", (event) => {
+  const newBrushSize = parseInt(event.target.value, 10);
+  pencil.setBrushSize(newBrushSize);
+});
 
 import Input from "./input.js";
-new Input(pencil);
+const input = new Input(pencil);
 
 //BUILD replace this with yours
 // http://localhost:3000/
 // wss://5r83l7fz-3001.use.devtunnels.ms/
-// CALM: Even though this is "Client" code I think client.js should solve the problem of how things get their dependencies not the cliet interfacing code. That should go into it's own class most likely. 
+// CALM: Even though this is "Client" code I think client.js should solve the problem of how things get their dependencies not the cliet interfacing code. That should go into it's own class most likely.
 
 const ws = new WebSocket("wss://5r83l7fz-3001.use.devtunnels.ms/");
 
 // When a message is sent to this client it is received here
 ws.onmessage = (event) => {
+  //send your data to server
+  const position = input.x + "," + input.y;
   const changes = virtualCanvas.pullChanges();
-  if (changes) ws.send(changes);
+  const message = position + ";" + changes;
+  ws.send(message);
 
-  if(event.data === "none") return;
+  //process data from server
+  const [userId, cursorEvent, canvasEvent] = event.data
+    .split(";")
+    .map((csv) => csv.split(",").map((str) => Number.parseInt(str)));
 
-  const data = event.data.split(",").map((str) => Number.parseInt(str));
-  for (let index = 0; index < data.length; index += 5)
+  //procces cursors
+  for (let index = 0; index < cursorEvent.length; index += 3) {
+    const id = cursorEvent[index];
+    if (id === userId[0]) continue;
+    let cursorElement = document.getElementById("cursor" + id);
+    if (!cursorElement) {
+      cursorElement = document.createElement("div");
+      cursorElement.id = "cursor" + id;
+      cursorElement.classList.add("cursor");
+      document.body.appendChild(cursorElement);
+    }
+    cursorElement.style.left = `${cursorEvent[index + 1]}px`; // Ensure units are added
+    cursorElement.style.top = `${cursorEvent[index + 2]}px`;
+
+    if (cursorElement._removeTimeout)
+      clearTimeout(cursorElement._removeTimeout);
+
+    cursorElement._removeTimeout = setTimeout(() => {
+      cursorElement.remove();
+    }, 500);
+  }
+
+  //process canvas
+  if (canvasEvent.length < 5) return;
+  for (let index = 0; index < canvasEvent.length; index += 5)
     virtualCanvas.setPixelServer(
-      data[index],
-      data[index + 1],
-      data[index + 2],
-      data[index + 3],
-      data[index + 4]
+      canvasEvent[index],
+      canvasEvent[index + 1],
+      canvasEvent[index + 2],
+      canvasEvent[index + 3],
+      canvasEvent[index + 4]
     );
 };
