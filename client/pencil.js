@@ -5,7 +5,7 @@ class Pencil {
 
     this.points = []; // Store the last four points for Catmull-Rom
     this.isDrawing = false;
-    this.brushSize = 1;
+    this.brushSize = 1; //brushSize
   }
 
   setBrushSize(size) {
@@ -49,6 +49,7 @@ class Pencil {
       ];
       this.points.unshift(mirroredPoint);
     }
+    //ALAN
 
     if (this.points.length > 4) {
       this.points.shift();
