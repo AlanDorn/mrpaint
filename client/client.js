@@ -59,7 +59,7 @@ ws.onmessage = (event) => {
 
     cursorElement._removeTimeout = setTimeout(() => {
       cursorElement.remove();
-    }, 500);
+    }, 128);
   }
 
   //process canvas
