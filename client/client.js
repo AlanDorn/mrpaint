@@ -7,11 +7,20 @@ const colorpicker = new ColorPicker();
 import Pencil from "./pencil.js";
 const pencil = new Pencil(virtualCanvas, colorpicker);
 
+//CALM is this the correct location for this?
+const brushSizeDropdown = document.getElementById('default-sizes');
+  brushSizeDropdown.addEventListener('change', (event) => {
+    const newBrushSize = parseInt(event.target.value, 10);
+    pencil.setBrushSize(newBrushSize);
+  });
+
 import Input from "./input.js";
 new Input(pencil);
 
-// replace this with yours
-const ws = new WebSocket("wss://5r83l7fz-3001.use.devtunnels.ms/");
+//BUILD replace this with yours
+// http://localhost:3000/
+// wss://5r83l7fz-3001.use.devtunnels.ms/
+const ws = new WebSocket("http://localhost:3001/");
 
 // When a message is sent to this client it is received here
 ws.onmessage = (event) => {
