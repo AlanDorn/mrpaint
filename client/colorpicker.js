@@ -1,7 +1,7 @@
 class ColorPicker {
   constructor() {
     this.color = [0, 0, 0];
-
+    //HECTIC: This needs to include some sort of pallet as well as a primary and secondary color.
     const colorPicker = document.getElementById("colorPicker");
     // Update on color change
     colorPicker.addEventListener(

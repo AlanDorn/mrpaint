@@ -41,6 +41,7 @@ ws.onmessage = (event) => {
     .map((csv) => csv.split(",").map((str) => Number.parseInt(str)));
 
   //procces cursors
+  //CALM: make this somehow get the user's selected color and use that as the cursor color
   for (let index = 0; index < cursorEvent.length; index += 3) {
     const id = cursorEvent[index];
     if (id !== userId[0]) {
