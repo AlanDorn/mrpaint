@@ -27,7 +27,8 @@ const input = new Input(pencil);
 const ws = new WebSocket("wss://5r83l7fz-3001.use.devtunnels.ms/");
 
 // When a message is sent to this client it is received here
-ws.onmessage = (event) => {// CALM: Even though this is "Client" code I think client.js should solve the problem of how things get their dependencies not the cliet interfacing code. That should go into it's own class most likely.
+ws.onmessage = (event) => {
+  // CALM: Even though this is "Client" code I think client.js should solve the problem of how things get their dependencies not the cliet interfacing code. That should go into it's own class most likely.
   //send your data to server
   const position = input.x + "," + input.y;
   const changes = virtualCanvas.pullChanges();
