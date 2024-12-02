@@ -43,27 +43,27 @@ ws.onmessage = (event) => {
   //procces cursors
   for (let index = 0; index < cursorEvent.length; index += 3) {
     const id = cursorEvent[index];
-    if (id === userId[0]) continue;
-    let cursorElement = document.getElementById("cursor" + id);
-    if (!cursorElement) {
-      cursorElement = document.createElement("div");
-      cursorElement.id = "cursor" + id;
-      cursorElement.classList.add("cursor");
-      document.body.appendChild(cursorElement);
+    if (id !== userId[0]) {
+      let cursorElement = document.getElementById("cursor" + id);
+      if (!cursorElement) {
+        cursorElement = document.createElement("div");
+        cursorElement.id = "cursor" + id;
+        cursorElement.classList.add("cursor");
+        document.body.appendChild(cursorElement);
+      }
+      cursorElement.style.left = `${cursorEvent[index + 1]}px`; // Ensure units are added
+      cursorElement.style.top = `${cursorEvent[index + 2]}px`;
+
+      if (cursorElement._removeTimeout)
+        clearTimeout(cursorElement._removeTimeout);
+
+      cursorElement._removeTimeout = setTimeout(() => {
+        cursorElement.remove();
+      }, 500);
     }
-    cursorElement.style.left = `${cursorEvent[index + 1]}px`; // Ensure units are added
-    cursorElement.style.top = `${cursorEvent[index + 2]}px`;
-
-    if (cursorElement._removeTimeout)
-      clearTimeout(cursorElement._removeTimeout);
-
-    cursorElement._removeTimeout = setTimeout(() => {
-      cursorElement.remove();
-    }, 500);
   }
 
   //process canvas
-  if (canvasEvent.length < 5) return;
   for (let index = 0; index < canvasEvent.length; index += 5)
     virtualCanvas.setPixelServer(
       canvasEvent[index],
