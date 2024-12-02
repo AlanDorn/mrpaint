@@ -22,12 +22,12 @@ const input = new Input(pencil);
 //BUILD replace this with yours
 // http://localhost:3000/
 // wss://5r83l7fz-3001.use.devtunnels.ms/
-// CALM: Even though this is "Client" code I think client.js should solve the problem of how things get their dependencies not the cliet interfacing code. That should go into it's own class most likely.
 
+// CALM: this can actually be programmatically set by looking at your url and setting the protocol ws for http and wss for https.
 const ws = new WebSocket("wss://5r83l7fz-3001.use.devtunnels.ms/");
 
 // When a message is sent to this client it is received here
-ws.onmessage = (event) => {
+ws.onmessage = (event) => {// CALM: Even though this is "Client" code I think client.js should solve the problem of how things get their dependencies not the cliet interfacing code. That should go into it's own class most likely.
   //send your data to server
   const position = input.x + "," + input.y;
   const changes = virtualCanvas.pullChanges();
