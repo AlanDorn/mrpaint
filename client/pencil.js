@@ -102,7 +102,7 @@ class Pencil {
   }
 
   setPixel(x, y) {
-    const size = this.brushSize;
+    const size = this.brushSize; // AGI: just like how we have this.colorpicker.color we could have this."brushsizeselector".size to obtain the size here. This would require some class to handle the size of the brush called "brushsizeselector" or whats sounds best.
     for (let dx = 0; dx < size; dx++) {
       for (let dy = 0; dy < size; dy++) {
         this.virtualCanvas.setPixelClient(

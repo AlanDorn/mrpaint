@@ -18,6 +18,7 @@ const wss = new WebSocket.Server({ server });
 let userIdCounter = 0;
 const activeUsers: Map<number, WebSocket> = new Map(); // a map of all active user websockets
 
+let cursorPositions = "";
 let canvasChanges = "";
 
 wss.on("connection", (ws) => {
@@ -29,7 +30,9 @@ wss.on("connection", (ws) => {
   // When a client sends a message it is received here
   // Currently it just sends the user's input to everyone
   ws.on("message", (event) => {
-    canvasChanges += event.toString() + ",";
+    const [cursorEvent, canvasEvent] = event.toString().split(";");
+    cursorPositions += userId + "," + cursorEvent + ",";
+    if (canvasEvent) canvasChanges += canvasEvent + ",";
   });
 
   // Kick the user from the active users
@@ -40,13 +43,12 @@ wss.on("connection", (ws) => {
 });
 
 setInterval(() => {
-  if (!canvasChanges) {
-    activeUsers.forEach((socket) => socket.send("none"));
-    return;
-  }
-  
-  canvasChanges = canvasChanges.slice(0, -1);
-  activeUsers.forEach((socket) => socket.send(canvasChanges));
+  cursorPositions = !cursorPositions ? "" : cursorPositions.slice(0, -1);
+  canvasChanges = !canvasChanges ? "" : canvasChanges.slice(0, -1);
+  const message = cursorPositions + ";" + canvasChanges;
+
+  activeUsers.forEach((socket, userId) => socket.send(userId + ";" + message));
+  cursorPositions = "";
   canvasChanges = "";
 }, 16);
 

@@ -75,7 +75,7 @@ class VirtualCanvas {
   }
 
   pullChanges() {
-    if (!this.changes.length) return null;
+    if (!this.changes.length) return "";
     const csv = this.changes.join(",");
     this.changes = [];
     return csv;
