@@ -4,23 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Canvas Click to Draw</title>
-    <style>
-      body {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        margin: 0;
-        background-color: #f0f0f0;
-      }
-      canvas {
-        border: 1px solid black;
-      }
-    </style>
+    <link rel="stylesheet" href="styles.css">
   </head>
   <body>
-    <canvas id="myCanvas" width="500" height="500"></canvas>
+    <div id="toolbar">
+      <input type="color" id="colorPicker" />
+      <input type="number" id="brush-size" min="0" value="1" step="1" />
+      <select id="default-sizes">
+        <option value="1">1 px</option>
+        <option value="2">2 px</option>
+        <option value="3">3 px</option>
+        <option value="4">4 px</option>
+      </select>
+    </div>
+    <div id="drawingarea">
+      <canvas id="myCanvas" width="500" height="500"></canvas>
+    </div>
   </body>
 
-  <script src="client.js"></script>
+  <script type="module" src="client.js"></script>
 </html>
