@@ -2,13 +2,14 @@ export default class Pencil {
   constructor(virtualCanvas, colorpicker, brushsize) {
     this.virtualCanvas = virtualCanvas;
     this.colorpicker = colorpicker;
-
+    this.currentcolor = [0, 0, 0];
     this.points = []; // Store the last four points for Catmull-Rom
     this.isDrawing = false;
+    this.primarydrawing = true;
     this.brushsize = brushsize;
   }
 
-  mouseUp(input) {
+  mouseUpLeft(input) {
     if (this.points.length >= 2) {
       const lastPoint = this.points[this.points.length - 1];
       const secondLastPoint = this.points[this.points.length - 2];
@@ -23,8 +24,32 @@ export default class Pencil {
     this.points = [];
   }
 
-  mouseDown(input) {
+  mouseUpRight(input) {
+    if (this.points.length >= 2) {
+      const lastPoint = this.points[this.points.length - 1];
+      const secondLastPoint = this.points[this.points.length - 2];
+      const mirroredPoint = [
+        2 * lastPoint[0] - secondLastPoint[0],
+        2 * lastPoint[1] - secondLastPoint[1],
+      ];
+      this.points.push(mirroredPoint);
+      this.drawSpline();
+    }
+    this.isDrawing = false;
+    this.points = [];
+  }
+
+  mouseDownLeft(input) {
     this.isDrawing = true;
+    this.primarydrawing = true;
+    const startPoint = this.virtualCanvas.positionInCanvas(input.x, input.y);
+    this.points.push(startPoint);
+    this.setPixel(startPoint[0], startPoint[1]);
+  }
+
+  mouseDownRight(input) {
+    this.isDrawing = true;
+    this.primarydrawing = false;
     const startPoint = this.virtualCanvas.positionInCanvas(input.x, input.y);
     this.points.push(startPoint);
     this.setPixel(startPoint[0], startPoint[1]);
@@ -61,14 +86,15 @@ export default class Pencil {
 
     const interpolate = (t, p0, p1, p2, p3) =>
       0.5 *
-      ((2 * p1) +
+      (2 * p1 +
         (-p0 + p2) * t +
         (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t +
         (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t);
 
     const derivative = (t, p0, p1, p2, p3) =>
       0.5 *
-      ((-p0 + p2) +
+      (-p0 +
+        p2 +
         2 * t * (2 * p0 - 5 * p1 + 4 * p2 - p3) +
         3 * t * t * (-p0 + 3 * p1 - 3 * p2 + p3));
 
@@ -98,14 +124,17 @@ export default class Pencil {
   }
 
   setPixel(x, y) {
+    const color = this.primarydrawing
+      ? this.colorpicker.primarycolor
+      : this.colorpicker.secondarycolor;
     for (let dx = 0; dx < this.brushsize.size; dx++) {
       for (let dy = 0; dy < this.brushsize.size; dy++) {
         this.virtualCanvas.setPixelClient(
           Math.round(x + dx),
           Math.round(y + dy),
-          this.colorpicker.color[0],
-          this.colorpicker.color[1],
-          this.colorpicker.color[2]
+          color[0],
+          color[1],
+          color[2]
         );
       }
     }
