@@ -1,0 +1,41 @@
+:root {
+  --toolheight: 2rem; /* Define the variable */
+}
+
+* {
+  margin: 0;
+  overflow: hidden;
+}
+body {
+  height: 100svh;
+  width: 100svw;
+}
+#toolbar {
+  width: 100svw;
+  height: var(--toolheight);
+  background-color: black;
+}
+#drawingarea {
+  width: 100svw;
+  height: calc(100svh - var(--toolheight));
+}
+
+input[type="color"] {
+  width: var(--toolheight);
+  height: var(--toolheight);
+}
+
+input[type="number"] {
+  width: var(--toolheight);
+  height: var(--toolheight);
+}
+canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges; /* Fallback for older browsers */
+}
+.cursor {
+  width: calc(var(--toolheight) / 3);
+  height: calc(var(--toolheight) / 3);
+  position: absolute;
+  background-color: cadetblue;
+}
