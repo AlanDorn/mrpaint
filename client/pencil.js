@@ -1,4 +1,4 @@
-class Pencil {
+export default class Pencil {
   constructor(virtualCanvas, colorpicker, brushsize) {
     this.virtualCanvas = virtualCanvas;
     this.colorpicker = colorpicker;
@@ -113,5 +113,3 @@ class Pencil {
     }
   }
 }
-
-export default Pencil;

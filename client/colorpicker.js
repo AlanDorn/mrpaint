@@ -1,4 +1,4 @@
-class ColorPicker {
+export default class ColorPicker {
   constructor() {
     this.color = [0, 0, 0];
     //HECTIC: This needs to include some sort of pallet as well as a primary and secondary color.
@@ -19,4 +19,3 @@ function hexToRgb(hex) {
   return [r, g, b];
 }
 
-export default ColorPicker;

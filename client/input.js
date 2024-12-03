@@ -1,4 +1,4 @@
-class Input {
+export default class Input {
   constructor(pencil) {
     this.x = 0;
     this.y = 0;
@@ -18,5 +18,3 @@ class Input {
     });
   }
 }
-
-export default Input;

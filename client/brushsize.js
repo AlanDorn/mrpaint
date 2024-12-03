@@ -1,4 +1,4 @@
-class BrushSize {
+export default class BrushSize {
   constructor() {
     this.size = 1;
 
@@ -17,5 +17,3 @@ class BrushSize {
     this.size = newSize;
   }
 }
-
-export default BrushSize;

@@ -1,4 +1,4 @@
-class VirtualCanvas {
+export default class VirtualCanvas {
   constructor() {
     this.canvas = document.getElementById("myCanvas");
     this.drawingarea = document.getElementById("drawingarea");
@@ -114,4 +114,3 @@ class VirtualCanvas {
   }
 }
 
-export default VirtualCanvas;
