@@ -4,17 +4,16 @@ const virtualCanvas = new VirtualCanvas();
 import ColorPicker from "./colorpicker.js";
 const colorpicker = new ColorPicker();
 
+import Brushsize from "./brushsize.js";
+const brushsize = new Brushsize();
+
 import Pencil from "./pencil.js";
-const pencil = new Pencil(virtualCanvas, colorpicker);
+const pencil = new Pencil(virtualCanvas, colorpicker, brushsize);
 
 //ALAN: is this the correct location for this?
 
 // AGI: This should get turned into a little class like color picker, eventually if enough of these little classes come around we will make a class that has them all as field members
-const brushSizeDropdown = document.getElementById("default-sizes");
-brushSizeDropdown.addEventListener("change", (event) => {
-  const newBrushSize = parseInt(event.target.value, 10);
-  pencil.setBrushSize(newBrushSize);
-});
+
 
 import Input from "./input.js";
 const input = new Input(pencil);
@@ -24,7 +23,7 @@ const input = new Input(pencil);
 // wss://5r83l7fz-3001.use.devtunnels.ms/
 
 // CALM: this can actually be programmatically set by looking at your url and setting the protocol ws for http and wss for https.
-const ws = new WebSocket("wss://5r83l7fz-3001.use.devtunnels.ms/");
+const ws = new WebSocket("http://localhost:3000/");
 
 // When a message is sent to this client it is received here
 ws.onmessage = (event) => {
