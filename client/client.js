@@ -64,6 +64,7 @@ ws.onmessage = (event) => {
     }
   }
 
+  if (canvasEvent.length < 5) return;
   //process canvas
   for (let index = 0; index < canvasEvent.length; index += 5)
     virtualCanvas.setPixelServer(
