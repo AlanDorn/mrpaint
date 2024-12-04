@@ -6,16 +6,16 @@ let drawing = false;
 // Begin drawing
 canvas.addEventListener('mousedown', () => {
     drawing = true;
-});
-
-// Stop drawing
-canvas.addEventListener('mouseup', () => {
-    drawing = false;
     ctx.beginPath();
 });
 
+// Stop drawing
+document.addEventListener('mouseup', () => {
+    drawing = false;
+});
+
 // Draw on the canvas
-canvas.addEventListener('mousemove', (event) => {
+document.addEventListener('mousemove', (event) => {
     if (!drawing) return;
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
@@ -24,7 +24,7 @@ canvas.addEventListener('mousemove', (event) => {
     //Cool line styling yippee
     ctx.lineWidth = 2;
     ctx.lineCap = 'round';
-    ctx.strokeStyle = 'white';
+    ctx.strokeStyle = 'yellow';
 
     ctx.lineTo(x, y);
     ctx.stroke();
@@ -34,3 +34,21 @@ canvas.addEventListener('mousemove', (event) => {
     // Emit drawing data to server
     sendDrawingData({ x, y });
 });
+
+// WebSocket connection
+const socket = new WebSocket('ws://localhost:3000');
+
+// Send drawing data
+function sendDrawingData(position) {
+    socket.send(JSON.stringify(position));
+}
+
+// Receive drawing data
+socket.onmessage = (message) => {
+    const position = JSON.parse(message.data);
+
+    ctx.lineTo(position.x, position.y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(position.x, position.y);
+};

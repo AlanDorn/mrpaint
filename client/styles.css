@@ -25,6 +25,11 @@ input[type="color"] {
   height: var(--toolheight);
 }
 
+input[type="color1"] {
+  width: var(--toolheight);
+  height: var(--toolheight);
+}
+
 input[type="number"] {
   width: var(--toolheight);
   height: var(--toolheight);
