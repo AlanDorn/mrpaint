@@ -4,12 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Canvas Click to Draw</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div id="toolbar">
       <input type="color" id="colorPicker" />
-      <input type="color" id="colorPicker2" />
+      <input type="color" id="colorPicker2" value="#ffffff" />
+      <!-- value = white : is important for starting value to show white -->
       <input type="number" id="brush-size" min="0" value="1" step="1" />
       <select id="default-sizes">
         <option value="1">1 px</option>
