@@ -1,10 +1,8 @@
-let userId = -1;
-let needsSynchronization = true;
-
-export default function socket(input, transactionManager, pencil) {
-  const ws = new WebSocket(
-    window.location.href.replace(/^http/, "ws").replace(/3000/, "3001")
-  );
+export default class Socket {
+  constructor(input, virtualCanvas) {
+    const ws = new WebSocket(
+      window.location.href.replace(/^http/, "ws").replace(/3000/, "3001")
+    );
 
   // When a message is sent to this client it is received here
   ws.onmessage = (event) => {
@@ -72,9 +70,25 @@ function handleCursorData(cursorData) {
   cursorElement.style.left = `${cursorData[1] * 256 + cursorData[2]}px`; // Ensure units are added
   cursorElement.style.top = `${cursorData[3] * 256 + cursorData[4]}px`;
 
-  if (cursorElement._removeTimeout) clearTimeout(cursorElement._removeTimeout);
+          if (cursorElement._removeTimeout)
+            clearTimeout(cursorElement._removeTimeout);
 
-  cursorElement._removeTimeout = setTimeout(() => {
-    cursorElement.remove();
-  }, 500);
+          cursorElement._removeTimeout = setTimeout(() => {
+            cursorElement.remove();
+          }, 500);
+        }
+      }
+
+      if (canvasEvent.length < 5) return;
+      //process canvas
+      for (let index = 0; index < canvasEvent.length; index += 5)
+        virtualCanvas.setPixelServer(
+          canvasEvent[index],
+          canvasEvent[index + 1],
+          canvasEvent[index + 2],
+          canvasEvent[index + 3],
+          canvasEvent[index + 4]
+        );
+    };
+  }
 }
