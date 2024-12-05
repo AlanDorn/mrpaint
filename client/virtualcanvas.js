@@ -36,8 +36,10 @@ export default class VirtualCanvas {
       this.imageData.data[index + 3] = 255; // Alpha
     }
 
-    this.resizeVirtualIfNeeded(x, y);
-    this.virtualCanvas[y][x] = [r, g, b];
+    if (x >= 0 && y >= 0 ) {
+      this.resizeVirtualIfNeeded(x, y);
+      this.virtualCanvas[y][x] = [r, g, b];
+    }
   }
 
   setPixelClient(x, y, r, g, b) {
