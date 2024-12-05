@@ -59,6 +59,7 @@ wss.on("connection", (ws) => {
   });
 });
 
+const nullMessage = new Uint8Array([0]);
 setInterval(() => {
   const clientMessage =
     !newTransactions && !cursorPositions
