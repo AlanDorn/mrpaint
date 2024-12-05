@@ -25,7 +25,7 @@ export default class VirtualCanvas {
   render() {
     this.ctx.putImageData(this.imageData, 0, 0);
   }
-
+  //HECTIC: for some reason this still bugs out when you mouse outside the canvas, which is weird because bound are checked a few times before this.
   setPixelServer(x, y, r, g, b) {
     if (x >= 0 && x < this.canvas.width && y >= 0 && y < this.canvas.height) {
       const index = (y * this.imageData.width + x) * 4; // Calculate pixel index

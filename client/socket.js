@@ -9,11 +9,27 @@ export default function socket(input, transactionManager, pencil) {
   // When a message is sent to this client it is received here
   ws.onmessage = (event) => {
     if (needsSynchronization) {
-      needsSynchronization = false;
-      userId = Number.parseInt(event.data);
-      ws.send("synchronized");
+      event.data.arrayBuffer().then((buffer) => {
+        const eventData = new Uint8Array(buffer);
+        needsSynchronization = false;
+        userId = eventData[0];
+        ws.send("synchronized");
+
+        const transactionData = eventData.slice(1);
+        const processedTransactions =
+          transactionManager.processTransactions(transactionData);
+
+        processedTransactions.forEach((transaction) => {
+          switch (transaction[1]) {
+            case "pencil":
+              pencil.drawServer(...transaction.slice(2));
+              break;
+          }
+        });
+      });
       return;
     }
+
     //send your data to server
     ws.send(transactionManager.buildServerMessage(input.x, input.y));
 

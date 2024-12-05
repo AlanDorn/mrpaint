@@ -41,7 +41,9 @@ export function splinePixels(fourPoints) {
 
     const x = interpolate(t, p0[0], p1[0], p2[0], p3[0]);
     const y = interpolate(t, p0[1], p1[1], p2[1], p3[1]);
-    if (prevX !== x || prevY !== y) pixels.push([x, y]);
+    const differentThanBefore = prevX !== x || prevY !== y;
+    const notNegative = x >= 0 && y >= 0;
+    if (differentThanBefore && notNegative) pixels.push([x, y]);
     prevX = x;
     prevY = y;
   }
