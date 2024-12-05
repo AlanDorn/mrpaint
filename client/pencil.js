@@ -70,7 +70,6 @@ export default class Pencil {
       ];
       this.points.unshift(mirroredPoint);
     }
-    //ALAN
 
     if (this.points.length > 4) {
       this.points.shift();

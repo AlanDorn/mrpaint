@@ -1,9 +1,7 @@
 export default class Socket {
   constructor(input, virtualCanvas) {
     const ws = new WebSocket(
-      window.location.href
-        .replace(/^http/, "ws")
-        .replace(/3000/, "3001")
+      window.location.href.replace(/^http/, "ws").replace(/3000/, "3001")
     );
 
     // When a message is sent to this client it is received here
@@ -20,6 +18,7 @@ export default class Socket {
         .map((csv) => csv.split(",").map((str) => Number.parseInt(str)));
 
       //procces cursors
+
       //CALM: make this somehow get the user's selected color and use that as the cursor color
       for (let index = 0; index < cursorEvent.length; index += 3) {
         const id = cursorEvent[index];
