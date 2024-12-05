@@ -19,35 +19,22 @@ const wss = new WebSocket.Server({ server });
 let userIdCounter = 0;
 const activeUsers: Map<number, WebSocket> = new Map(); // a map of all active user websockets
 
-const cursorPositions: Uint8Array[] = [];
-const transactions: Uint8Array[] = [];
+let cursorPositions = "";
+let canvasChanges = "";
 
 //CALM: There needs to be some start up mechanism for each client. This will give them their userId and the current canvas state.
 wss.on("connection", (ws) => {
-  const userId = userIdCounter++ % 256;
-  let needsSynchronization = true;
-  ws.send(userId);
+  const userId = userIdCounter++;
+  console.log("new user " + userId);
 
+  activeUsers.set(userId, ws);
+
+  // When a client sends a message it is received here
+  // Currently it just sends the user's input to everyone
   ws.on("message", (event) => {
-    if (needsSynchronization) {
-      needsSynchronization = false;
-      activeUsers.set(userId, ws);
-      console.log("new user " + userId);
-      return;
-    }
-
-    const eventData = new Uint8Array(event as Buffer);
-
-    cursorPositions.push(
-      new Uint8Array([
-        userId,
-        eventData[0],
-        eventData[1],
-        eventData[2],
-        eventData[3],
-      ])
-    );
-    transactions.push(eventData.slice(4));
+    const [cursorEvent, canvasEvent] = event.toString().split(";");
+    cursorPositions += userId + "," + cursorEvent + ",";
+    if (canvasEvent) canvasChanges += canvasEvent + ",";
   });
 
   // Kick the user from the active users
@@ -57,37 +44,16 @@ wss.on("connection", (ws) => {
   });
 });
 
-const nullMessage = new Uint8Array([0]);
 setInterval(() => {
-  const clientMessage =
-    !transactions && !cursorPositions
-      ? nullMessage
-      : joinUint8Arrays(
-          new Uint8Array([cursorPositions.length]),
-          ...cursorPositions,
-          ...transactions
-        );
+  cursorPositions = !cursorPositions ? "" : cursorPositions.slice(0, -1);
+  canvasChanges = !canvasChanges ? "" : canvasChanges.slice(0, -1);
+  const message = cursorPositions + ";" + canvasChanges;
 
-  activeUsers.forEach((socket) => socket.send(clientMessage));
-  cursorPositions.length = 0;
-  transactions.length = 0;
-}, 16);
-
-function joinUint8Arrays(...components: Uint8Array[]) {
-  let transactionLength = 0;
-  for (let index = 0; index < components.length; index++)
-    transactionLength += components[index].length;
-
-  const transaction = new Uint8Array(transactionLength);
-  let bufferOffset = 0;
-  for (let index = 0; index < components.length; index++) {
-    transaction.set(components[index], bufferOffset);
-    bufferOffset += components[index].length;
-  }
-  return transaction;
-}
+  activeUsers.forEach((socket, userId) => socket.send(userId + ";" + message));
+  cursorPositions = "";
+  canvasChanges = "";
+}, 32);
 
 server.listen(3001, () => console.log("WebSocket server running on port 3001"));
 
-mrpaint();
 mrpaint();
