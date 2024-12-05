@@ -4,7 +4,6 @@ import Brushsize from "./brushsize.js";
 import Pencil from "./pencil.js";
 import Input from "./input.js";
 import Socket from "./socket.js";
-import newTransaction from "./transaction.js";
 
 const virtualCanvas = new VirtualCanvas();
 const colorpicker = new ColorPicker();
