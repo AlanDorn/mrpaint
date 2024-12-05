@@ -18,8 +18,6 @@ export default class ColorPicker {
       () => (this.secondarycolor = hexToRgb(colorPicker2.value))
     );
   }
-
-  
 }
 
 function hexToRgb(hex) {
@@ -29,4 +27,3 @@ function hexToRgb(hex) {
   const b = bigint & 255;
   return [r, g, b];
 }
-

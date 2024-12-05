@@ -1,4 +1,4 @@
-import path from "path";
+import path, { join } from "path";
 import express from "express";
 import * as http from "http";
 import WebSocket from "ws";
@@ -21,12 +21,13 @@ const activeUsers: Map<number, WebSocket> = new Map(); // a map of all active us
 
 const cursorPositions: Uint8Array[] = [];
 const transactions: Uint8Array[] = [];
+const newTransactions: Uint8Array[] = [];
 
 //CALM: There needs to be some start up mechanism for each client. This will give them their userId and the current canvas state.
 wss.on("connection", (ws) => {
   const userId = userIdCounter++ % 256;
   let needsSynchronization = true;
-  ws.send(userId);
+  ws.send(joinUint8Arrays(new Uint8Array([userId]), ...transactions));
 
   ws.on("message", (event) => {
     if (needsSynchronization) {
@@ -48,6 +49,7 @@ wss.on("connection", (ws) => {
       ])
     );
     transactions.push(eventData.slice(4));
+    newTransactions.push(eventData.slice(4));
   });
 
   // Kick the user from the active users
@@ -57,20 +59,19 @@ wss.on("connection", (ws) => {
   });
 });
 
-const nullMessage = new Uint8Array([0]);
 setInterval(() => {
   const clientMessage =
-    !transactions && !cursorPositions
+    !newTransactions && !cursorPositions
       ? nullMessage
       : joinUint8Arrays(
           new Uint8Array([cursorPositions.length]),
           ...cursorPositions,
-          ...transactions
+          ...newTransactions
         );
 
   activeUsers.forEach((socket) => socket.send(clientMessage));
   cursorPositions.length = 0;
-  transactions.length = 0;
+  newTransactions.length = 0;
 }, 16);
 
 function joinUint8Arrays(...components: Uint8Array[]) {
