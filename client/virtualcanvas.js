@@ -15,7 +15,7 @@ export default class VirtualCanvas {
     this.virtualWidth = this.canvas.width;
     this.virtualHeight = this.canvas.height;
 
-    this.changes = [];
+    
 
     // This loop updates the screen every 32 ms or ~30 fps.
     setInterval(() => this.render(), 16);
@@ -52,7 +52,7 @@ export default class VirtualCanvas {
     }
 
     if (x >= 0 && x < this.virtualWidth && y >= 0 && y < this.virtualHeight) {
-      this.changes.push(x, y, r, g, b);
+      
       this.virtualCanvas[y][x] = [r, g, b];
     }
   }
@@ -76,12 +76,7 @@ export default class VirtualCanvas {
     }
   }
 
-  pullChanges() {
-    if (!this.changes.length) return "";
-    const csv = this.changes.join(",");
-    this.changes = [];
-    return csv;
-  }
+
 
   resize() {
     const rect = this.drawingarea.getBoundingClientRect();
