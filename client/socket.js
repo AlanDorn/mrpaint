@@ -1,3 +1,5 @@
+import { decodePosition } from "./transactionmanager.js";
+
 let userId = -1;
 let needsSynchronization = true;
 
@@ -19,13 +21,14 @@ export default function socket(input, transactionManager, pencil) {
         const processedTransactions =
           transactionManager.processTransactions(transactionData);
 
-        processedTransactions.forEach((transaction) => {
+        for (let index = 0; index < processedTransactions.length; index++) {
+          const transaction = processedTransactions[index];
           switch (transaction[1]) {
             case "pencil":
               pencil.drawServer(...transaction.slice(2));
               break;
           }
-        });
+        }
       });
       return;
     }
@@ -69,8 +72,10 @@ function handleCursorData(cursorData) {
     cursorElement.classList.add("cursor");
     document.body.appendChild(cursorElement);
   }
-  cursorElement.style.left = `${cursorData[1] * 256 + cursorData[2]}px`; // Ensure units are added
-  cursorElement.style.top = `${cursorData[3] * 256 + cursorData[4]}px`;
+
+  const cursorPosition = decodePosition(cursorData.slice(1));
+  cursorElement.style.left = `${cursorPosition[0]}px`; // Ensure units are added
+  cursorElement.style.top = `${cursorPosition[1]}px`;
 
   if (cursorElement._removeTimeout) clearTimeout(cursorElement._removeTimeout);
 

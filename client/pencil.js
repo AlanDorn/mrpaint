@@ -102,8 +102,8 @@ export default class Pencil {
     for (let dx = 0; dx < brushsize; dx++) {
       for (let dy = 0; dy < brushsize; dy++) {
         this.virtualCanvas.setPixelClient(
-          Math.round(x + dx),
-          Math.round(y + dy),
+          x + dx,
+          y + dy,
           color[0],
           color[1],
           color[2]
@@ -116,8 +116,8 @@ export default class Pencil {
     for (let dx = 0; dx < brushsize; dx++) {
       for (let dy = 0; dy < brushsize; dy++) {
         this.virtualCanvas.setPixelServer(
-          Math.round(x + dx),
-          Math.round(y + dy),
+          x + dx,
+          y + dy,
           color[0],
           color[1],
           color[2]

@@ -34,8 +34,8 @@ export default class Input {
       
     });
     document.addEventListener("mousemove", (event) => {
-      this.x = event.clientX;
-      this.y = event.clientY;
+      this.x = Math.round(event.clientX);
+      this.y = Math.round(event.clientY);
       pencil.mouseMove(this);
     });
   }

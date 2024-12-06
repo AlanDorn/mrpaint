@@ -12,14 +12,14 @@ export default class TransactionManager {
 
   pencilTransaction(color, brushsize, p0, p1, p2, p3) {
     const transaction = buildTransaction(
-      touuid(),
-      this.toolCodes["pencil"],
-      encodeColor(color),
-      encodeSmallNumber(brushsize),
-      encodePosition(p0),
-      encodePosition(p1),
-      encodePosition(p2),
-      encodePosition(p3)
+      touuid(), //10 bytes
+      this.toolCodes["pencil"], //1 bytes
+      encodeColor(color), //3 bytes
+      encodeLargeNumber(brushsize), //2 bytes
+      encodePosition(p0), //4 bytes
+      encodePosition(p1), //4 bytes
+      encodePosition(p2), //4 bytes
+      encodePosition(p3) //4 bytes
     );
 
     this.unsentTransactions.push(transaction);
@@ -30,12 +30,12 @@ export default class TransactionManager {
     return [
       transaction.slice(0, 10),
       "pencil",
-      decodeColor(transaction.slice(11, 14)), // Assuming 3-byte color
-      decodeSmallNumber(transaction.slice(14, 15)),
-      decodePosition(transaction.slice(15, 19)),
-      decodePosition(transaction.slice(19, 23)),
-      decodePosition(transaction.slice(23, 27)),
-      decodePosition(transaction.slice(27, 31)),
+      decodeColor(transaction.slice(11, 14)),
+      decodeLargeNumber(transaction.slice(14, 16)),
+      decodePosition(transaction.slice(16, 20)),
+      decodePosition(transaction.slice(20, 24)),
+      decodePosition(transaction.slice(24, 28)),
+      decodePosition(transaction.slice(28, 32)),
     ];
   }
 
@@ -43,8 +43,8 @@ export default class TransactionManager {
     //AGI: For now we know the length of the each transaction however we might not in the future. The would require a step here for deterining the sizes of each transaction.
 
     const processedTransactions = [];
-    for (let index = 0; index < transactions.length; index += 31) {
-      const transaction = transactions.slice(index, index + 31);
+    for (let index = 0; index < transactions.length; index += 32) {
+      const transaction = transactions.slice(index, index + 32);
       const tool = this.getTransactionTool(transaction);
       switch (tool) {
         case "pencil":
@@ -80,7 +80,7 @@ function buildTransaction(...components) {
   let transactionLength = 0;
   for (let index = 0; index < components.length; index++)
     transactionLength += components[index].length;
-  
+
   const transaction = new Uint8Array(transactionLength);
   let bufferOffset = 0;
   for (let index = 0; index < components.length; index++) {
@@ -102,31 +102,32 @@ function encodeColor(color) {
   return new Uint8Array(color);
 }
 
-function encodeSmallNumber(number) {
-  return new Uint8Array([Math.floor(number)]);
-}
-
-function encodeLargeNumber(number) {
-  return new Uint8Array([Math.floor(number / 256), Math.floor(number % 256)]);
-}
-
-function encodePosition(position) {
-  return new Uint8Array([
-    Math.floor(position[0] / 256),
-    Math.floor(position[0] % 256),
-    Math.floor(position[1] / 256),
-    Math.floor(position[1] % 256),
-  ]);
-}
-
 function decodeColor(colorBytes) {
   return Array.from(colorBytes);
+}
+
+
+function encodeSmallNumber(number) {
+  return new Uint8Array([Math.floor(number)]);
 }
 
 function decodeSmallNumber(bytes) {
   return bytes[0];
 }
 
-function decodePosition(bytes) {
-  return [bytes[0] * 256 + bytes[1], bytes[2] * 256 + bytes[3]];
+function encodeLargeNumber(number) {
+  return new Uint8Array([Math.floor(number / 256), Math.floor(number % 256)]);
+}
+
+function decodeLargeNumber(byteArray) {
+  return byteArray[0] * 256 + byteArray[1];
+}
+
+function encodePosition(position) {
+  const buffer = new Int16Array(position);
+  return new Uint8Array(buffer.buffer);
+}
+
+export function decodePosition(position) {
+  return Array.from(new Int16Array(position.buffer));
 }
