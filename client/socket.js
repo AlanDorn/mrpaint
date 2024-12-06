@@ -11,12 +11,11 @@ export default function socket(input, transactionManager, pencil) {
   function renderTransactions(transactionData) {
     const processedTransactions =
       transactionManager.processTransactions(transactionData);
-    const chunkSize = 500; // Number of transactions to process per chunk
+    const chunkSize = 500; 
     let index = 0;
-
+    //Recursive for loop which doesn't block event loop
     function processNextChunk() {
       const end = Math.min(index + chunkSize, processedTransactions.length);
-
       for (; index < end; index++) {
         const transaction = processedTransactions[index];
         switch (transaction[1]) {
@@ -27,8 +26,7 @@ export default function socket(input, transactionManager, pencil) {
       }
 
       if (index < processedTransactions.length) {
-        // Schedule the next chunk
-        setTimeout(processNextChunk, 0); // Yield to the event loop
+        setTimeout(processNextChunk, 0);
       }
     }
 
