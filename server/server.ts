@@ -34,6 +34,7 @@ wss.on("connection", (ws) => {
       needsSynchronization = false;
       activeUsers.set(userId, ws);
       console.log("new user " + userId);
+      console.log("canvas size (Bytes): " + transactionIndex);
       return;
     }
 

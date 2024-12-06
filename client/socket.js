@@ -11,15 +11,28 @@ export default function socket(input, transactionManager, pencil) {
   function renderTransactions(transactionData) {
     const processedTransactions =
       transactionManager.processTransactions(transactionData);
+    const chunkSize = 500; // Number of transactions to process per chunk
+    let index = 0;
 
-    for (let index = 0; index < processedTransactions.length; index++) {
-      const transaction = processedTransactions[index];
-      switch (transaction[1]) {
-        case "pencil":
-          pencil.drawServer(...transaction.slice(2));
-          break;
+    function processNextChunk() {
+      const end = Math.min(index + chunkSize, processedTransactions.length);
+
+      for (; index < end; index++) {
+        const transaction = processedTransactions[index];
+        switch (transaction[1]) {
+          case "pencil":
+            pencil.drawServer(...transaction.slice(2));
+            break;
+        }
+      }
+
+      if (index < processedTransactions.length) {
+        // Schedule the next chunk
+        setTimeout(processNextChunk, 0); // Yield to the event loop
       }
     }
+
+    processNextChunk(); // Start processing
   }
 
   // When a message is sent to this client it is received here
@@ -28,7 +41,16 @@ export default function socket(input, transactionManager, pencil) {
       event.data.arrayBuffer().then((buffer) => {
         const eventData = new Uint8Array(buffer);
         userId = eventData[0];
+        console.log("Synchronizing canvas");
+
+        const startTime = Date.now();
         renderTransactions(eventData.slice(1));
+        const endTime = Date.now() - startTime;
+        console.log(
+          `Processed ${Math.round(
+            eventData.slice(1).length / 32 / endTime
+          )} transactions a millisecond`
+        );
         needsSynchronization = false;
         ws.send("synchronized");
       });
@@ -43,9 +65,9 @@ export default function socket(input, transactionManager, pencil) {
   };
 
   setInterval(() => {
-    if(needsSynchronization) return;
+    if (needsSynchronization) return;
     ws.send(transactionManager.buildServerMessage(userId, input.x, input.y));
-  }, 8);
+  }, 16);
 }
 
 function handleCursorData(cursorData) {
@@ -68,5 +90,5 @@ function handleCursorData(cursorData) {
 
   cursorElement._removeTimeout = setTimeout(() => {
     cursorElement.remove();
-  }, 100);
+  }, 1500);
 }

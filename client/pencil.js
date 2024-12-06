@@ -93,9 +93,8 @@ export default class Pencil {
 
   drawServer(color, brushsize, p0, p1, p2, p3) {
     const pixels = splinePixels([p0, p1, p2, p3]);
-    pixels.forEach((pixel) =>
-      this.setPixelServer(color, brushsize, pixel[0], pixel[1])
-    );
+    for (let index = 0; index < pixels.length; index++)
+      this.setPixelServer(color, brushsize, pixels[index][0], pixels[index][1]);
   }
 
   setPixelClient(color, brushsize, x, y) {
