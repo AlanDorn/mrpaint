@@ -62,8 +62,9 @@ export default class TransactionManager {
     return this.toolCodesInverse[transaction[10]];
   }
 
-  buildServerMessage(mouseX, mouseY) {
+  buildServerMessage(userId, mouseX, mouseY) {
     return buildTransaction(
+      new Uint8Array([userId]),
       encodePosition([mouseX, mouseY]),
       ...this.pullTransactions()
     );

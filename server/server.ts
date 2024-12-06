@@ -1,4 +1,4 @@
-import path, { join } from "path";
+import path from "path";
 import express from "express";
 import * as http from "http";
 import WebSocket from "ws";
@@ -19,15 +19,15 @@ const wss = new WebSocket.Server({ server });
 let userIdCounter = 0;
 const activeUsers: Map<number, WebSocket> = new Map(); // a map of all active user websockets
 
-const cursorPositions: Uint8Array[] = [];
-const transactions: Uint8Array[] = [];
-const newTransactions: Uint8Array[] = [];
+let transactionIndex = 1;
+const transactions: Uint8Array = new Uint8Array(2 ** 27); // up to 4 million pencil transactions or 128 Mega Bytes
 
 //CALM: There needs to be some start up mechanism for each client. This will give them their userId and the current canvas state.
 wss.on("connection", (ws) => {
-  const userId = userIdCounter++ % 256;
   let needsSynchronization = true;
-  ws.send(joinUint8Arrays(new Uint8Array([userId]), ...transactions));
+  const userId = userIdCounter++ % 256;
+  transactions[0] = userId;
+  ws.send(transactions.slice(0, transactionIndex));
 
   ws.on("message", (event) => {
     if (needsSynchronization) {
@@ -38,18 +38,12 @@ wss.on("connection", (ws) => {
     }
 
     const eventData = new Uint8Array(event as Buffer);
-
-    cursorPositions.push(
-      new Uint8Array([
-        userId,
-        eventData[0],
-        eventData[1],
-        eventData[2],
-        eventData[3],
-      ])
-    );
-    transactions.push(eventData.slice(4));
-    newTransactions.push(eventData.slice(4));
+    activeUsers.forEach((socket, id) => {
+      if (id !== userId) socket.send(eventData);
+    });
+    const justTransactions = eventData.slice(5);
+    transactions.set(justTransactions, transactionIndex);
+    transactionIndex += justTransactions.length;
   });
 
   // Kick the user from the active users
@@ -58,36 +52,6 @@ wss.on("connection", (ws) => {
     console.log("delete user " + userId);
   });
 });
-
-const nullMessage = new Uint8Array([0]);
-setInterval(() => {
-  const clientMessage =
-    !newTransactions && !cursorPositions
-      ? nullMessage
-      : joinUint8Arrays(
-          new Uint8Array([cursorPositions.length]),
-          ...cursorPositions,
-          ...newTransactions
-        );
-
-  activeUsers.forEach((socket) => socket.send(clientMessage));
-  cursorPositions.length = 0;
-  newTransactions.length = 0;
-}, 16);
-
-function joinUint8Arrays(...components: Uint8Array[]) {
-  let transactionLength = 0;
-  for (let index = 0; index < components.length; index++)
-    transactionLength += components[index].length;
-
-  const transaction = new Uint8Array(transactionLength);
-  let bufferOffset = 0;
-  for (let index = 0; index < components.length; index++) {
-    transaction.set(components[index], bufferOffset);
-    bufferOffset += components[index].length;
-  }
-  return transaction;
-}
 
 server.listen(3001, () => console.log("WebSocket server running on port 3001"));
 

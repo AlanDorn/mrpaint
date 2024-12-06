@@ -8,57 +8,44 @@ export default function socket(input, transactionManager, pencil) {
     window.location.href.replace(/^http/, "ws").replace(/3000/, "3001")
   );
 
+  function renderTransactions(transactionData) {
+    const processedTransactions =
+      transactionManager.processTransactions(transactionData);
+
+    for (let index = 0; index < processedTransactions.length; index++) {
+      const transaction = processedTransactions[index];
+      switch (transaction[1]) {
+        case "pencil":
+          pencil.drawServer(...transaction.slice(2));
+          break;
+      }
+    }
+  }
+
   // When a message is sent to this client it is received here
   ws.onmessage = (event) => {
     if (needsSynchronization) {
       event.data.arrayBuffer().then((buffer) => {
         const eventData = new Uint8Array(buffer);
-        needsSynchronization = false;
         userId = eventData[0];
+        renderTransactions(eventData.slice(1));
+        needsSynchronization = false;
         ws.send("synchronized");
-
-        const transactionData = eventData.slice(1);
-        const processedTransactions =
-          transactionManager.processTransactions(transactionData);
-
-        for (let index = 0; index < processedTransactions.length; index++) {
-          const transaction = processedTransactions[index];
-          switch (transaction[1]) {
-            case "pencil":
-              pencil.drawServer(...transaction.slice(2));
-              break;
-          }
-        }
       });
       return;
     }
 
-    //send your data to server
-    ws.send(transactionManager.buildServerMessage(input.x, input.y));
-
     event.data.arrayBuffer().then((buffer) => {
       const eventData = new Uint8Array(buffer);
-
-      const numberOfCursors = eventData[0];
-      let dataOffset = 1;
-      for (let index = 0; index < numberOfCursors; index++) {
-        handleCursorData(eventData.slice(dataOffset, dataOffset + 5));
-        dataOffset += 5;
-      }
-
-      const transactionData = eventData.slice(dataOffset);
-      const processedTransactions =
-        transactionManager.processTransactions(transactionData);
-
-      processedTransactions.forEach((transaction) => {
-        switch (transaction[1]) {
-          case "pencil":
-            pencil.drawServer(...transaction.slice(2));
-            break;
-        }
-      });
+      handleCursorData(eventData.slice(0, 5));
+      renderTransactions(eventData.slice(5));
     });
   };
+
+  setInterval(() => {
+    if(needsSynchronization) return;
+    ws.send(transactionManager.buildServerMessage(userId, input.x, input.y));
+  }, 8);
 }
 
 function handleCursorData(cursorData) {
@@ -81,5 +68,5 @@ function handleCursorData(cursorData) {
 
   cursorElement._removeTimeout = setTimeout(() => {
     cursorElement.remove();
-  }, 500);
+  }, 100);
 }
