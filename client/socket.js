@@ -45,9 +45,9 @@ export default function socket(input, transactionManager, pencil) {
         renderTransactions(eventData.slice(1));
         const endTime = Date.now() - startTime;
         console.log(
-          `Processed ${Math.round(
-            eventData.slice(1).length / 32 / endTime
-          )} transactions a millisecond`
+          `Finished processing @ ${Math.round(
+            eventData.length / 32 / endTime * 1000
+          )} TX/S`
         );
         needsSynchronization = false;
         ws.send("synchronized");
