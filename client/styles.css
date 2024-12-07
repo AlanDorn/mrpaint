@@ -1,47 +1,117 @@
 :root {
-  --toolheight: 4rem; 
+  --toolheight: 7rem; 
 }
 
 * {
   margin: 0;
   overflow: hidden;
 }
+
 body {
   height: 100svh;
   width: 100svw;
 }
+
 #toolbar {
   width: 100svw;
   height: var(--toolheight);
   background-color: black;
+  overflow: visible;
 }
+
 #drawingarea {
   width: 100svw;
   height: calc(100svh - var(--toolheight));
 }
 
 input[type="color"] {
-  width: var(--toolheight);
-  height: var(--toolheight);
+  width: 2rem;
+  height: 2rem;
 }
 
-input[type="color1"] {
-  width: var(--toolheight);
-  height: var(--toolheight);
-}
-
-input[type="number"] {
-  width: var(--toolheight);
-  height: var(--toolheight);
-}
 canvas {
+  z-index: 0;
   image-rendering: pixelated;
-  image-rendering: crisp-edges; /* Fallback for older browsers */
+  image-rendering: crisp-edges;
 }
-.cursor {
-  width: calc(var(--toolheight) / 3);
-  height: calc(var(--toolheight) / 3);
+
+.custom-dropdown {
+  z-index: 1;
+  position: relative;
+  display: inline-block;
+  width: 150px;
+  overflow: visible !important;
+}
+
+/* Input field: ensure no border radius, no size change on focus */
+/* Input field with dynamic brush size preview */
+/* Input field with brush size preview on the right */
+.custom-dropdown input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  outline: none;
+  box-shadow: none;
+  border-radius: 0;
+  transition: none;
+  appearance: none;
+
+  /* Default background styling */
+  background-image: none;
+  background-repeat: no-repeat;
+}
+
+
+
+
+/* Ensure no change on focus */
+.custom-dropdown input:focus {
+  border: 1px solid #ccc; /* Keep the same border */
+  padding: 10px; /* Maintain the same padding */
+  outline: none; /* Prevent focus outline */
+  box-shadow: none; /* Prevent focus shadow */
+  transition: none; /* Ensure no visual transition */
+}
+
+/* Dropdown list styling */
+.dropdown-list {
+  display: none; /* Hidden by default */
   position: absolute;
-  background-color: cadetblue;
-  clip-path: polygon(0 0, 0% 100%, 70% 70%, 0 0);
+  top: 100%; /* Below the input */
+  left: 0;
+  width: 114%;
+  border: 1px solid #000;
+  background-color: white;
+  z-index: 10;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.dropdown-list.show {
+  display: block;
+}
+
+.dropdown-item {
+  display: flex; /* Align text and visual size horizontally */
+  align-items: center;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.dropdown-item:hover {
+  background-color: #f0f0f0;
+}
+
+.size-label {
+  margin-right: 10px; /* Space between label and line */
+  font-size: 14px;
+}
+
+.size-line {
+  background-color: #000000; /* Color of the size line */
+  display: inline-block;
+  
+  
 }
