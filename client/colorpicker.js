@@ -5,17 +5,17 @@ export default class ColorPicker {
     this.palette = [];
 
     //HECTIC: This needs to include some sort of pallet as well as a primary and secondary color.
-    const colorPicker = document.getElementById("colorPicker");
-    const colorPicker2 = document.getElementById("colorPicker2");
+    const primaryPicker = document.getElementById("primaryPicker");
+    const secondaryPicker = document.getElementById("secondaryPicker");
 
     // Update on color change
-    colorPicker.addEventListener(
+    primaryPicker.addEventListener(
       "input",
-      () => (this.primarycolor = hexToRgb(colorPicker.value))
+      () => (this.primarycolor = hexToRgb(primaryPicker.value))
     );
-    colorPicker2.addEventListener(
+    secondaryPicker.addEventListener(
       "input",
-      () => (this.secondarycolor = hexToRgb(colorPicker2.value))
+      () => (this.secondarycolor = hexToRgb(secondaryPicker.value))
     );
   }
 }

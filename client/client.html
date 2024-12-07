@@ -8,21 +8,34 @@
   </head>
   <body>
     <div id="toolbar">
-      <input type="color" id="colorPicker" />
-      <input type="color" id="colorPicker2" value="#ffffff" />
-      <!-- value = white : is important for starting value to show white -->
-      <input type="number" id="brush-size" min="0" value="1" step="1" />
-      <select id="default-sizes">
-        <option value="1">1 px</option>
-        <option value="2">2 px</option>
-        <option value="3">3 px</option>
-        <option value="4">4 px</option>
-      </select>
+      <input type="color" id="primaryPicker" />
+      <input type="color" id="secondaryPicker" value="#ffffff" />
+
+      <div class="custom-dropdown">
+        <input type="text" placeholder="Enter brush size..." id="customInput" />
+        <ul id="dropdownOptions" class="dropdown-list">
+          <li class="dropdown-item" data-value="1">
+            <span class="size-label">1 </span>
+            <div class="size-line" style="height: 1px; width: 135px;"></div>
+          </li>
+          <li class="dropdown-item" data-value="2">
+            <span class="size-label">2 </span>
+            <div class="size-line" style="height: 2px; width: 135px;"></div>
+          </li>
+          <li class="dropdown-item" data-value="3">
+            <span class="size-label">3 </span>
+            <div class="size-line" style="height: 3px; width: 135px;"></div>
+          </li>
+          <li class="dropdown-item" data-value="4">
+            <span class="size-label">4 </span>
+            <div class="size-line" style="height: 4px; width: 135px;"></div>
+          </li>
+        </ul>
+      </div>
     </div>
     <div id="drawingarea">
       <canvas id="myCanvas" width="500" height="500"></canvas>
     </div>
+    <script type="module" src="client.js"></script>
   </body>
-
-  <script type="module" src="client.js"></script>
 </html>
