@@ -1,5 +1,7 @@
 :root {
-  --toolheight: 7rem; 
+  --toolheight: 7rem;
+  --purple: #ddc6f0;
+  --font: "Hack"; /* Hack, "Courier New", Courier, monospace */
 }
 
 * {
@@ -30,18 +32,15 @@ input[type="color"] {
 }
 
 canvas {
-  z-index: 0;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }
 
 .custom-dropdown {
-  
   position: relative;
   display: inline-block;
   width: 175px;
   overflow: visible;
-  
 }
 
 /* Input field with dynamic brush size preview */
@@ -53,9 +52,8 @@ canvas {
   border: 1px solid #000000;
   box-shadow: inset 0 0 0 1px #ffffff;
   font-size: 14px;
-  font-family: "Courier New", Courier, monospace; /* Monospace font for alignment */
+  font-family: var(--font);
   outline: none;
-
   transition: none;
   appearance: none;
   text-align: center; /* Center-align text for consistent positioning */
@@ -63,24 +61,18 @@ canvas {
   background-repeat: no-repeat;
 }
 
-.custom-dropdown input::selection{
-  background-color: #ddc6f0;
+.custom-dropdown input::selection {
+  background-color: var(--purple);
 }
-
-
 
 /* Ensure no change on focus */
 .custom-dropdown input:focus {
   border: 1px solid #000000; /* Keep the same border */
-  box-shadow: inset 0 0 0 1px #ffffff;
-  
+  /* box-shadow: inset 0 0 0 1px #ffffff; */ /* box-shadow: 0 0 10px 2px #ddc6f0;; Prevent focus shadow */
   outline: none; /* Prevent focus outline */
-  /* box-shadow: 0 0 10px 2px #ddc6f0;; Prevent focus shadow */
   transition: none; /* Ensure no visual transition */
   align-items: center;
 }
-
-
 
 /* Dropdown list styling */
 .dropdown-list {
@@ -91,7 +83,6 @@ canvas {
   width: 187px;
   border: 2px solid #000;
   background-color: white;
-  z-index: 10;
   padding: 0;
   margin: 0;
   list-style: none;
@@ -106,15 +97,14 @@ canvas {
   align-items: center;
   justify-content: space-between; /* Space between the number and the line preview */
   padding: 10px;
-  font-family: "Courier New", Courier, monospace; /* Match input font */
+  font-family: var(--font); /* Match input font */
   font-size: 14px;
   cursor: pointer;
   height: calc(var(--toolheight) / 4); /* Ensure consistent height */
 }
 
 .dropdown-item:hover {
-  background-color: #ddc6f0;
-  
+  background-color: var(--purple);
 }
 
 .size-label {
@@ -128,4 +118,3 @@ canvas {
   display: inline-block;
   width: 115px; /* Consistent width for all line previews */
 }
-
