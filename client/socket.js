@@ -11,7 +11,7 @@ export default function socket(input, transactionManager, pencil) {
   function renderTransactions(transactionData) {
     const processedTransactions =
       transactionManager.processTransactions(transactionData);
-    const chunkSize = 500; 
+    const chunkSize = 100; 
     let index = 0;
     //Recursive for loop which doesn't block event loop
     function processNextChunk() {

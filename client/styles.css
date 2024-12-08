@@ -36,43 +36,51 @@ canvas {
 }
 
 .custom-dropdown {
-  z-index: 1;
+  
   position: relative;
   display: inline-block;
-  width: 150px;
-  overflow: visible !important;
+  width: 175px;
+  overflow: visible;
+  
 }
 
-/* Input field: ensure no border radius, no size change on focus */
 /* Input field with dynamic brush size preview */
 /* Input field with brush size preview on the right */
 .custom-dropdown input {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
+  margin-top: 5px;
+  height: calc(var(--toolheight) - 15px);
+  border: 1px solid #000000;
+  box-shadow: inset 0 0 0 1px #ffffff;
   font-size: 14px;
+  font-family: "Courier New", Courier, monospace; /* Monospace font for alignment */
   outline: none;
-  box-shadow: none;
-  border-radius: 0;
+
   transition: none;
   appearance: none;
-
-  /* Default background styling */
+  text-align: center; /* Center-align text for consistent positioning */
   background-image: none;
   background-repeat: no-repeat;
 }
 
+.custom-dropdown input::selection{
+  background-color: #ddc6f0;
+}
 
 
 
 /* Ensure no change on focus */
 .custom-dropdown input:focus {
-  border: 1px solid #ccc; /* Keep the same border */
-  padding: 10px; /* Maintain the same padding */
+  border: 1px solid #000000; /* Keep the same border */
+  box-shadow: inset 0 0 0 1px #ffffff;
+  
   outline: none; /* Prevent focus outline */
-  box-shadow: none; /* Prevent focus shadow */
+  /* box-shadow: 0 0 10px 2px #ddc6f0;; Prevent focus shadow */
   transition: none; /* Ensure no visual transition */
+  align-items: center;
 }
+
+
 
 /* Dropdown list styling */
 .dropdown-list {
@@ -80,8 +88,8 @@ canvas {
   position: absolute;
   top: 100%; /* Below the input */
   left: 0;
-  width: 114%;
-  border: 1px solid #000;
+  width: 187px;
+  border: 2px solid #000;
   background-color: white;
   z-index: 10;
   padding: 0;
@@ -94,24 +102,30 @@ canvas {
 }
 
 .dropdown-item {
-  display: flex; /* Align text and visual size horizontally */
+  display: flex; /* Align text and line horizontally */
   align-items: center;
+  justify-content: space-between; /* Space between the number and the line preview */
   padding: 10px;
+  font-family: "Courier New", Courier, monospace; /* Match input font */
+  font-size: 14px;
   cursor: pointer;
+  height: calc(var(--toolheight) / 4); /* Ensure consistent height */
 }
 
 .dropdown-item:hover {
-  background-color: #f0f0f0;
+  background-color: #ddc6f0;
+  
 }
 
 .size-label {
-  margin-right: 10px; /* Space between label and line */
-  font-size: 14px;
+  text-align: center; /* Align numbers in dropdown */
+  margin-right: 10px; /* Space between label and line preview */
+  width: 20px; /* Fixed width for numbers, handles up to 3 digits */
 }
 
 .size-line {
-  background-color: #000000; /* Color of the size line */
+  background-color: #000000; /* Line color */
   display: inline-block;
-  
-  
+  width: 115px; /* Consistent width for all line previews */
 }
+
