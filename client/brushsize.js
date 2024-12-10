@@ -118,6 +118,6 @@ export default class BrushSize {
 
   setBrushSize(newSize) {
     this.size = newSize;
-    console.log(`Brush size set to: ${this.size}px`);
+    // console.log(`Brush size set to: ${this.size}px`);
   }
 }

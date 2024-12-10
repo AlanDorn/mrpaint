@@ -6,6 +6,7 @@ import Pencil from "./pencil.js";
 import Input from "./input.js";
 import socket from "./socket.js";
 
+
 const virtualCanvas = new VirtualCanvas();
 const transactionManager = new TransactionManager();
 const colorpicker = new ColorPicker();
