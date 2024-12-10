@@ -1,55 +1,23 @@
-import { decodePosition } from "./transactionmanager.js";
+import { decodePosition } from "./transaction.js";
 
 let userId = -1;
-let needsSynchronization = true;
+let firstMessage = true;
 
-export default function socket(input, transactionManager, pencil) {
+export default function socket(input, transactionManager) {
   const ws = new WebSocket(
     window.location.href.replace(/^http/, "ws").replace(/3000/, "3001")
   );
 
-  function renderTransactions(transactionData) {
-    const processedTransactions =
-      transactionManager.processTransactions(transactionData);
-    const chunkSize = 500; 
-    let index = 0;
-    //Recursive for loop which doesn't block event loop
-    function processNextChunk() {
-      const end = Math.min(index + chunkSize, processedTransactions.length);
-      for (; index < end; index++) {
-        const transaction = processedTransactions[index];
-        switch (transaction[1]) {
-          case "pencil":
-            pencil.drawServer(...transaction.slice(2));
-            break;
-        }
-      }
-
-      if (index < processedTransactions.length) {
-        setTimeout(processNextChunk, 0);
-      }
-    }
-
-    processNextChunk(); // Start processing
-  }
-
   // When a message is sent to this client it is received here
   ws.onmessage = (event) => {
-    if (needsSynchronization) {
+    if (firstMessage) {
       event.data.arrayBuffer().then((buffer) => {
         const eventData = new Uint8Array(buffer);
         userId = eventData[0];
-        console.log("Synchronizing canvas");
-
-        const startTime = Date.now();
-        renderTransactions(eventData.slice(1));
-        const endTime = Date.now() - startTime;
-        console.log(
-          `Finished processing @ ${Math.round(
-            eventData.length / 32 / endTime * 1000
-          )} TX/S`
-        );
-        needsSynchronization = false;
+        console.log(userId);
+        if (eventData.length > 1)
+          transactionManager.pushServer(eventData.slice(1));
+        firstMessage = false;
         ws.send("synchronized");
       });
       return;
@@ -58,14 +26,15 @@ export default function socket(input, transactionManager, pencil) {
     event.data.arrayBuffer().then((buffer) => {
       const eventData = new Uint8Array(buffer);
       handleCursorData(eventData.slice(0, 5));
-      renderTransactions(eventData.slice(5));
+      if(eventData.length > 5)
+        transactionManager.pushServer(eventData.slice(5));
     });
   };
 
   setInterval(() => {
-    if (needsSynchronization) return;
+    if (firstMessage) return;
     ws.send(transactionManager.buildServerMessage(userId, input.x, input.y));
-  }, 16);
+  }, 45);
 }
 
 function handleCursorData(cursorData) {

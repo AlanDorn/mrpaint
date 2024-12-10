@@ -1,60 +1,93 @@
-const base62Chars =
-  "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+export const toolCodes = {
+  pixel: new Uint8Array([0]),
+  pencil: new Uint8Array([1]),
+};
+export const toolCodeInverse = ["pixel", "pencil"];
+export const toolLength = [20, 32];
 
-export default function newTransaction(canvasEdit) {
-  const deciSecondsSinceEpoch = Math.floor(Date.now() / 10);
-
-  const base62 = Array.from(
-    { length: 7 },
-    (_, i, arr) =>
-      base62Chars[Math.floor(deciSecondsSinceEpoch / 62 ** (7 - i - 1)) % 62]
-  ).join("");
-
-  const uuid = Array.from(
-    { length: 4 },
-    () => base62Chars[Math.floor(Math.random() * 62)]
-  ).join("");
-
-  return `${base62}${uuid};${canvasEdit}`;
+export function pixelTransaction(color, brushsize, position) {
+  return buildTransaction(
+    touuid(), //10 bytes
+    toolCodes["pixel"], //1 bytes
+    encodeColor(color), //3 bytes
+    encodeLargeNumber(brushsize), //2 bytes
+    encodePosition(position), //4 bytes
+  );
 }
 
-function getDecisecondsBuffer() {
-  // Calculate the number of deciseconds since 1/1/1970
-  const now = Date.now(); // Milliseconds since epoch
-  let deciseconds = Math.floor(now / 100); // Convert to deciseconds
-
-  // Create a 5-byte buffer
-  const buffer = new ArrayBuffer(8);
-  const view = new DataView(buffer);
-
-  // Write the deciseconds value into the buffer, padded to 5 bytes
-  // We fill the buffer from the rightmost bytes to ensure padding
-  for (let i = 4; i >= 0; i--) {
-    view.setUint8(i, deciseconds & 0xff); // Write the least significant byte
-    deciseconds >>>= 8; // Shift the value right by 8 bits
-  }
-
-  for (let i = 5; i < 8; i++) {
-    view.setUint8(i, Math.floor(Math.random() * 256));
-  }
-
-  return buffer;
+export function pencilTransaction(color, brushsize, p0, p1, p2, p3) {
+  return buildTransaction(
+    touuid(), //10 bytes
+    toolCodes["pencil"], //1 bytes
+    encodeColor(color), //3 bytes
+    encodeLargeNumber(brushsize), //2 bytes
+    encodePosition(p0), //4 bytes
+    encodePosition(p1), //4 bytes
+    encodePosition(p2), //4 bytes
+    encodePosition(p3) //4 bytes
+  );
 }
 
-// Usage example:
-const buffer = getDecisecondsBuffer();
-console.log(new Uint8Array(buffer)); // Logs the 5-byte buffer as a Uint8Array for inspection
+export function buildTransaction(...components) {
+  let transactionLength = 0;
+  for (let index = 0; index < components.length; index++)
+    transactionLength += components[index].length;
 
-// Example usage
-const canvasEdit = "spline;EDFFE4,1,10,10,100,100";
-const transactions = [];
-transactions[2] = newTransaction(canvasEdit);
-setTimeout(() => {
-  transactions[0] = newTransaction(canvasEdit);
-  console.log(transactions[0]);
-  transactions.sort();
-  console.log(transactions[0]);
-  console.log(transactions[1]);
-  console.log(transactions[2]);
-}, 30);
-transactions[1] = newTransaction(canvasEdit);
+  const transaction = new Uint8Array(transactionLength);
+  let bufferOffset = 0;
+  for (let index = 0; index < components.length; index++) {
+    transaction.set(components[index], bufferOffset);
+    bufferOffset += components[index].length;
+  }
+  return transaction;
+}
+
+export function touuid() {
+  let b = new Uint8Array(10),
+    t = Date.now();
+  b[5] = (t & 15) * 16 + (Math.random() * 16) | 0;
+  t = (t / 16) | 0
+  for (let i = 4; i >= 0; b[i--] = t & 255, t = (t / 256) | 0);
+  for (let i = 5; i < 10; b[i++] = (Math.random() * 256) | 0);
+  return b;
+}
+
+// positive if first is bigger, negative if second, 0 if equal
+export function compareTouuid(first, second) {
+  for (let index = 0; index < 10; index++)
+    if (first[index] !== second[index]) return first[index] - second[index];
+  return 0;
+}
+
+export function encodeColor(color) {
+  return new Uint8Array(color);
+}
+
+export function decodeColor(colorBytes) {
+  return Array.from(colorBytes);
+}
+
+export function encodeSmallNumber(number) {
+  return new Uint8Array([Math.floor(number)]);
+}
+
+export function decodeSmallNumber(bytes) {
+  return bytes[0];
+}
+
+export function encodeLargeNumber(number) {
+  return new Uint8Array([Math.floor(number / 256), Math.floor(number % 256)]);
+}
+
+export function decodeLargeNumber(byteArray) {
+  return byteArray[0] * 256 + byteArray[1];
+}
+
+export function encodePosition(position) {
+  const buffer = new Int16Array(position);
+  return new Uint8Array(buffer.buffer);
+}
+
+export function decodePosition(position) {
+  return Array.from(new Int16Array(position.buffer));
+}
