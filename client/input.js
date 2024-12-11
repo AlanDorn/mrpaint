@@ -1,5 +1,5 @@
 export default class Input {
-  constructor(pencil) {
+  constructor(toolbar) {
     this.x = 0;
     this.y = 0;
     this.mouseDown = false;
@@ -16,27 +16,27 @@ export default class Input {
       if (event.button === 0) {   
         //0 = left, 1 = middle, 2 = right
         this.mouseDown = true;
-        pencil.mouseDownLeft(this);
+        toolbar.mouseDownLeft(this);
         
       }
       if (event.button === 2) {
         this.mouseDown = true;
-        pencil.mouseDownRight(this);
+        toolbar.mouseDownRight(this);
         
       }
     });
 
     document.addEventListener("mouseup", () => {
         this.mouseDown = false;
-        pencil.mouseUpLeft(this);
+        toolbar.mouseUpLeft(this);
         this.mouseDown = false;
-        pencil.mouseUpRight(this);
+        toolbar.mouseUpRight(this);
       
     });
     document.addEventListener("mousemove", (event) => {
       this.x = Math.round(event.clientX);
       this.y = Math.round(event.clientY);
-      pencil.mouseMove(this);
+      toolbar.mouseMove(this);
     });
   }
 }

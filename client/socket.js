@@ -3,7 +3,7 @@ import { decodePosition } from "./transactionmanager.js";
 let userId = -1;
 let needsSynchronization = true;
 
-export default function socket(input, transactionManager, pencil) {
+export default function socket(input, transactionManager, toolbar) {
   const ws = new WebSocket(
     window.location.href.replace(/^http/, "ws").replace(/3000/, "3001")
   );
@@ -20,7 +20,7 @@ export default function socket(input, transactionManager, pencil) {
         const transaction = processedTransactions[index];
         switch (transaction[1]) {
           case "pencil":
-            pencil.drawServer(...transaction.slice(2));
+            toolbar.pencil.drawServer(...transaction.slice(2));
             break;
         }
       }
