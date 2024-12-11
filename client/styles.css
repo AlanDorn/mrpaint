@@ -36,6 +36,13 @@ canvas {
   image-rendering: crisp-edges;
 }
 
+.cursor {
+  height: 10px;
+  width: 10px;
+  background-color: brown;
+  position: absolute;
+}
+
 .custom-dropdown {
   position: relative;
   display: inline-block;
