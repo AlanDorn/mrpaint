@@ -21,9 +21,9 @@ export default class VirtualCanvas {
     });
     this.resize();
     //setInterval(() => this.render(), 4);
-    this.fpsReduce = 2;
+    this.fpsReduce = 4;
     this.fpsCounter = 0;
-    this.filling = false;
+    this.fillGeneration = 0;
   }
 
   render() {
@@ -85,16 +85,47 @@ export default class VirtualCanvas {
 
   fillImageData() {
     const { width, height } = this.canvas;
-    const imageData = this.imageData;
-    const virtualCanvas = this.virtualCanvas;
     let y = 0; // Start at the top of the canvas
-    this.filling = true;
+    this.fillGeneration++
+    const thisGeneration = this.fillGeneration;
+
     const processChunk = () => {
-      const chunkSize = 16; // Number of rows to process per iteration
+      const chunkSize = 2; // Number of rows to process per iteration
       const maxY = Math.min(y + chunkSize, height);
 
       for (; y < maxY; y++) {
         for (let x = 0; x < width; x++) {
+          const newIndex = (y * width + x) * 4;
+          this.imageData.data[newIndex] = this.virtualCanvas[y][x][0]; // Red
+          this.imageData.data[newIndex + 1] = this.virtualCanvas[y][x][1]; // Green
+          this.imageData.data[newIndex + 2] = this.virtualCanvas[y][x][2]; // Blue
+          this.imageData.data[newIndex + 3] = 255; // Alpha
+        }
+      }
+
+      if (y < height && thisGeneration == this.fillGeneration) {
+        setTimeout(processChunk, 0); // Schedule the next chunk
+      } 
+    };
+
+    processChunk(); // Start processing
+  }
+
+  fillImageData1() {
+    const { width, height } = this.canvas;
+    const imageData = this.imageData;
+    const virtualCanvas = this.virtualCanvas;
+    let chunkStartY = 0; // Start at the top of the canvas
+    let chunkStartX = 0; // Start at the left of the canvas
+    const thisGeneration = this.fillGeneration;
+  
+    const processChunk = () => {
+      const chunkSize = 64; 
+      const maxChunkY = Math.min(chunkStartY + chunkSize, height);
+      const maxChunkX = Math.min(chunkStartX + chunkSize, width);
+  
+      for (let y = chunkStartY; y < maxChunkY; y++) {
+        for (let x = chunkStartX; x < maxChunkX; x++) {
           const newIndex = (y * width + x) * 4;
           imageData.data[newIndex] = virtualCanvas[y][x][0]; // Red
           imageData.data[newIndex + 1] = virtualCanvas[y][x][1]; // Green
@@ -102,16 +133,23 @@ export default class VirtualCanvas {
           imageData.data[newIndex + 3] = 255; // Alpha
         }
       }
-
-      if (y < height) {
-        setTimeout(processChunk, 0); // Schedule the next chunk
+  
+      // Move to the next chunk
+      if (chunkStartX + chunkSize < width) {
+        chunkStartX += chunkSize;
       } else {
-        this.filling = false;
+        chunkStartX = 0; // Reset to the first column
+        chunkStartY += chunkSize;
+      }
+  
+      if (chunkStartY < height && thisGeneration == this.fillGeneration) {
+        setTimeout(processChunk, 0); // Schedule the next chunk
       }
     };
-
+  
     processChunk(); // Start processing
   }
+  
 
   reset() {
     this.virtualCanvas = Array.from({ length: this.canvas.height }, () =>

@@ -4,21 +4,22 @@ import {
   encodePosition,
   toolLength,
 } from "./transaction.js";
-import renderTransaction from "./transactionrenderer.js";
+import TransactionRenderer from "./transactionrenderer.js";
 
 export default class TransactionManager {
   constructor(virtualCanvas) {
     this.virtualCanvas = virtualCanvas;
+    this.transactionRenderer = new TransactionRenderer(virtualCanvas);
     this.snapshots = [];
     this.snapshotIndexes = [];
-    this.snapshotMod = 64;
+    this.snapshotMod = 32;
     this.snapshotExp = 1.5;
     this.snapshotRecycler = [];
     this.transactions = [];
     this.unsentTransactions = [];
     this.rendered = 0;
     this.correct = 0;
-    this.transactionRenderLoop(4);
+    this.transactionRenderLoop(2);
     this.min = 0;
   }
 
@@ -27,12 +28,14 @@ export default class TransactionManager {
     this.virtualCanvas.render();
     const outOfSync = this.correct < this.rendered;
     if (outOfSync) {
-      console.log(this.rendered - this.correct);
       let snapshotFound = false;
       for (let index = this.snapshots.length - 1; index >= 0; index--)
         if (this.snapshotIndexes[index] < this.correct) {
           this.snapshots.length = index + 1;
           this.snapshotIndexes.length = index + 1;
+          this.transactionRenderer.removeTasksAfterSnapshot(
+            this.transactions[this.snapshotIndexes[index]]
+          );
           this.virtualCanvas.set(this.snapshots[index]);
           this.rendered = this.snapshotIndexes[index] + 1;
           this.correct = this.snapshotIndexes[index] + 1;
@@ -42,6 +45,7 @@ export default class TransactionManager {
       if (!snapshotFound) {
         this.snapshots.length = 0;
         this.snapshotIndexes.length = 0;
+        this.transactionRenderer.removeTasksAfterSnapshot();
         this.virtualCanvas.reset();
         this.rendered = 0;
         this.correct = 0;
@@ -51,19 +55,24 @@ export default class TransactionManager {
     let rendered = false;
     while (
       Date.now() - startTime < loopTargetms &&
-      this.rendered < this.transactions.length
+      this.rendered < this.transactions.length 
     ) {
       rendered = true;
-      renderTransaction(this.virtualCanvas, this.transactions[this.rendered]);
+      this.transactionRenderer.renderTransaction(
+        this.transactions[this.rendered]
+      );
+      const indexOfLastRender = this.getSortedPosition(
+        this.transactionRenderer.lastFinishedTransaction
+      );
       const snapShotIsNeeded =
-        this.rendered % this.snapshotMod === this.snapshotMod - 1;
+        indexOfLastRender % this.snapshotMod === this.snapshotMod - 1;
       if (snapShotIsNeeded) {
         //remove unneeded old snapshots
         for (let index = this.snapshots.length - 1; index > 0; index--) {
           const previousSnapShotAge =
-            this.rendered - this.snapshotIndexes[index - 1];
+            indexOfLastRender - this.snapshotIndexes[index - 1];
           const currentSnapShotAge =
-            this.rendered - this.snapshotIndexes[index];
+            indexOfLastRender - this.snapshotIndexes[index];
           const previousBase = Math.floor(
             Math.log(previousSnapShotAge) / Math.log(this.snapshotExp)
           );
@@ -87,19 +96,20 @@ export default class TransactionManager {
           this.snapshots.push(this.virtualCanvas.cloneCanvas());
         }
 
-        this.snapshotIndexes.push(this.rendered);
+        this.snapshotIndexes.push(indexOfLastRender);
       }
 
       this.rendered++;
       this.correct++;
     }
 
-    const simulateSyncErrors = false;
+    const simulateSyncErrors = true;
     if (rendered && simulateSyncErrors) {
-      if (Math.random() < 0.4) {
-        this.correct -= Math.random() < 0.5 ? 16 : 32;
+      if (Math.random() < 1) {
+        const previousCorrect = this.correct;
+        this.correct -= Math.random() < 0.8 ? 4 : 16;
         this.correct = Math.max(this.min, this.correct);
-        this.min = this.correct;
+        this.min = previousCorrect;
       }
     }
 
@@ -134,7 +144,9 @@ export default class TransactionManager {
     setTimeout(push, 0);
   }
 
-  pushClient(transactions) {
+  pushClient(transaction) {
+    this.unsentTransactions.push(transaction);
+    return;
     let offset = 0;
     while (offset < transactions.length) {
       const transactionLength = toolLength[transactions[offset + 10]];
@@ -151,6 +163,9 @@ export default class TransactionManager {
   }
 
   getSortedPosition(transaction) {
+    if (!transaction) {
+      return 0;
+    }
     let low = 0;
     let high = this.transactions.length;
 

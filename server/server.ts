@@ -34,7 +34,7 @@ wss.on("connection", (ws) => {
       needsSynchronization = false;
       activeUsers.set(userId, ws);
       console.log("new user " + userId);
-      console.log("canvas size (Bytes): " + transactionIndex);
+      console.log("canvas size (Bytes): " + formatBytes(transactionIndex));
       return;
     }
 
@@ -57,3 +57,14 @@ wss.on("connection", (ws) => {
 server.listen(3001, () => console.log("WebSocket server running on port 3001"));
 
 mrpaint();
+
+
+function formatBytes(bytes: number, decimals = 2) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024,
+        dm = decimals < 0 ? 0 : decimals,
+        sizes = ['Bs', 'KBs', 'MBs', 'GBs', 'TBs'],
+        i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}

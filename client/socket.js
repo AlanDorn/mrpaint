@@ -33,8 +33,10 @@ export default function socket(input, transactionManager) {
 
   setInterval(() => {
     if (firstMessage) return;
-    ws.send(transactionManager.buildServerMessage(userId, input.x, input.y));
-  }, 45);
+    const transactions = transactionManager.buildServerMessage(userId, input.x, input.y)
+    ws.send(transactions);
+    transactionManager.pushServer(transactions.slice(5))
+  }, 8);
 }
 
 function handleCursorData(cursorData) {
