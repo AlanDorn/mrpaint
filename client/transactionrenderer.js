@@ -48,7 +48,7 @@ function renderPencil(virtualCanvas, transaction) {
     decodePosition(transaction.slice(28, 32)),
   ]);
 
-  const chunkSize = Math.ceil((1 * 400 * 400) / brushsize / brushsize); // Number of pixels to process per chunk
+  const chunkSize = Math.ceil((2 * 400 * 400) / brushsize / brushsize); // Number of pixels to process per chunk
   const task = []; // Array to store the lambdas
 
   for (let index = 0; index < pixels.length; index += chunkSize) {

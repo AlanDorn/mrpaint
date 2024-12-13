@@ -29,6 +29,14 @@ input[type="color"] {
   height: 2rem;
 }
 
+.cursor{
+  width:10px;
+  height:10px;
+  background-color:darkgrey;
+  position: absolute;
+}
+
+
 canvas {
   z-index: 0;
   image-rendering: pixelated;

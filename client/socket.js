@@ -36,7 +36,7 @@ export default function socket(input, transactionManager) {
     const transactions = transactionManager.buildServerMessage(userId, input.x, input.y)
     ws.send(transactions);
     transactionManager.pushServer(transactions.slice(5))
-  }, 32);
+  }, 16);
 }
 
 function handleCursorData(cursorData) {

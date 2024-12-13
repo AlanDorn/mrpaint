@@ -4,27 +4,6 @@ export default class Input {
     this.y = 0;
     this.mouseDown = false;
 
-    // Throttle utility function
-    const throttle = (func, limit) => {
-      let lastFunc;
-      let lastRan;
-      return function (...args) {
-        const context = this;
-        if (!lastRan) {
-          func.apply(context, args);
-          lastRan = Date.now();
-        } else {
-          clearTimeout(lastFunc);
-          lastFunc = setTimeout(() => {
-            if (Date.now() - lastRan >= limit) {
-              func.apply(context, args);
-              lastRan = Date.now();
-            }
-          }, limit - (Date.now() - lastRan));
-        }
-      };
-    };
-
     document.addEventListener("contextmenu", (event) => {
       event.preventDefault();
     });
@@ -48,13 +27,16 @@ export default class Input {
       pencil.mouseUpRight(this);
     });
 
-    // Throttled pointermove handler
-    const throttledPointerMove = throttle((event) => {
+    
+
+    let lastMove = performance.now();
+    document.addEventListener("pointermove", (event) => {
       this.x = Math.round(event.clientX);
       this.y = Math.round(event.clientY);
-      pencil.mouseMove(this);
-    }, 16.67); // Limit to ~60 Hz (1000ms / 60)
-
-    document.addEventListener("pointermove", throttledPointerMove);
+      if(performance.now() - lastMove > 16){
+        pencil.mouseMove(this);
+        lastMove = performance.now();
+      }
+    });
   }
 }

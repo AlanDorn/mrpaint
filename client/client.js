@@ -16,5 +16,5 @@ const pencil = new Pencil(
   colorpicker,
   brushsize
 );
-const input = new Input(pencil);
+const input = new Input(pencil );
 new socket(input, transactionManager);

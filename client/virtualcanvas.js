@@ -16,15 +16,15 @@ export default class VirtualCanvas {
     this.virtualWidth = this.canvas.width;
     this.virtualHeight = this.canvas.height;
 
+    this.fillGeneration = [];
     window.addEventListener("resize", () => {
-        this.resize();
+      this.resize();
     });
     this.resize();
-    //setInterval(() => this.render(), 4);
-    setInterval(() => this.render(), 16);
   }
 
   render() {
+    if (this.fillGeneration.length !== 0) this.fillGeneration.pop()();
     this.ctx.putImageData(this.imageData, 0, 0);
   }
 
@@ -79,30 +79,25 @@ export default class VirtualCanvas {
 
   fillImageData() {
     const { width, height } = this.canvas;
-    let y = 0; // Start at the top of the canvas
-    this.fillGeneration++
-    const thisGeneration = this.fillGeneration;
-
-    const processChunk = () => {
-      const chunkSize = 128; // Number of rows to process per iteration
-      const maxY = Math.min(y + chunkSize, height);
-
-      for (; y < maxY; y++) {
-        for (let x = 0; x < width; x++) {
-          const newIndex = (y * width + x) * 4;
-          this.imageData.data[newIndex] = this.virtualCanvas[y][x][0]; // Red
-          this.imageData.data[newIndex + 1] = this.virtualCanvas[y][x][1]; // Green
-          this.imageData.data[newIndex + 2] = this.virtualCanvas[y][x][2]; // Blue
-          this.imageData.data[newIndex + 3] = 255; // Alpha
+    const chunkSize = 128;
+    // Pre-generate all chunks
+    this.fillGeneration = [];
+    const totalChunks = Math.ceil(height / chunkSize);
+    for (let i = 0; i < totalChunks; i++) {
+      const startY = i * chunkSize;
+      const endY = Math.min(startY + chunkSize, height);
+      this.fillGeneration.push(() => {
+        for (let y = startY; y < endY; y++) {
+          for (let x = 0; x < width; x++) {
+            const newIndex = (y * width + x) * 4;
+            this.imageData.data[newIndex] = this.virtualCanvas[y][x][0]; // Red
+            this.imageData.data[newIndex + 1] = this.virtualCanvas[y][x][1]; // Green
+            this.imageData.data[newIndex + 2] = this.virtualCanvas[y][x][2]; // Blue
+            this.imageData.data[newIndex + 3] = 255; // Alpha
+          }
         }
-      }
-
-      if (y < height && thisGeneration == this.fillGeneration) {
-        setTimeout(processChunk, 0); // Schedule the next chunk
-      } 
-    };
-
-    processChunk(); // Start processing
+      });
+    }
   }
 
   fillImageData1() {
@@ -112,12 +107,12 @@ export default class VirtualCanvas {
     let chunkStartY = 0; // Start at the top of the canvas
     let chunkStartX = 0; // Start at the left of the canvas
     const thisGeneration = this.fillGeneration;
-  
+
     const processChunk = () => {
-      const chunkSize = 128; 
+      const chunkSize = 2;
       const maxChunkY = Math.min(chunkStartY + chunkSize, height);
       const maxChunkX = Math.min(chunkStartX + chunkSize, width);
-  
+
       for (let y = chunkStartY; y < maxChunkY; y++) {
         for (let x = chunkStartX; x < maxChunkX; x++) {
           const newIndex = (y * width + x) * 4;
@@ -127,7 +122,7 @@ export default class VirtualCanvas {
           imageData.data[newIndex + 3] = 255; // Alpha
         }
       }
-  
+
       // Move to the next chunk
       if (chunkStartX + chunkSize < width) {
         chunkStartX += chunkSize;
@@ -135,15 +130,14 @@ export default class VirtualCanvas {
         chunkStartX = 0; // Reset to the first column
         chunkStartY += chunkSize;
       }
-  
+
       if (chunkStartY < height && thisGeneration == this.fillGeneration) {
         setTimeout(processChunk, 0); // Schedule the next chunk
       }
     };
-  
+
     processChunk(); // Start processing
   }
-  
 
   reset() {
     this.virtualCanvas = Array.from({ length: this.canvas.height }, () =>
@@ -163,24 +157,36 @@ export default class VirtualCanvas {
   }
 
   cloneCanvas(recycledSnapshot = null) {
-    // If no recycled snapshot is provided, create a new array structure
+    const srcHeight = this.virtualCanvas.length;
+
     if (!recycledSnapshot) {
-      const clone = [];
-      for (let y = 0; y < this.virtualHeight; y++)
-        clone.push([...this.virtualCanvas[y]]);
+      // Create a fresh clone
+      const clone = new Array(srcHeight);
+      for (let y = 0; y < srcHeight; y++) {
+        const srcRow = this.virtualCanvas[y];
+        const rowLength = srcRow.length;
+        const newRow = new Array(rowLength);
+        for (let x = 0; x < rowLength; x++) {
+          newRow[x] = srcRow[x];
+        }
+        clone[y] = newRow;
+      }
       return clone;
     } else {
-      // Adjust the recycledSnapshot dimensions to fit this.virtualCanvas
-      recycledSnapshot.length = this.virtualCanvas.length;
+      // Reuse existing snapshot arrays if possible
+      recycledSnapshot.length = srcHeight;
+      for (let y = 0; y < srcHeight; y++) {
+        const srcRow = this.virtualCanvas[y];
+        const rowLength = srcRow.length;
+        let targetRow = recycledSnapshot[y];
 
-      for (let y = 0; y < this.virtualCanvas.length; y++) {
-        // Ensure the row exists in recycledSnapshot
-        recycledSnapshot[y] = recycledSnapshot[y] || [];
-        recycledSnapshot[y].length = this.virtualCanvas[y].length;
+        if (!targetRow || targetRow.length !== rowLength) {
+          targetRow = new Array(rowLength);
+          recycledSnapshot[y] = targetRow;
+        }
 
-        // Fill new columns in the recycled row if necessary
-        for (let x = 0; x < this.virtualCanvas[y].length; x++) {
-          recycledSnapshot[y][x] = this.virtualCanvas[y][x];
+        for (let x = 0; x < rowLength; x++) {
+          targetRow[x] = srcRow[x];
         }
       }
       return recycledSnapshot;

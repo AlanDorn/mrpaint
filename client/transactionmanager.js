@@ -8,6 +8,7 @@ import buildRenderTask from "./transactionrenderer.js";
 
 const mod = 32;
 const exp = 4;
+
 export default class TransactionManager {
   constructor(virtualCanvas) {
     this.virtualCanvas = virtualCanvas;
@@ -16,25 +17,24 @@ export default class TransactionManager {
     this.currentTask = [];
     this.rendered = 0;
     this.correct = 0;
-    this.running = false;
     this.snapshots = [];
     this.snapshotIndexes = [];
-  }
-
-  startRenderer() {
-    setTimeout(() => this.transactionRenderLoop(2), 0);
+    this.snapshotGraveyard = [];
+    setTimeout(() => this.transactionRenderLoop(16), 0);
+    this.counter = 0;
   }
 
   transactionRenderLoop(loopTargetms) {
-    this.running = true;
     const startTime = performance.now();
 
+    this.counter++;
+    if(this.counter % 1 == 0){
+      this.virtualCanvas.render();
+    }
+
     const needToSyncCanvas = this.correct < this.rendered;
-    // In the case that we to receive a transaction that came before our current render point we need to reset the screen to what it was like before that transaction and play it forward again.
-    // syncCanvas will kill the current task and set up the render index to continue rendering transactions gracefully.
     if (needToSyncCanvas) this.syncCanvas();
 
-    //Rendering the transactions can block the event loop. The renderTasks are build such that they can be done in multiple steps allowing more room for mouse IO events to go through. There is over head between setting a timeout so it is wise to have an internal looping portion to this event safe loop.
     while (performance.now() - startTime < loopTargetms) {
       const taskIsFinished = this.currentTask.length === 0;
       if (taskIsFinished) {
@@ -44,36 +44,46 @@ export default class TransactionManager {
         const allTransactionsAreRendered =
           this.rendered >= this.transactions.length;
         if (allTransactionsAreRendered) {
-          this.running = false;
+          const timeLeft = loopTargetms - (performance.now() - startTime);
+          setTimeout(() => this.transactionRenderLoop(loopTargetms), timeLeft);
           return;
         }
 
-        this.currentTask = buildRenderTask(this.transactions[this.rendered]);
+        this.currentTask = buildRenderTask(
+          this.virtualCanvas,
+          this.transactions[this.rendered]
+        );
+
         this.rendered++;
         this.correct++;
       }
 
-      this.currentTask.slice()(); //run the next bit of task
+      this.currentTask.pop()(); // run the next bit of task
     }
 
-    this.startRenderer(); // Start over again
+    setTimeout(() => this.transactionRenderLoop(loopTargetms), 0);
   }
 
   syncCanvas() {
-    // currentTask hold sub tasks that can get processed across render iterations. Setting it to empty stops that task from continueing.
+    // Stop the current task
     this.currentTask.length = 0;
 
-    // Remove any snapshots which will never be used because they are out of sync.
+    // Remove any snapshots that are newer than the current correct index.
     for (let index = 0; index < this.snapshots.length; index++) {
       const snapshotIsNewerThanCorrect =
         this.snapshotIndexes[index] >= this.correct;
       if (snapshotIsNewerThanCorrect) {
-        this.snapshots.length = index;
-        this.snapshotIndexes.length = index;
+        // Instead of just truncating, we splice so we can push them into the graveyard
+        const removedSnapshots = this.snapshots.splice(index);
+        const removedIndexes = this.snapshotIndexes.splice(index);
+
+        // Push removed snapshots into the graveyard
+        this.snapshotGraveyard.push(...removedSnapshots);
         break;
       }
     }
 
+    // If there are no snapshots that come before the correct index, reset
     const thereIsNoSnapShotBeforeCorrect = this.snapshots.length === 0;
     if (thereIsNoSnapShotBeforeCorrect) {
       this.virtualCanvas.reset();
@@ -82,6 +92,7 @@ export default class TransactionManager {
       return;
     }
 
+    // Set the canvas to the last snapshot
     const snapshot = this.snapshots[this.snapshots.length - 1];
     const snapshotIndex = this.snapshotIndexes[this.snapshotIndexes.length - 1];
     this.virtualCanvas.set(snapshot);
@@ -90,19 +101,31 @@ export default class TransactionManager {
   }
 
   takeSnapShot() {
-    //This prevents too many snapshots piling up. We have a smart way to remove transactions such that there is always at least 1 snapshot within a magnitude. So if your exp was 10 then you would always have a snapshot within 10000 1000 100 and 10 if you have gotten that far.
+    // Clean up older snapshots that are in the same "magnitude" tier
     for (let index = this.snapshots.length - 1; index > 0; index--) {
       const previousBase = Math.floor(
-        Math.log(indexOfLastRender - this.snapshotIndexes[index - 1]) /
+        Math.log(this.rendered - this.snapshotIndexes[index - 1]) /
           Math.log(exp)
       );
       const currentBase = Math.floor(
-        Math.log(indexOfLastRender - this.snapshotIndexes[index]) /
-          Math.log(exp)
+        Math.log(this.rendered - this.snapshotIndexes[index]) / Math.log(exp)
       );
-      if (previousBase === currentBase) this.snapshotIndexes.splice(index, 1);
+      if (previousBase === currentBase) {
+        // Remove the snapshot and push it into the graveyard
+        const removedSnapshots = this.snapshots.splice(index, 1);
+        this.snapshotIndexes.splice(index, 1);
+        this.snapshotGraveyard.push(...removedSnapshots);
+      }
     }
-    this.snapshots.push(this.virtualCanvas.cloneCanvas());
+
+    // Create a new snapshot from an old one if available
+    let reusedSnapshot = null;
+    if (this.snapshotGraveyard.length > 0) {
+      // Pop from graveyard and reuse it
+      reusedSnapshot = this.snapshotGraveyard.pop();
+    }
+
+    this.snapshots.push(this.virtualCanvas.cloneCanvas(reusedSnapshot));
     this.snapshotIndexes.push(this.rendered - 1);
   }
 
@@ -129,8 +152,6 @@ export default class TransactionManager {
       this.transactions.splice(sortedPosition, 0, transaction);
       offset += transactionLength;
     }
-    if (this.rendered < this.transactions.length && !this.running)
-      this.startRenderer();
   }
 
   pushClient(transaction) {
@@ -144,9 +165,8 @@ export default class TransactionManager {
     let high = this.transactions.length;
     while (low < high) {
       const mid = Math.floor((low + high) / 2);
-      if (compareTouuid(this.transactions[mid], transaction) < 0)
-        low = mid + 1; // Move right
-      else high = mid; // Move left
+      if (compareTouuid(this.transactions[mid], transaction) < 0) low = mid + 1;
+      else high = mid;
     }
     return low; // This is the insertion index
   }
