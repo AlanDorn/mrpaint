@@ -11,7 +11,7 @@ export default function socket(input, transactionManager, toolbar) {
   function renderTransactions(transactionData) {
     const processedTransactions =
       transactionManager.processTransactions(transactionData);
-    const chunkSize = 100; 
+    const chunkSize = 1000;
     let index = 0;
     //Recursive for loop which doesn't block event loop
     function processNextChunk() {
@@ -21,6 +21,9 @@ export default function socket(input, transactionManager, toolbar) {
         switch (transaction[1]) {
           case "pencil":
             toolbar.pencil.drawServer(...transaction.slice(2));
+            break;
+          case "fill":
+            toolbar.fillTool.drawServer(...transaction.slice(2));
             break;
         }
       }
@@ -46,7 +49,7 @@ export default function socket(input, transactionManager, toolbar) {
         const endTime = Date.now() - startTime;
         console.log(
           `Finished processing @ ${Math.round(
-            eventData.length / 32 / endTime * 1000
+            (eventData.length / 32 / endTime) * 1000
           )} TX/S`
         );
         needsSynchronization = false;

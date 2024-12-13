@@ -17,7 +17,7 @@ export default class VirtualCanvas {
 
     
 
-    // This loop updates the screen every 32 ms or ~30 fps.
+    // This loop updates the screen every ~125 fps. (1000/8 = 125)
     setInterval(() => this.render(), 8);
     window.addEventListener("resize", () => this.resize());
     this.resize();

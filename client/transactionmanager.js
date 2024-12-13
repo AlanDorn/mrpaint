@@ -5,9 +5,34 @@ export default class TransactionManager {
 
     this.toolCodes = {
       pencil: new Uint8Array([0]),
+      fill: new Uint8Array([1]),
     };
 
-    this.toolCodesInverse = ["pencil"];
+    this.toolCodesInverse = ["pencil", "fill"];
+  }
+
+  fillTransaction(x, y, newColor, targetColor) {
+    const transaction = buildTransaction(
+      touuid(), // 10 bytes
+      this.toolCodes["fill"], // 1 byte
+      encodeColor(newColor), // 3 bytes
+      encodeColor(targetColor), // 3 bytes
+      encodePosition([x, y]), // 4 bytes
+      new Uint8Array(11) // 11 bytes padding
+    );
+
+    this.unsentTransactions.push(transaction);
+    this.transactions.push(transaction);
+  }
+
+  processFill(transaction) {
+    return [
+      transaction.slice(0, 10), // UUID
+      "fill", // Tool name
+      decodeColor(transaction.slice(11, 14)), // newColor (3 bytes)
+      decodeColor(transaction.slice(14, 17)), // targetColor (3 bytes)
+      decodePosition(transaction.slice(17, 21)), // position (x, y)
+    ];
   }
 
   pencilTransaction(color, brushsize, p0, p1, p2, p3) {
@@ -49,6 +74,9 @@ export default class TransactionManager {
       switch (tool) {
         case "pencil":
           processedTransactions.push(this.processPencil(transaction));
+          break;
+        case "fill":
+          processedTransactions.push(this.processFill(transaction));
           break;
       }
 
@@ -106,7 +134,6 @@ function encodeColor(color) {
 function decodeColor(colorBytes) {
   return Array.from(colorBytes);
 }
-
 
 function encodeSmallNumber(number) {
   return new Uint8Array([Math.floor(number)]);

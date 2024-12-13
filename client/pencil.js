@@ -50,7 +50,18 @@ export default class Pencil {
   }
 
   handleMouseUp() {
-    if (this.points.length >= 2) {
+    if (this.points.length === 1) {
+      // Single dot scenario
+      const startPoint = this.points[0];
+      // Record a pencil transaction for a single dot (all four points are the same)
+      this.transactionManager.pencilTransaction(
+        this.currentColor,
+        this.brushsize.size,
+        startPoint, startPoint, startPoint, startPoint
+      );
+      // We already set the pixel on mouseDown, so no extra drawing is needed here.
+    } else if (this.points.length >= 2) {
+      // Existing logic for a line/spline
       const mirroredPoint = mirrorAcross(
         this.points[this.points.length - 1],
         this.points[this.points.length - 2]
@@ -58,9 +69,11 @@ export default class Pencil {
       this.points.push(mirroredPoint);
       this.drawClient();
     }
+  
     this.isDrawing = false;
     this.points = [];
   }
+  
 
   handleMouseDown(input) {
     this.isDrawing = true;
