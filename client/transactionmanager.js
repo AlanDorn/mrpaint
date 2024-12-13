@@ -29,10 +29,10 @@ export default class TransactionManager {
     if (
       this.simulateLag &&
       this.correct > this.lastVirtualError &&
-      this.correct % 4 == 3
+      this.correct % 2 == 1
     ) {
       this.lastVirtualError = this.correct;
-      this.correct -= 64;
+      this.correct -= 2;
     }
   }
 
@@ -156,7 +156,7 @@ export default class TransactionManager {
     let offset = 0;
     while (offset < transactions.length) {
       const transactionLength = toolLength[transactions[offset + 10]];
-      const transaction = transactions.slice(
+      const transaction = transactions.subarray(
         offset,
         offset + transactionLength
       );
