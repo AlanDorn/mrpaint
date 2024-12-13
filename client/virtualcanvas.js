@@ -21,16 +21,10 @@ export default class VirtualCanvas {
     });
     this.resize();
     //setInterval(() => this.render(), 4);
-    this.fpsReduce = 4;
-    this.fpsCounter = 0;
-    this.fillGeneration = 0;
+    setInterval(() => this.render(), 16);
   }
 
   render() {
-    //if (this.filling) return;
-    this.fpsCounter++;
-    this.fpsCounter %= this.fpsReduce;
-    if (this.fpsCounter !== 0) return;
     this.ctx.putImageData(this.imageData, 0, 0);
   }
 
@@ -90,7 +84,7 @@ export default class VirtualCanvas {
     const thisGeneration = this.fillGeneration;
 
     const processChunk = () => {
-      const chunkSize = 2; // Number of rows to process per iteration
+      const chunkSize = 128; // Number of rows to process per iteration
       const maxY = Math.min(y + chunkSize, height);
 
       for (; y < maxY; y++) {
@@ -120,7 +114,7 @@ export default class VirtualCanvas {
     const thisGeneration = this.fillGeneration;
   
     const processChunk = () => {
-      const chunkSize = 64; 
+      const chunkSize = 128; 
       const maxChunkY = Math.min(chunkStartY + chunkSize, height);
       const maxChunkX = Math.min(chunkStartX + chunkSize, width);
   
