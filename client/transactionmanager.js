@@ -21,16 +21,25 @@ export default class TransactionManager {
     this.snapshotIndexes = [];
     this.snapshotGraveyard = [];
     setTimeout(() => this.transactionRenderLoop(16), 0);
-    this.counter = 0;
+    this.lastVirtualError = 0;
+    this.simulateLag = false;
+  }
+
+  simulateVirtualLag() {
+    if (
+      this.simulateLag &&
+      this.correct > this.lastVirtualError &&
+      this.correct % 4 == 3
+    ) {
+      this.lastVirtualError = this.correct;
+      this.correct -= 64;
+    }
   }
 
   transactionRenderLoop(loopTargetms) {
     const startTime = performance.now();
 
-    this.counter++;
-    if(this.counter % 1 == 0){
-      this.virtualCanvas.render();
-    }
+    this.virtualCanvas.render();
 
     const needToSyncCanvas = this.correct < this.rendered;
     if (needToSyncCanvas) this.syncCanvas();
@@ -45,6 +54,7 @@ export default class TransactionManager {
           this.rendered >= this.transactions.length;
         if (allTransactionsAreRendered) {
           const timeLeft = loopTargetms - (performance.now() - startTime);
+          this.simulateVirtualLag();
           setTimeout(() => this.transactionRenderLoop(loopTargetms), timeLeft);
           return;
         }
@@ -61,10 +71,13 @@ export default class TransactionManager {
       this.currentTask.pop()(); // run the next bit of task
     }
 
+    this.simulateVirtualLag();
+
     setTimeout(() => this.transactionRenderLoop(loopTargetms), 0);
   }
 
   syncCanvas() {
+    console.log("syncing");
     // Stop the current task
     this.currentTask.length = 0;
 
@@ -86,7 +99,7 @@ export default class TransactionManager {
     // If there are no snapshots that come before the correct index, reset
     const thereIsNoSnapShotBeforeCorrect = this.snapshots.length === 0;
     if (thereIsNoSnapShotBeforeCorrect) {
-      this.virtualCanvas.reset();
+      this.snapshotGraveyard.push(this.virtualCanvas.reset());
       this.rendered = 0;
       this.correct = 0;
       return;
@@ -95,7 +108,7 @@ export default class TransactionManager {
     // Set the canvas to the last snapshot
     const snapshot = this.snapshots[this.snapshots.length - 1];
     const snapshotIndex = this.snapshotIndexes[this.snapshotIndexes.length - 1];
-    this.virtualCanvas.set(snapshot);
+    this.snapshotGraveyard.push(this.virtualCanvas.set(snapshot));
     this.rendered = snapshotIndex + 1;
     this.correct = snapshotIndex + 1;
   }
@@ -155,6 +168,7 @@ export default class TransactionManager {
   }
 
   pushClient(transaction) {
+    this.pushServer(transaction);
     this.unsentTransactions.push(transaction);
     return;
   }

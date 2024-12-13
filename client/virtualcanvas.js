@@ -140,20 +140,24 @@ export default class VirtualCanvas {
   }
 
   reset() {
+    const oldVirtualCanvas = this.virtualCanvas;
     this.virtualCanvas = Array.from({ length: this.canvas.height }, () =>
       Array(this.canvas.width).fill(white)
     );
     this.virtualWidth = this.canvas.width;
     this.virtualHeight = this.canvas.height;
-    this.fillImageData();
+    setTimeout(() => this.fillImageData());
+    return oldVirtualCanvas;
   }
 
   set(newVirtualCanvas) {
+    const oldVirtualCanvas = this.virtualCanvas;
     this.virtualCanvas = newVirtualCanvas;
     this.virtualWidth = this.virtualCanvas[0].length;
     this.virtualHeight = this.virtualCanvas.length;
     this.resizeVirtualIfNeeded(this.virtualWidth, this.virtualHeight);
-    this.fillImageData();
+    setTimeout(() => this.fillImageData());
+    return oldVirtualCanvas;
   }
 
   cloneCanvas(recycledSnapshot = null) {
