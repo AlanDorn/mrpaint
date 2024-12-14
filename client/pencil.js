@@ -5,14 +5,14 @@ import {
 import { mirrorAcross } from "./util2d.js";
 
 export default class Pencil {
-  constructor(virtualCanvas, transactionManager, colorpicker, brushsize) {
+  constructor(virtualCanvas, transactionManager, toolbar) {
     this.virtualCanvas = virtualCanvas;
     this.transactionManager = transactionManager;
-    this.colorpicker = colorpicker;
+    this.colorpicker = toolbar.colorpicker;
     this.points = []; // Store the last four points for Catmull-Rom
     this.isDrawing = false;
     this.currentColor = [0, 0, 0];
-    this.brushsize = brushsize;
+    this.brushsize = toolbar.brushsize;
   }
 
   mouseUpLeft(input) {

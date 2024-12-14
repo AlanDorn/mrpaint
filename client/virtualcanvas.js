@@ -24,8 +24,11 @@ export default class VirtualCanvas {
   }
 
   render() {
-    if (this.fillGeneration.length !== 0) this.fillGeneration.pop()();
     this.ctx.putImageData(this.imageData, 0, 0);
+  }
+
+  fill() {
+    if (this.fillGeneration.length !== 0) this.fillGeneration.pop()();
   }
 
   setPixel(x, y, r, g, b) {
@@ -79,7 +82,7 @@ export default class VirtualCanvas {
 
   fillImageData() {
     const { width, height } = this.canvas;
-    const chunkSize = 128;
+    const chunkSize = 512;
     // Pre-generate all chunks
     this.fillGeneration = [];
     const totalChunks = Math.ceil(height / chunkSize);
@@ -98,45 +101,6 @@ export default class VirtualCanvas {
         }
       });
     }
-  }
-
-  fillImageData1() {
-    const { width, height } = this.canvas;
-    const imageData = this.imageData;
-    const virtualCanvas = this.virtualCanvas;
-    let chunkStartY = 0; // Start at the top of the canvas
-    let chunkStartX = 0; // Start at the left of the canvas
-    const thisGeneration = this.fillGeneration;
-
-    const processChunk = () => {
-      const chunkSize = 2;
-      const maxChunkY = Math.min(chunkStartY + chunkSize, height);
-      const maxChunkX = Math.min(chunkStartX + chunkSize, width);
-
-      for (let y = chunkStartY; y < maxChunkY; y++) {
-        for (let x = chunkStartX; x < maxChunkX; x++) {
-          const newIndex = (y * width + x) * 4;
-          imageData.data[newIndex] = virtualCanvas[y][x][0]; // Red
-          imageData.data[newIndex + 1] = virtualCanvas[y][x][1]; // Green
-          imageData.data[newIndex + 2] = virtualCanvas[y][x][2]; // Blue
-          imageData.data[newIndex + 3] = 255; // Alpha
-        }
-      }
-
-      // Move to the next chunk
-      if (chunkStartX + chunkSize < width) {
-        chunkStartX += chunkSize;
-      } else {
-        chunkStartX = 0; // Reset to the first column
-        chunkStartY += chunkSize;
-      }
-
-      if (chunkStartY < height && thisGeneration == this.fillGeneration) {
-        setTimeout(processChunk, 0); // Schedule the next chunk
-      }
-    };
-
-    processChunk(); // Start processing
   }
 
   reset() {

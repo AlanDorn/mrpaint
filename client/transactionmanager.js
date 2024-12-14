@@ -7,7 +7,7 @@ import {
 import buildRenderTask from "./transactionrenderer.js";
 
 const mod = 32;
-const exp = 4;
+const exp = 1.5;
 
 export default class TransactionManager {
   constructor(virtualCanvas) {
@@ -20,7 +20,7 @@ export default class TransactionManager {
     this.snapshots = [];
     this.snapshotIndexes = [];
     this.snapshotGraveyard = [];
-    setTimeout(() => this.transactionRenderLoop(16), 0);
+    setTimeout(() => this.transactionRenderLoop(16.66), 0);
     this.lastVirtualError = 0;
     this.simulateLag = false;
   }
@@ -40,6 +40,10 @@ export default class TransactionManager {
     const startTime = performance.now();
 
     this.virtualCanvas.render();
+
+    if (this.rendered == this.transactions.length) {
+      this.virtualCanvas.fill();
+    }
 
     const needToSyncCanvas = this.correct < this.rendered;
     if (needToSyncCanvas) this.syncCanvas();
@@ -67,8 +71,9 @@ export default class TransactionManager {
         this.rendered++;
         this.correct++;
       }
-
-      this.currentTask.pop()(); // run the next bit of task
+      
+      const optionalNextTask = this.currentTask.pop()(); // run the next bit of task
+      if (optionalNextTask) this.currentTask.push(optionalNextTask);
     }
 
     this.simulateVirtualLag();
@@ -77,7 +82,6 @@ export default class TransactionManager {
   }
 
   syncCanvas() {
-    console.log("syncing");
     // Stop the current task
     this.currentTask.length = 0;
 

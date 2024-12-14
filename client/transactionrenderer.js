@@ -11,6 +11,8 @@ export default function buildRenderTask(virtualCanvas, transaction) {
       return renderPixel(virtualCanvas, transaction);
     case 1:
       return renderPencil(virtualCanvas, transaction);
+    case 2:
+      return renderFill(virtualCanvas, transaction);
   }
 }
 
@@ -75,4 +77,62 @@ function renderPencil(virtualCanvas, transaction) {
   }
 
   return task;
+}
+
+function renderFill(virtualCanvas, transaction) {
+  const color = decodeColor(transaction.slice(11, 14));
+  const [x, y] = decodePosition(transaction.slice(14, 18));
+
+  virtualCanvas.resizeVirtualIfNeeded(x,y);
+  const targetColor = virtualCanvas.virtualCanvas[y][x];
+
+  if (colorsMatch(targetColor, color)) return [() => {}];
+
+  const stack = [[x, y]];
+  const width = virtualCanvas.virtualWidth;
+  const height = virtualCanvas.virtualHeight;
+
+  const nextRender = () => {
+    const startTime = performance.now();
+    while (performance.now() - startTime < 4 && stack.length > 0) {
+      const [curX, curY] = stack.pop();
+
+      if (
+        curX < 0 ||
+        curX >= width ||
+        curY < 0 ||
+        curY >= height ||
+        !colorsMatch(virtualCanvas.virtualCanvas[curY][curX], targetColor)
+      ) {
+        continue;
+      }
+
+      virtualCanvas.setPixel(curX, curY, ...color);
+
+      const neighbors = [
+        [curX + 1, curY],
+        [curX - 1, curY],
+        [curX, curY + 1],
+        [curX, curY - 1]
+      ];
+      
+      for (let i = neighbors.length; i > 0; ) {
+        const rand = Math.floor(Math.random() * i);
+        stack.push(neighbors[rand]);
+        neighbors[rand] = neighbors[--i];
+      }
+    }
+
+    const stackIsNotEmpty = stack.length > 0;
+    if (stackIsNotEmpty) return nextRender;
+  };
+
+  const task = [nextRender];
+  return task;
+}
+
+function colorsMatch(first, second) {
+  return (
+    first[0] === second[0] && first[1] === second[1] && first[2] === second[2]
+  );
 }

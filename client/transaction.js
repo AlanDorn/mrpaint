@@ -1,9 +1,10 @@
 export const toolCodes = {
   pixel: new Uint8Array([0]),
   pencil: new Uint8Array([1]),
+  fill: new Uint8Array([2]),
 };
-export const toolCodeInverse = ["pixel", "pencil"];
-export const toolLength = [20, 32];
+export const toolCodeInverse = ["pixel", "pencil", "fill"];
+export const toolLength = [20, 32, 18];
 
 export function pixelTransaction(color, brushsize, position) {
   return buildTransaction(
@@ -25,6 +26,15 @@ export function pencilTransaction(color, brushsize, p0, p1, p2, p3) {
     encodePosition(p1), //4 bytes
     encodePosition(p2), //4 bytes
     encodePosition(p3) //4 bytes
+  );
+}
+
+export function fillTransaction(color, position) {
+  return buildTransaction(
+    touuid(), //10 bytes
+    toolCodes["fill"], //1 bytes
+    encodeColor(color), //3 bytes
+    encodePosition(position), //4 bytes
   );
 }
 
