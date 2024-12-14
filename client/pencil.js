@@ -67,9 +67,11 @@ export default class Pencil {
         pencilTransaction(this.currentColor, this.brushsize.size, ...this.points)
       );
     }
+  
     this.isDrawing = false;
     this.points = [];
   }
+  
 
   handleMouseDown(input) {
     this.isDrawing = true;
