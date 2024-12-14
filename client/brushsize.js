@@ -31,9 +31,9 @@ export default class BrushSize {
       return parsedValue;
     };
 
-    const adjustBrushSize = (delta) => {
+    const adjustBrushSize = (event) => {
       let currentValue = sanitizeInput(input.value) || 1;
-      let newValue = currentValue + delta;
+      let newValue = currentValue + event;
 
       if(newValue < 1) newValue = 1;
       if(newValue > this.maxSize) newValue = this.maxSize;

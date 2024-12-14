@@ -1,4 +1,8 @@
-import { mirrorAcross, splinePixels } from "./util2d.js";
+import {
+  pencilTransaction,
+  pixelTransaction,
+} from "./transaction.js";
+import { mirrorAcross } from "./util2d.js";
 
 export default class Pencil {
   constructor(virtualCanvas, transactionManager, toolbar) {
@@ -45,18 +49,23 @@ export default class Pencil {
     }
 
     if (this.points.length === 4) {
-      this.drawClient();
+      this.transactionManager.pushClient(
+        pencilTransaction(this.currentColor, this.brushsize.size, ...this.points)
+      );
     }
   }
 
   handleMouseUp() {
-    if (this.points.length >= 2) {
+    if (this.points.length >= 3) {
       const mirroredPoint = mirrorAcross(
         this.points[this.points.length - 1],
         this.points[this.points.length - 2]
       );
       this.points.push(mirroredPoint);
-      this.drawClient();
+      if(this.points.length > 4) this.points.shift();
+      this.transactionManager.pushClient(
+        pencilTransaction(this.currentColor, this.brushsize.size, ...this.points)
+      );
     }
     this.isDrawing = false;
     this.points = [];
@@ -66,62 +75,8 @@ export default class Pencil {
     this.isDrawing = true;
     const startPoint = this.virtualCanvas.positionInCanvas(input.x, input.y);
     this.points.push(startPoint);
-    this.setPixelClient(
-      this.currentColor,
-      this.brushsize.size,
-      startPoint[0],
-      startPoint[1]
+    this.transactionManager.pushClient(
+      pixelTransaction(this.currentColor, this.brushsize.size, startPoint)
     );
-  }
-
-  drawClient() {
-    this.transactionManager.pencilTransaction(
-      this.currentColor,
-      this.brushsize.size,
-      ...this.points
-    );
-    const pixels = splinePixels(this.points);
-    pixels.forEach((pixel) =>
-      this.setPixelClient(
-        this.currentColor,
-        this.brushsize.size,
-        pixel[0],
-        pixel[1]
-      )
-    );
-  }
-
-  drawServer(color, brushsize, p0, p1, p2, p3) {
-    const pixels = splinePixels([p0, p1, p2, p3]);
-    for (let index = 0; index < pixels.length; index++)
-      this.setPixelServer(color, brushsize, pixels[index][0], pixels[index][1]);
-  }
-
-  setPixelClient(color, brushsize, x, y) {
-    for (let dx = 0; dx < brushsize; dx++) {
-      for (let dy = 0; dy < brushsize; dy++) {
-        this.virtualCanvas.setPixelClient(
-          x + dx,
-          y + dy,
-          color[0],
-          color[1],
-          color[2]
-        );
-      }
-    }
-  }
-
-  setPixelServer(color, brushsize, x, y) {
-    for (let dx = 0; dx < brushsize; dx++) {
-      for (let dy = 0; dy < brushsize; dy++) {
-        this.virtualCanvas.setPixelServer(
-          x + dx,
-          y + dy,
-          color[0],
-          color[1],
-          color[2]
-        );
-      }
-    }
   }
 }
