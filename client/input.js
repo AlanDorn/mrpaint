@@ -33,7 +33,7 @@ export default class Input {
     document.addEventListener("pointermove", (event) => {
       this.x = Math.round(event.clientX);
       this.y = Math.round(event.clientY);
-      if(performance.now() - lastMove > 16){
+      if(performance.now() - lastMove > 32){
         toolbar.mouseMove(this);
         lastMove = performance.now();
       }

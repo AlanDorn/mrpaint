@@ -31,18 +31,18 @@ export default class VirtualCanvas {
     if (this.fillGeneration.length !== 0) this.fillGeneration.pop()();
   }
 
-  setPixel(x, y, r, g, b) {
+  setPixel(x, y, color) {
     if (x >= 0 && x < this.canvas.width && y >= 0 && y < this.canvas.height) {
       const index = (y * this.imageData.width + x) * 4; // Calculate pixel index
-      this.imageData.data[index] = r; // Red
-      this.imageData.data[index + 1] = g; // Green
-      this.imageData.data[index + 2] = b; // Blue
+      this.imageData.data[index] = color[0]; // Red
+      this.imageData.data[index + 1] = color[1]; // Green
+      this.imageData.data[index + 2] = color[2]; // Blue
       this.imageData.data[index + 3] = 255; // Alpha
     }
 
     if (x >= 0 && y >= 0) {
       this.resizeVirtualIfNeeded(x, y);
-      this.virtualCanvas[y][x] = [r, g, b];
+      this.virtualCanvas[y][x] = color;
     }
   }
 

@@ -25,13 +25,7 @@ function renderPixel(virtualCanvas, transaction) {
     () => {
       for (let dx = 0; dx < brushsize; dx++) {
         for (let dy = 0; dy < brushsize; dy++) {
-          virtualCanvas.setPixel(
-            pixel[0] + dx,
-            pixel[1] + dy,
-            color[0],
-            color[1],
-            color[2]
-          );
+          virtualCanvas.setPixel(pixel[0] + dx, pixel[1] + dy, color);
         }
       }
     },
@@ -63,13 +57,7 @@ function renderPencil(virtualCanvas, transaction) {
         const [x, y] = pixels[i];
         for (let dx = 0; dx < brushsize; dx++) {
           for (let dy = 0; dy < brushsize; dy++) {
-            virtualCanvas.setPixel(
-              x + dx,
-              y + dy,
-              color[0],
-              color[1],
-              color[2]
-            );
+            virtualCanvas.setPixel(x + dx, y + dy, color);
           }
         }
       }
@@ -83,7 +71,7 @@ function renderFill(virtualCanvas, transaction) {
   const color = decodeColor(transaction.slice(11, 14));
   const [x, y] = decodePosition(transaction.slice(14, 18));
 
-  virtualCanvas.resizeVirtualIfNeeded(x,y);
+  virtualCanvas.resizeVirtualIfNeeded(x, y);
   const targetColor = virtualCanvas.virtualCanvas[y][x];
 
   if (colorsMatch(targetColor, color)) return [() => {}];
@@ -94,7 +82,7 @@ function renderFill(virtualCanvas, transaction) {
 
   const nextRender = () => {
     const startTime = performance.now();
-    while (performance.now() - startTime < 4 && stack.length > 0) {
+    while (performance.now() - startTime < 32 && stack.length > 0) {
       const [curX, curY] = stack.pop();
 
       if (
@@ -107,20 +95,27 @@ function renderFill(virtualCanvas, transaction) {
         continue;
       }
 
-      virtualCanvas.setPixel(curX, curY, ...color);
+      virtualCanvas.setPixel(curX, curY, color);
 
       const neighbors = [
         [curX + 1, curY],
         [curX - 1, curY],
         [curX, curY + 1],
-        [curX, curY - 1]
+        [curX, curY - 1],
       ];
-      
-      for (let i = neighbors.length; i > 0; ) {
-        const rand = Math.floor(Math.random() * i);
-        stack.push(neighbors[rand]);
-        neighbors[rand] = neighbors[--i];
-      }
+
+      if (Math.random() < 1/64)
+        for (let i = 0; i < neighbors.length; i++) {
+          const pos = Math.floor(Math.random() * stack.length);
+          stack.push(stack[pos]);
+          stack[pos] = neighbors[i];
+        }
+      else
+        for (let i = neighbors.length; i > 0; ) {
+          const rand = Math.floor(Math.random() * i);
+          stack.push(neighbors[rand]);
+          neighbors[rand] = neighbors[--i];
+        }
     }
 
     const stackIsNotEmpty = stack.length > 0;

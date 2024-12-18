@@ -20,19 +20,16 @@ export default class TransactionManager {
     this.snapshots = [];
     this.snapshotIndexes = [];
     this.snapshotGraveyard = [];
-    setTimeout(() => this.transactionRenderLoop(16.66), 0);
+    setTimeout(() => this.transactionRenderLoop(32), 0);
     this.lastVirtualError = 0;
     this.simulateLag = false;
+    this.lastLag = 0;
   }
 
   simulateVirtualLag() {
-    if (
-      this.simulateLag &&
-      this.correct > this.lastVirtualError &&
-      this.correct % 2 == 1
-    ) {
+    if (this.simulateLag && this.correct > this.lastVirtualError) {
       this.lastVirtualError = this.correct;
-      this.correct -= 2;
+      this.correct -= Math.random() < 0.5 ? 30 : 60;
     }
   }
 
@@ -48,7 +45,12 @@ export default class TransactionManager {
     const needToSyncCanvas = this.correct < this.rendered;
     if (needToSyncCanvas) this.syncCanvas();
 
+    let rendered = false;
     while (performance.now() - startTime < loopTargetms) {
+      if (performance.now() - startTime < 16 && !rendered) {
+        rendered = true;
+        this.virtualCanvas.render();
+      }
       const taskIsFinished = this.currentTask.length === 0;
       if (taskIsFinished) {
         const needToTakeSnapShot = this.rendered % mod === mod - 1;
@@ -71,7 +73,7 @@ export default class TransactionManager {
         this.rendered++;
         this.correct++;
       }
-      
+
       const optionalNextTask = this.currentTask.pop()(); // run the next bit of task
       if (optionalNextTask) this.currentTask.push(optionalNextTask);
     }

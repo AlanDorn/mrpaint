@@ -58,7 +58,7 @@ export function touuid() {
   b[5] = (t & 15) * 16 + (Math.random() * 16) | 0;
   t = (t / 16) | 0
   for (let i = 4; i >= 0; b[i--] = t & 255, t = (t / 256) | 0);
-  for (let i = 5; i < 10; b[i++] = (Math.random() * 256) | 0);
+  for (let i = 6; i < 10; b[i++] = (Math.random() * 256) | 0);
   return b;
 }
 
