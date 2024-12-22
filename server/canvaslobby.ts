@@ -15,7 +15,7 @@ export default class CanvasLobby {
   addUser(ws: WebSocket) {
     this.activeUsers.set(this.userIdCounter, ws);
     this.transactions[0] = this.userIdCounter++ % 256;
-    ws.send(this.transactions.slice(0, this.transactionIndex));
+    ws.send(this.transactions.subarray(0, this.transactionIndex));
     return this.transactions[0];
   }
 
@@ -28,7 +28,7 @@ export default class CanvasLobby {
     this.activeUsers.forEach((socket, id) => {
       if (id !== userId) socket.send(eventData);
     });
-    const justTransactions = eventData.slice(5);
+    const justTransactions = eventData.subarray(5);
     this.transactions.set(justTransactions, this.transactionIndex);
     this.transactionIndex += justTransactions.length;
   }

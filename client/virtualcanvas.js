@@ -32,15 +32,15 @@ export default class VirtualCanvas {
   }
 
   setPixel(x, y, color) {
-    if (x >= 0 && x < this.canvas.width && y >= 0 && y < this.canvas.height) {
-      const index = (y * this.imageData.width + x) * 4; // Calculate pixel index
-      this.imageData.data[index] = color[0]; // Red
-      this.imageData.data[index + 1] = color[1]; // Green
-      this.imageData.data[index + 2] = color[2]; // Blue
-      this.imageData.data[index + 3] = 255; // Alpha
-    }
-
     if (x >= 0 && y >= 0) {
+      if (x < this.canvas.width && y < this.canvas.height) {
+        let index = (y * this.imageData.width + x) * 4; // Calculate pixel index
+        const data = this.imageData.data;
+        data[index++] = color[0]; // Red
+        data[index++] = color[1]; // Green
+        data[index++] = color[2]; // Blue
+        data[index] = 255; // Alpha
+      }
       this.resizeVirtualIfNeeded(x, y);
       this.virtualCanvas[y][x] = color;
     }
@@ -49,18 +49,18 @@ export default class VirtualCanvas {
   resizeVirtualIfNeeded(x, y) {
     if (y >= this.virtualHeight) {
       const rowsToAdd = y - this.virtualHeight + 1;
-      for (let i = 0; i < rowsToAdd; i++) {
+      for (let i = 0; i < rowsToAdd; i++) 
         this.virtualCanvas.push(Array(this.virtualWidth).fill(white));
-      }
+      
       this.virtualHeight += rowsToAdd;
     }
 
     // Extend canvas width (columns) for all rows
     if (x >= this.virtualWidth) {
       const colsToAdd = x - this.virtualWidth + 1;
-      for (let row of this.virtualCanvas) {
+      for (let row of this.virtualCanvas)
         row.push(...Array(colsToAdd).fill(white));
-      }
+      
       this.virtualWidth += colsToAdd;
     }
   }

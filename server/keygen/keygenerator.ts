@@ -27,14 +27,16 @@ async function readLinesFromFile(filePath: string): Promise<string[]> {
   const N = nouns.length;
   const adjPairCount = (A * (A - 1)) / 2;
   combinations = N * adjPairCount;
+  startPoint = Math.floor(Math.random() * combinations);
 })();
 
 let keyIndex = 0;
 const prime = 3469;
+let startPoint: number;
 
 export default function keyGen() {
   // Compute the randomIndex
-  const randomIndex = (prime * keyIndex) % combinations;
+  const randomIndex = (prime * keyIndex + startPoint) % combinations;
 
   const A = adjectives.length;
   const N = nouns.length;

@@ -21,13 +21,13 @@ export default function socket(input, transactionManager) {
         userId = eventData[0];
         console.log(userId);
         if (eventData.length > 1)
-          transactionManager.pushServer(eventData.slice(1));
+          transactionManager.pushServer(eventData.subarray(1));
         return;
       }
       const eventData = new Uint8Array(buffer);
-      handleCursorData(eventData.slice(0, 5));
+      handleCursorData(eventData.subarray(0, 5));
       if (eventData.length > 5)
-        transactionManager.pushServer(eventData.slice(5));
+        transactionManager.pushServer(eventData.subarray(5));
     });
   };
 
@@ -49,7 +49,7 @@ function handleCursorData(cursorData) {
     document.body.appendChild(cursorElement);
   }
 
-  const cursorPosition = decodePosition(cursorData.slice(1));
+  const cursorPosition = decodePosition(cursorData.subarray(1));
   cursorElement.style.left = `${cursorPosition[0]}px`; // Ensure units are added
   cursorElement.style.top = `${cursorPosition[1]}px`;
 

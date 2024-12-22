@@ -1,4 +1,5 @@
 import {
+  operationId,
   pencilTransaction,
   pixelTransaction,
 } from "./transaction.js";
@@ -13,6 +14,9 @@ export default class Pencil {
     this.isDrawing = false;
     this.currentColor = [0, 0, 0];
     this.brushsize = toolbar.brushsize;
+    this.toolbar = toolbar;
+
+    this.operationId = null;
   }
 
   mouseUpLeft(input) {
@@ -50,7 +54,7 @@ export default class Pencil {
 
     if (this.points.length === 4) {
       this.transactionManager.pushClient(
-        pencilTransaction(this.currentColor, this.brushsize.size, ...this.points)
+        pencilTransaction(this.operationId, this.currentColor, this.brushsize.size, ...this.points)
       );
     }
   }
@@ -64,7 +68,7 @@ export default class Pencil {
       this.points.push(mirroredPoint);
       if(this.points.length > 4) this.points.shift();
       this.transactionManager.pushClient(
-        pencilTransaction(this.currentColor, this.brushsize.size, ...this.points)
+        pencilTransaction(this.operationId, this.currentColor, this.brushsize.size, ...this.points)
       );
     }
   
@@ -77,8 +81,10 @@ export default class Pencil {
     this.isDrawing = true;
     const startPoint = this.virtualCanvas.positionInCanvas(input.x, input.y);
     this.points.push(startPoint);
+    this.operationId = operationId();
     this.transactionManager.pushClient(
-      pixelTransaction(this.currentColor, this.brushsize.size, startPoint)
+      pixelTransaction(this.operationId, this.currentColor, this.brushsize.size, startPoint)
     );
+    this.toolbar.undo.pushOperation(this.operationId);
   }
 }

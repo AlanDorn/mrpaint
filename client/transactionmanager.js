@@ -2,6 +2,9 @@ import {
   buildTransaction,
   compareTouuid,
   encodePosition,
+  readOperationIdAsNumber,
+  TOOLCODEINDEX,
+  toolCodes,
   toolLength,
 } from "./transaction.js";
 import buildRenderTask from "./transactionrenderer.js";
@@ -12,18 +15,24 @@ const exp = 1.5;
 export default class TransactionManager {
   constructor(virtualCanvas) {
     this.virtualCanvas = virtualCanvas;
+
     this.transactions = [];
     this.unsentTransactions = [];
-    this.currentTask = [];
-    this.rendered = 0;
-    this.correct = 0;
+
+    this.firstTransactionOfOperation = new Map();
+    this.lastUndoRedoOperation = new Map();
+
     this.snapshots = [];
     this.snapshotIndexes = [];
     this.snapshotGraveyard = [];
-    setTimeout(() => this.transactionRenderLoop(32), 0);
-    this.lastVirtualError = 0;
+
+    this.rendered = 0;
+    this.correct = 0;
+    this.currentTask = [];
+
     this.simulateLag = false;
-    this.lastLag = 0;
+    this.lastVirtualError = 0;
+    setTimeout(() => this.transactionRenderLoop(32), 0);
   }
 
   simulateVirtualLag() {
@@ -38,7 +47,7 @@ export default class TransactionManager {
 
     this.virtualCanvas.render();
 
-    if (this.rendered == this.transactions.length) {
+    if (this.rendered >= this.transactions.length) {
       this.virtualCanvas.fill();
     }
 
@@ -53,9 +62,6 @@ export default class TransactionManager {
       }
       const taskIsFinished = this.currentTask.length === 0;
       if (taskIsFinished) {
-        const needToTakeSnapShot = this.rendered % mod === mod - 1;
-        if (needToTakeSnapShot) this.takeSnapShot();
-
         const allTransactionsAreRendered =
           this.rendered >= this.transactions.length;
         if (allTransactionsAreRendered) {
@@ -65,22 +71,30 @@ export default class TransactionManager {
           return;
         }
 
-        this.currentTask = buildRenderTask(
-          this.virtualCanvas,
-          this.transactions[this.rendered]
-        );
-
+        let transaction = this.transactions[this.rendered];
         this.rendered++;
         this.correct++;
+        if (this.transactionIsUndone(transaction)) continue;
+
+        this.currentTask = buildRenderTask(this.virtualCanvas, transaction);
       }
 
       const optionalNextTask = this.currentTask.pop()(); // run the next bit of task
       if (optionalNextTask) this.currentTask.push(optionalNextTask);
+      if (this.currentTask.length === 0 && this.rendered % mod === mod - 1)
+        this.takeSnapShot();
     }
 
     this.simulateVirtualLag();
 
     setTimeout(() => this.transactionRenderLoop(loopTargetms), 0);
+  }
+
+  transactionIsUndone(transaction) {
+    const operationId = readOperationIdAsNumber(transaction);
+    const potentialUndoRedo = this.lastUndoRedoOperation.get(operationId);
+    if (!potentialUndoRedo) return false;
+    return potentialUndoRedo[TOOLCODEINDEX] === toolCodes.undo[0];
   }
 
   syncCanvas() {
@@ -94,7 +108,7 @@ export default class TransactionManager {
       if (snapshotIsNewerThanCorrect) {
         // Instead of just truncating, we splice so we can push them into the graveyard
         const removedSnapshots = this.snapshots.splice(index);
-        const removedIndexes = this.snapshotIndexes.splice(index);
+        this.snapshotIndexes.splice(index);
 
         // Push removed snapshots into the graveyard
         this.snapshotGraveyard.push(...removedSnapshots);
@@ -114,9 +128,13 @@ export default class TransactionManager {
     // Set the canvas to the last snapshot
     const snapshot = this.snapshots[this.snapshots.length - 1];
     const snapshotIndex = this.snapshotIndexes[this.snapshotIndexes.length - 1];
+
     this.snapshotGraveyard.push(this.virtualCanvas.set(snapshot));
     this.rendered = snapshotIndex + 1;
     this.correct = snapshotIndex + 1;
+    this.snapshots.length--;
+    this.snapshotIndexes.length--;
+    this.takeSnapShot();
   }
 
   takeSnapShot() {
@@ -161,16 +179,66 @@ export default class TransactionManager {
   pushServer(transactions) {
     let offset = 0;
     while (offset < transactions.length) {
-      const transactionLength = toolLength[transactions[offset + 10]];
+      const transactionType = transactions[offset + TOOLCODEINDEX];
+      const transactionLength = toolLength[transactionType];
       const transaction = transactions.subarray(
         offset,
         offset + transactionLength
       );
-      const sortedPosition = this.getSortedPosition(transaction);
-      this.correct = Math.min(this.correct, sortedPosition);
-      this.transactions.splice(sortedPosition, 0, transaction);
       offset += transactionLength;
+
+      if (
+        transactionType === toolCodes.undo[0] ||
+        transactionType === toolCodes.redo[0]
+      )
+        this.handleUndoRedo(transaction);
+      else {
+        const sortedPosition = this.transactionIndex(transaction);
+        this.setIfFirstInstanceOfOperation(transaction);
+        this.transactions.splice(sortedPosition, 0, transaction);
+        this.correct = Math.min(this.correct, sortedPosition);
+      }
     }
+  }
+
+  handleUndoRedo(undoRedo) {
+    const operationId = readOperationIdAsNumber(undoRedo);
+    const strings = [];
+    strings[3] = "undo";
+    strings[4] = "redo";
+
+    const potentialUndoRedo = this.lastUndoRedoOperation.get(operationId);
+
+    if (potentialUndoRedo) {
+      if (compareTouuid(undoRedo, potentialUndoRedo) > 0) {
+        this.lastUndoRedoOperation.set(operationId, undoRedo);
+        const lastUndoRedoIsDifferent =
+          undoRedo[TOOLCODEINDEX] !== potentialUndoRedo[TOOLCODEINDEX];
+        if (lastUndoRedoIsDifferent) {
+          const firstTransaction =
+            this.firstTransactionOfOperation.get(operationId);
+          const sortedPosition = this.transactionIndex(firstTransaction);
+          this.correct = Math.min(this.correct, sortedPosition);
+        }
+      }
+      return;
+    }
+
+    this.lastUndoRedoOperation.set(operationId, undoRedo);
+
+    if (undoRedo[TOOLCODEINDEX] === toolCodes.undo[0]) {
+      const firstTransaction =
+        this.firstTransactionOfOperation.get(operationId);
+      const sortedPosition = this.transactionIndex(firstTransaction);
+      this.correct = Math.min(this.correct, sortedPosition);
+    }
+  }
+
+  setIfFirstInstanceOfOperation(transaction) {
+    const operationId = readOperationIdAsNumber(transaction);
+    const firstTransaction = this.firstTransactionOfOperation.get(operationId);
+    if (!firstTransaction || compareTouuid(transaction, firstTransaction) < 0)
+      this.firstTransactionOfOperation.set(operationId, transaction);
   }
 
   pushClient(transaction) {
@@ -179,8 +247,7 @@ export default class TransactionManager {
     return;
   }
 
-  getSortedPosition(transaction) {
-    if (!transaction) return 0;
+  transactionIndex(transaction) {
     let low = 0;
     let high = this.transactions.length;
     while (low < high) {
@@ -188,6 +255,6 @@ export default class TransactionManager {
       if (compareTouuid(this.transactions[mid], transaction) < 0) low = mid + 1;
       else high = mid;
     }
-    return low; // This is the insertion index
+    return low;
   }
 }

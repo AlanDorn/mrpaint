@@ -2,23 +2,36 @@ export const toolCodes = {
   pixel: new Uint8Array([0]),
   pencil: new Uint8Array([1]),
   fill: new Uint8Array([2]),
+  undo: new Uint8Array([3]),
+  redo: new Uint8Array([4]),
 };
-export const toolCodeInverse = ["pixel", "pencil", "fill"];
-export const toolLength = [20, 32, 18];
+export const toolCodeInverse = ["pixel", "pencil", "fill", "undo", "redo"];
+export const toolLength = [24, 36, 22, 15, 15];
+export const TOOLCODEINDEX = 14;
 
-export function pixelTransaction(color, brushsize, position) {
+export function pixelTransaction(operationId, color, brushsize, position) {
   return buildTransaction(
-    touuid(), //10 bytes
+    touuid(), //8 bytes
+    operationId, //6 bytes
     toolCodes["pixel"], //1 bytes
     encodeColor(color), //3 bytes
     encodeLargeNumber(brushsize), //2 bytes
-    encodePosition(position), //4 bytes
+    encodePosition(position) //4 bytes
   );
 }
 
-export function pencilTransaction(color, brushsize, p0, p1, p2, p3) {
+export function pencilTransaction(
+  operationId,
+  color,
+  brushsize,
+  p0,
+  p1,
+  p2,
+  p3
+) {
   return buildTransaction(
-    touuid(), //10 bytes
+    touuid(), //8 bytes
+    operationId, //6 bytes
     toolCodes["pencil"], //1 bytes
     encodeColor(color), //3 bytes
     encodeLargeNumber(brushsize), //2 bytes
@@ -29,12 +42,29 @@ export function pencilTransaction(color, brushsize, p0, p1, p2, p3) {
   );
 }
 
-export function fillTransaction(color, position) {
+export function fillTransaction(operationId, color, position) {
   return buildTransaction(
-    touuid(), //10 bytes
+    touuid(), //8 bytes
+    operationId, //6 bytes
     toolCodes["fill"], //1 bytes
     encodeColor(color), //3 bytes
-    encodePosition(position), //4 bytes
+    encodePosition(position) //4 bytes
+  );
+}
+
+export function undoTransaction(operationId) {
+  return buildTransaction(
+    touuid(), //8 bytes
+    operationId, //6 bytes
+    toolCodes["undo"] //1 bytes
+  );
+}
+
+export function redoTransaction(operationId) {
+  return buildTransaction(
+    touuid(), //8 bytes
+    operationId, //6 bytes
+    toolCodes["redo"] //1 bytes
   );
 }
 
@@ -44,27 +74,54 @@ export function buildTransaction(...components) {
     transactionLength += components[index].length;
 
   const transaction = new Uint8Array(transactionLength);
-  let bufferOffset = 0;
-  for (let index = 0; index < components.length; index++) {
+  for (
+    let index = 0, bufferOffset = 0;
+    index < components.length;
+    bufferOffset += components[index++].length
+  )
     transaction.set(components[index], bufferOffset);
-    bufferOffset += components[index].length;
-  }
+
   return transaction;
 }
 
+export function operationId() {
+  let b = new Uint8Array(6);
+  for (let i = 0; i < 6; b[i++] = (Math.random() * 256) | 0);
+  return b;
+}
+
+export function readOperationId(transaction) {
+  return transaction.subarray(8, 14);
+}
+
+export function readOperationIdAsNumber(transaction) {
+  let operationId = 0n;
+  for (let index = 8; index < 14; index++)
+    operationId = (operationId << 8n) | BigInt(transaction[index]);
+  return operationId;
+}
+
+export function compareOperationId(first, second) {
+  for (let index = 8; index < 14; index++)
+    if (first[index] !== second[index]) return first[index] - second[index];
+  return 0;
+}
+
 export function touuid() {
-  let b = new Uint8Array(10),
+  let b = new Uint8Array(8),
     t = Date.now();
-  b[5] = (t & 15) * 16 + (Math.random() * 16) | 0;
-  t = (t / 16) | 0
+
+  b[5] = ((t & 15) * 16 + Math.random() * 16) | 0;
+  t = (t / 16) | 0;
+
   for (let i = 4; i >= 0; b[i--] = t & 255, t = (t / 256) | 0);
-  for (let i = 6; i < 10; b[i++] = (Math.random() * 256) | 0);
+  for (let i = 6; i < 8; b[i++] = (Math.random() * 256) | 0);
   return b;
 }
 
 // positive if first is bigger, negative if second, 0 if equal
 export function compareTouuid(first, second) {
-  for (let index = 0; index < 10; index++)
+  for (let index = 0; index < 14; index++)
     if (first[index] !== second[index]) return first[index] - second[index];
   return 0;
 }
@@ -94,10 +151,19 @@ export function decodeLargeNumber(byteArray) {
 }
 
 export function encodePosition(position) {
-  const buffer = new Int16Array(position);
-  return new Uint8Array(buffer.buffer);
+  const array = new Uint8Array(4);
+  array[0] = position[0] & 0xFF; // Lower 8 bits
+  array[1] = (position[0] >> 8) & 0xFF; // Upper 8 bits
+  array[2] = position[1] & 0xFF; // Lower 8 bits
+  array[3] = (position[1] >> 8) & 0xFF; // Upper 8 bits
+  return array;
 }
 
+// Function to decode a Uint8Array back into two Int16 values
 export function decodePosition(position) {
-  return Array.from(new Int16Array(position.buffer));
+  const int1 = (position[1] << 8) | position[0];
+  const signedInt1 = int1 > 0x7FFF ? int1 - 0x10000 : int1;
+  const int2 = (position[3] << 8) | position[2];
+  const signedInt2 = int2 > 0x7FFF ? int2 - 0x10000 : int2;
+  return [signedInt1, signedInt2];
 }

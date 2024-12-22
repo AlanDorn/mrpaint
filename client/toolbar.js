@@ -2,6 +2,7 @@ import BrushSize from "./brushsize.js";
 import ColorPicker from "./colorpicker.js";
 import Pencil from "./pencil.js";
 import FillTool from "./filltool.js";
+import Undo from "./undo.js";
 
 export default class Toolbar {
   constructor(virtualCanvas, transactionManager) {
@@ -9,6 +10,7 @@ export default class Toolbar {
     this.brushsize = new BrushSize();
     this.pencil = new Pencil(virtualCanvas, transactionManager, this);
     this.fillTool = new FillTool(virtualCanvas, transactionManager, this);
+    this.undo = new Undo(transactionManager);
 
     //set the default tool to pencil
     this.activeTool = this.pencil;

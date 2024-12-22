@@ -1,12 +1,12 @@
 import {
-  decodeColor,
   decodeLargeNumber,
   decodePosition,
+  TOOLCODEINDEX,
 } from "./transaction.js";
 import { splinePixels } from "./util2d.js";
 
 export default function buildRenderTask(virtualCanvas, transaction) {
-  switch (transaction[10]) {
+  switch (transaction[TOOLCODEINDEX]) {
     case 0:
       return renderPixel(virtualCanvas, transaction);
     case 1:
@@ -14,12 +14,14 @@ export default function buildRenderTask(virtualCanvas, transaction) {
     case 2:
       return renderFill(virtualCanvas, transaction);
   }
+
+  return [() => {}];
 }
 
 function renderPixel(virtualCanvas, transaction) {
-  const color = decodeColor(transaction.slice(11, 14));
-  const brushsize = decodeLargeNumber(transaction.slice(14, 16));
-  const pixel = decodePosition(transaction.slice(16, 20));
+  const color = transaction.subarray(15, 18);
+  const brushsize = decodeLargeNumber(transaction.subarray(18, 20));
+  const pixel = decodePosition(transaction.subarray(20, 24));
 
   const task = [
     () => {
@@ -35,13 +37,13 @@ function renderPixel(virtualCanvas, transaction) {
 }
 
 function renderPencil(virtualCanvas, transaction) {
-  const color = decodeColor(transaction.slice(11, 14));
-  const brushsize = decodeLargeNumber(transaction.slice(14, 16));
+  const color = transaction.subarray(15, 18);
+  const brushsize = decodeLargeNumber(transaction.subarray(18, 20));
   const pixels = splinePixels([
-    decodePosition(transaction.slice(16, 20)),
-    decodePosition(transaction.slice(20, 24)),
-    decodePosition(transaction.slice(24, 28)),
-    decodePosition(transaction.slice(28, 32)),
+    decodePosition(transaction.subarray(20, 24)),
+    decodePosition(transaction.subarray(24, 28)),
+    decodePosition(transaction.subarray(28, 32)),
+    decodePosition(transaction.subarray(32, 36)),
   ]);
 
   const chunkSize = Math.ceil((2 * 400 * 400) / brushsize / brushsize); // Number of pixels to process per chunk
@@ -68,10 +70,11 @@ function renderPencil(virtualCanvas, transaction) {
 }
 
 function renderFill(virtualCanvas, transaction) {
-  const color = decodeColor(transaction.slice(11, 14));
-  const [x, y] = decodePosition(transaction.slice(14, 18));
+  const color = transaction.subarray(15, 18);
+  const [x, y] = decodePosition(transaction.subarray(18, 22));
 
   virtualCanvas.resizeVirtualIfNeeded(x, y);
+
   const targetColor = virtualCanvas.virtualCanvas[y][x];
 
   if (colorsMatch(targetColor, color)) return [() => {}];
@@ -83,39 +86,41 @@ function renderFill(virtualCanvas, transaction) {
   const nextRender = () => {
     const startTime = performance.now();
     while (performance.now() - startTime < 32 && stack.length > 0) {
-      const [curX, curY] = stack.pop();
+      for (let fast = 0; fast < 20000 && stack.length > 0; fast++) {
+        const [curX, curY] = stack.pop();
 
-      if (
-        curX < 0 ||
-        curX >= width ||
-        curY < 0 ||
-        curY >= height ||
-        !colorsMatch(virtualCanvas.virtualCanvas[curY][curX], targetColor)
-      ) {
-        continue;
+        if (
+          curX < 0 ||
+          curX >= width ||
+          curY < 0 ||
+          curY >= height ||
+          !colorsMatch(virtualCanvas.virtualCanvas[curY][curX], targetColor)
+        ) {
+          continue;
+        }
+
+        virtualCanvas.setPixel(curX, curY, color);
+
+        const neighbors = [
+          [curX + 1, curY],
+          [curX - 1, curY],
+          [curX, curY + 1],
+          [curX, curY - 1],
+        ];
+
+        if (Math.random() < 1 / 3)
+          for (let i = 0; i < neighbors.length; i++) {
+            const pos = Math.floor(Math.random() * stack.length);
+            stack.push(stack[pos]);
+            stack[pos] = neighbors[i];
+          }
+        else
+          for (let i = neighbors.length; i > 0; ) {
+            const rand = Math.floor(Math.random() * i);
+            stack.push(neighbors[rand]);
+            neighbors[rand] = neighbors[--i];
+          }
       }
-
-      virtualCanvas.setPixel(curX, curY, color);
-
-      const neighbors = [
-        [curX + 1, curY],
-        [curX - 1, curY],
-        [curX, curY + 1],
-        [curX, curY - 1],
-      ];
-
-      if (Math.random() < 1/64)
-        for (let i = 0; i < neighbors.length; i++) {
-          const pos = Math.floor(Math.random() * stack.length);
-          stack.push(stack[pos]);
-          stack[pos] = neighbors[i];
-        }
-      else
-        for (let i = neighbors.length; i > 0; ) {
-          const rand = Math.floor(Math.random() * i);
-          stack.push(neighbors[rand]);
-          neighbors[rand] = neighbors[--i];
-        }
     }
 
     const stackIsNotEmpty = stack.length > 0;
