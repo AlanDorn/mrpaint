@@ -4,36 +4,48 @@ export default class Input {
     this.y = 0;
     this.mouseDown = false;
 
+    let lastMove = performance.now();
+    let canvas = document.getElementById("myCanvas");
+
     document.addEventListener("contextmenu", (event) => {
       event.preventDefault();
     });
 
-    document.addEventListener("mousedown", (event) => {
-      if (event.button === 0) {
-        // 0 = left, 1 = middle, 2 = right
-        this.mouseDown = true;
-        toolbar.mouseDownLeft(this);
-      }
-      if (event.button === 2) {
-        this.mouseDown = true;
-        toolbar.mouseDownRight(this);
+    document.addEventListener("pointerdown", (event) => {
+      if (event.target === canvas) {//check so that click is on canvas, if on menu or outside stop beotch!
+        if (
+          (event.button === 0 && event.pointerType === "mouse") ||
+          event.pointerType === "touch"
+        ) {
+          // 0 = left, 1 = middle, 2 = right
+          this.mouseDown = true;
+          this.x = Math.round(event.clientX);
+          this.y = Math.round(event.clientY);
+          toolbar.mouseDownLeft(this);
+        }
+        if (event.pointerType === "mouse" && event.button === 2) {
+          this.mouseDown = true;
+          this.x = Math.round(event.clientX);
+          this.y = Math.round(event.clientY);
+          toolbar.mouseDownRight(this);
+        }
       }
     });
 
-    document.addEventListener("mouseup", () => {
+    document.addEventListener("pointerup", () => {
       this.mouseDown = false;
       toolbar.mouseUpLeft(this);
-      this.mouseDown = false;
       toolbar.mouseUpRight(this);
     });
 
-    
-
-    let lastMove = performance.now();
     document.addEventListener("pointermove", (event) => {
       this.x = Math.round(event.clientX);
       this.y = Math.round(event.clientY);
-      if(performance.now() - lastMove > 32){
+
+      if (this.mouseDown) {
+        toolbar.mouseMove(this);
+      }
+      if (performance.now() - lastMove > 32) {
         toolbar.mouseMove(this);
         lastMove = performance.now();
       }

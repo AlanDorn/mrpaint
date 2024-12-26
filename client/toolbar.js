@@ -21,6 +21,23 @@ export default class Toolbar {
   setupToolSwitcher() {
     const pencilButton = document.getElementById("pencil");
     const fillToolButton = document.getElementById("fillTool");
+    const undoButton = document.getElementById("undo");
+    const redoButton = document.getElementById("redo");
+
+    undoButton.addEventListener("click", () => {
+      // const cntrlzEvent = new KeyboardEvent("keydown", {
+      //   key: "z",
+      //   cntrlKey: true,
+      //   bubbles: true,
+      //   cancelable: true
+      // });
+      // document.dispatchEvent(cntrlzEvent);
+      this.undo.undo();
+    });
+
+    redoButton.addEventListener("click", () => {
+      this.undo.redo();
+    });
 
     pencilButton.addEventListener("click", () => {
       this.setActiveTool(this.pencil);
@@ -31,16 +48,14 @@ export default class Toolbar {
       this.setActiveTool(this.fillTool);
       this.updateActiveButton(fillToolButton);
     });
-
-    
   }
 
-  setActiveTool(tool){
+  setActiveTool(tool) {
     this.activeTool = tool;
     console.log(`switched to ${tool.constructor.name}`);
   }
 
-  updateActiveButton(activeButton){
+  updateActiveButton(activeButton) {
     const buttons = document.querySelectorAll("#toolbar button");
 
     buttons.forEach((button) => button.classList.remove("active"));

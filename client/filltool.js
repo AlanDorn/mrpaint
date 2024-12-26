@@ -8,11 +8,11 @@ export default class FillTool {
     this.toolbar = toolbar;
   }
 
-  mouseMove(input) {}
+  mouseMove() {}
 
-  mouseUpLeft(input) {}
+  mouseUpLeft() {}
 
-  mouseUpRight(input) {}
+  mouseUpRight() {}
 
   mouseDownLeft(input) {
     const position = this.virtualCanvas.positionInCanvas(input.x, input.y);

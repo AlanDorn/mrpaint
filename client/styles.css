@@ -1,12 +1,18 @@
 :root {
-  --toolheight: 7rem;
+  --toolheight: 6rem;
   --purple: #ddc6f0;
   --font: "Hack"; /* Hack, "Courier New", Courier, monospace */
+  --fontsize: 14px;
 }
+
+@font-face {
+  font-family: Hack;
+  src: url('./fonts/Hack-Regular.ttf');
+   }
 
 * {
   margin: 0;
-  overflow: hidden;
+  /* overflow: hidden; */
 }
 
 body {
@@ -21,21 +27,39 @@ body {
   position: absolute;
 }
 
+#ribbon {
+  width: 100svw;
+  height: 1.5rem;
+  background-color: rgb(67, 46, 148);
+  overflow: visible;
+}
+
+#quicktoolbar {
+  width: 100svw;
+  height: 1.5rem;
+  background-color: rgb(147, 59, 59);
+  overflow: visible;
+}
+
 #toolbar {
   width: 100svw;
   height: var(--toolheight);
   background-color: black;
   overflow: visible;
+  display: flex;
 }
 
 #drawingarea {
   width: 100svw;
   height: calc(100svh - var(--toolheight));
+  touch-action: none; /* for screen users */
 }
 
 input[type="color"] {
-  width: 2rem;
-  height: 2rem;
+  width: 3rem;
+  height: 3rem;
+  margin-top: 1rem;
+  margin-left: 0.5rem;
 }
 
 canvas {
@@ -54,6 +78,7 @@ canvas {
   position: relative;
   display: inline-block;
   width: 175px;
+  margin-right: 15px;
   overflow: visible;
 }
 
@@ -62,10 +87,10 @@ canvas {
 .custom-dropdown input {
   width: 100%;
   margin-top: 5px;
-  height: calc(var(--toolheight) - 15px);
+  height: calc(var(--toolheight) - 14px);
   border: 1px solid #000000;
   box-shadow: inset 0 0 0 1px #ffffff;
-  font-size: 14px;
+  font-size: var(--fontsize);
   font-family: var(--font);
   outline: none;
   transition: none;
@@ -133,93 +158,89 @@ canvas {
   width: 115px; /* Consistent width for all line previews */
 }
 
-#fillTool {
+#main-tools{
+  display: grid;
+  grid-template-columns: repeat(2, 2rem);
+  grid-template-rows: repeat(2, 2rem);
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  /* margin: auto 1rem; */
+  margin-left: 0.25rem;
+  padding-top: .2rem;
+  padding-right: 1rem;
+}
+
+#fillTool,
+#pencil,
+#undo,
+#redo {
+  cursor: pointer;
+
   width: 2rem;
   height: 2rem;
+
   padding: 5px;
   /* display: flex; */
   align-items: center;
   position: relative;
-  margin-left: 20px;
+  
   background-color: #ffffff;
   border: 1px solid #000000;
-  cursor: pointer;
+  
+  margin-top: 1rem;
+  margin-right: 0.5em;
+  margin-left: 0.5em;
 }
-
-#fillTool img {
+#fillTool img,
+#pencil img,
+#undo img, 
+#redo img{
+  margin: auto;
   width: 25px;
   height: 25px;
 }
 
-#fillTool:hover {
-  
-  /* display: flex; */
+#fillTool:hover,
+#pencil:hover,
+#undo:hover, 
+#redo:hover {
   background-color: var(--purple);
 }
 
-#fillTool:active {
+#fillTool:active,
+#pencil:active,
+#undo:active, 
+#redo:active {
   box-shadow: 0px 0px 1px 1px var(--purple);
- 
   background-color: var(--purple);
-  
 }
 
-#pencil {
-  width: 2rem;
-  height: 2rem;
-  padding: 5px;
-  /* display: flex; */
-  align-items: center;
+#colorpalette {
+  display: grid;
+  grid-template-columns: repeat(10, 20px);
+  grid-template-rows: repeat(3, 20px);
+  /* gap:1px; */
+  top: 1rem;
+  margin-left: 10px;
   position: relative;
-  margin-left: 20px;
-  background-color: #ffffff;
-  border: 1px solid #000000;
+  overflow: visible;
+
+}
+
+.swatch {
+  /* box-sizing:border-box; */
+  border: 1px solid #ffffff;
+  outline: 1px solid #a0a0a0;
   cursor: pointer;
+  /* overflow: visible; */
+  margin-left: 1.5px;
+  margin-top: 1.5px;
+  margin-bottom: 1.5px;
+  margin-right: 1.5px;
 }
 
-#pencil img {
-  width: 25px;
-  height: 25px;
-}
-
-#pencil:hover {
-  
-  /* display: flex; */
-  background-color: var(--purple);
-}
-
-#pencil:active {
-  box-shadow: 0px 0px 1px 1px var(--purple);
-  background-color: var(--purple);
-  
-}
-
-#pencil {
-  width: 2rem;
-  height: 2rem;
-  padding: 5px;
-  /* display: flex; */
-  align-items: center;
-  position: relative;
-  margin-left: 20px;
-  background-color: #ffffff;
-  border: 1px solid #000000;
-  cursor: pointer;
-}
-
-#pencil img {
-  width: 25px;
-  height: 25px;
-}
-
-#pencil:hover {
-  
-  /* display: flex; */
-  background-color: var(--purple);
-}
-
-#pencil:active {
-  box-shadow: 0px 0px 1px 1px var(--purple);
-  background-color: var(--purple);
-  
+.swatch:hover {
+  overflow: visible;
+  outline: 1px solid #b217fb;
 }

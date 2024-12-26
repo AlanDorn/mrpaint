@@ -7,43 +7,62 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <!-- <div id="ribbon"></div>
+    <div id="quicktoolbar"></div> -->
     <div id="toolbar">
-      <input type="color" id="primaryPicker" />
-      <input type="color" id="secondaryPicker" value="#ffffff" />
+      <div id="main-tools">
+        <button id="undo" title="undo (cntrl + z)">
+          <img src="./images/undo.png" alt="undo" />Undo
+        </button>
+
+        <button id="redo" title="redo (cntrl + y)">
+          <img src="./images/redo.png" alt="redo" />
+        </button>
+
+        <button id="fillTool" title="fillTool">
+          <img src="./images/fillTool2.png" alt="fillTool" />
+        </button>
+
+        <button id="pencil" title="pencil">
+          <img src="./images/pencil.png" alt="pencil" />
+        </button>
+      </div>
+
       <div class="custom-dropdown">
-        <input type="text" placeholder="Enter brush size..." id="customInput" style="padding-left:12px; text-align:left;"/>
-        
+        <input
+          type="text"
+          placeholder="Enter brush size..."
+          id="customInput"
+          style="padding-left: 12px; text-align: left"
+        />
+
         <ul id="dropdownOptions" class="dropdown-list">
           <li class="dropdown-item" data-value="1">
             <span class="size-label">1</span>
-            <div class="size-line" style="height: 1px;"></div>
+            <div class="size-line" style="height: 1px"></div>
           </li>
           <li class="dropdown-item" data-value="2">
             <span class="size-label">2</span>
-            <div class="size-line" style="height: 2px;"></div>
+            <div class="size-line" style="height: 2px"></div>
           </li>
           <li class="dropdown-item" data-value="3">
             <span class="size-label">3</span>
-            <div class="size-line" style="height: 3px;"></div>
+            <div class="size-line" style="height: 3px"></div>
           </li>
           <li class="dropdown-item" data-value="4">
             <span class="size-label">4</span>
-            <div class="size-line" style="height: 4px;"></div>
+            <div class="size-line" style="height: 4px"></div>
           </li>
         </ul>
       </div>
-      
-      <button id="fillTool" title="fillTool">
-        <img src="fillTool2.png" alt="fillTool" />
-      </button>
 
-      <button id="pencil" title="pencil">
-        <img src="pencil.png" alt="pencil" />
-      </button>
-      
-    </div> 
+      <input type="color" id="primaryPicker" />
+      <input type="color" id="secondaryPicker" value="#ffffff" />
+
+      <div id="colorpalette"></div>
+    </div>
     <div id="drawingarea">
-      <canvas id="myCanvas" width="500" height="500"></canvas>
+      <canvas id="myCanvas"></canvas>
     </div>
     <script type="module" src="client.js"></script>
   </body>
