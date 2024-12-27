@@ -30,7 +30,8 @@ export function splinePixels(fourPoints) {
   let prevX = interpolate(t, p0[0], p1[0], p2[0], p3[0]);
   let prevY = interpolate(t, p0[1], p1[1], p2[1], p3[1]);
   pixels.push([prevX, prevY]);
-  while (t > 0) { // Run until t > 0
+  while (t > 0) {
+    // Run until t > 0
     const dx = derivative(t, p0[0], p1[0], p2[0], p3[0]);
     const dy = derivative(t, p0[1], p1[1], p2[1], p3[1]);
     const velocity = Math.sqrt(dx * dx + dy * dy);
@@ -48,4 +49,16 @@ export function splinePixels(fourPoints) {
     prevY = y;
   }
   return pixels;
+}
+
+export function centerToBrushSize(brushsize, ...points) {
+  const shift = Math.floor(brushsize / 2);
+  const centeredPoints = [];
+  for (let index = 0; index < points.length; index++) {
+    centeredPoints.push([
+      points[index][0] - shift,
+      points[index][1] - shift,
+    ]);
+  }
+  return centeredPoints;
 }

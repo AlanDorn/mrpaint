@@ -3,7 +3,9 @@ import {
   decodePosition,
   TOOLCODEINDEX,
 } from "./transaction.js";
-import { splinePixels } from "./util2d.js";
+import { centerToBrushSize, splinePixels } from "./util2d.js";
+
+const doNothing = () => {};
 
 export default function buildRenderTask(virtualCanvas, transaction) {
   switch (transaction[TOOLCODEINDEX]) {
@@ -15,13 +17,16 @@ export default function buildRenderTask(virtualCanvas, transaction) {
       return renderFill(virtualCanvas, transaction);
   }
 
-  return [() => {}];
+  return [doNothing];
 }
 
 function renderPixel(virtualCanvas, transaction) {
   const color = transaction.subarray(15, 18);
   const brushsize = decodeLargeNumber(transaction.subarray(18, 20));
-  const pixel = decodePosition(transaction.subarray(20, 24));
+  const pixel = centerToBrushSize(
+    brushsize,
+    decodePosition(transaction.subarray(20, 24))
+  )[0];
 
   const task = [
     () => {
@@ -39,14 +44,18 @@ function renderPixel(virtualCanvas, transaction) {
 function renderPencil(virtualCanvas, transaction) {
   const color = transaction.subarray(15, 18);
   const brushsize = decodeLargeNumber(transaction.subarray(18, 20));
-  const pixels = splinePixels([
-    decodePosition(transaction.subarray(20, 24)),
-    decodePosition(transaction.subarray(24, 28)),
-    decodePosition(transaction.subarray(28, 32)),
-    decodePosition(transaction.subarray(32, 36)),
-  ]);
+  const pixels = splinePixels(
+    centerToBrushSize(
+      brushsize,
+      decodePosition(transaction.subarray(20, 24)),
+      decodePosition(transaction.subarray(24, 28)),
+      decodePosition(transaction.subarray(28, 32)),
+      decodePosition(transaction.subarray(32, 36))
+    )
+  );
 
-  const chunkSize = Math.ceil((2 * 400 * 400) / brushsize / brushsize); // Number of pixels to process per chunk
+  //CALM: benchmark this so you can figure out what is a good number for this.
+  const chunkSize = Math.ceil(100000); // Number of pixels to process per chunk
   const task = []; // Array to store the lambdas
 
   for (let index = 0; index < pixels.length; index += chunkSize) {
@@ -79,7 +88,7 @@ function renderFill(virtualCanvas, transaction) {
 
   const targetColor = virtualCanvas.virtualCanvas[y][x];
 
-  if (colorsMatch(targetColor, color)) return [() => {}];
+  if (colorsMatch(targetColor, color)) return [doNothing];
 
   const stack = [[x, y]];
   const width = virtualCanvas.virtualWidth;
