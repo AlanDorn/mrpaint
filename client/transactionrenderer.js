@@ -57,10 +57,12 @@ function renderPencil(virtualCanvas, transaction) {
     task.push(() => {
       for (let i = start; i < end; i++) {
         const [x, y] = pixels[i];
+        // Draw the top edge
         for (let dx = 0; dx < brushsize; dx++) {
-          for (let dy = 0; dy < brushsize; dy++) {
-            virtualCanvas.setPixel(x + dx, y + dy, color);
-          }
+          virtualCanvas.setPixel(x + dx, y, color);
+          virtualCanvas.setPixel(x + dx, y + brushsize - 1, color);
+          virtualCanvas.setPixel(x, y + dx, color);
+          virtualCanvas.setPixel(x + brushsize - 1, y + dx, color);
         }
       }
     });
