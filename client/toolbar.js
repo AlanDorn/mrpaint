@@ -4,6 +4,9 @@ import Pencil from "./pencil.js";
 import FillTool from "./filltool.js";
 import Undo from "./undo.js";
 
+//TODO Gotta add straight line tool! 
+//TODO add the active button coloring logic, not sure if goes here or somewhere else yet!
+
 export default class Toolbar {
   constructor(virtualCanvas, transactionManager) {
     this.colorpicker = new ColorPicker();

@@ -23,9 +23,9 @@ export default class ColorPicker {
       [153, 217, 234],  //light blue
       [112, 146, 190],  //marine blue?
       [200, 191, 231],  //light purp
-      [255, 255, 255],
-      [255, 255, 255],
-      [255, 255, 255],
+      [255, 255, 255],  //TODO Need to makes these blank and make sure the blank dont break the code
+      [255, 255, 255],  //     Need to add functionality to save custom colors to the blank bank, 
+      [255, 255, 255],  //     how exactly to do that with the current color picker? New color Picker?
       [255, 255, 255], 
       [255, 255, 255],
       [255, 255, 255],
@@ -52,7 +52,7 @@ export default class ColorPicker {
     // );
     
     initPickers() {
-      const primaryPicker = document.getElementById("primaryPicker");
+      const primaryPicker = document.getElementById("primaryPicker");     //MAYHEM I think the getElementById should be moved to toolbar class? because it exists in the toolbar? 
       const secondaryPicker = document.getElementById("secondaryPicker");
   
       // On change, parse to RGB
