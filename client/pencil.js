@@ -60,18 +60,6 @@ export default class Pencil {
   }
 
   handleMouseUp() {
-    if (this.points.length >= 3) {
-      const mirroredPoint = mirrorAcross(
-        this.points[this.points.length - 1],
-        this.points[this.points.length - 2]
-      );
-      this.points.push(mirroredPoint);
-      if(this.points.length > 4) this.points.shift();
-      this.transactionManager.pushClient(
-        pencilTransaction(this.operationId, this.currentColor, this.brushsize.size, ...this.points)
-      );
-    }
-  
     this.isDrawing = false;
     this.points = [];
   }
