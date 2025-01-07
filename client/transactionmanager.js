@@ -9,7 +9,7 @@ import {
 } from "./transaction.js";
 import buildRenderTask from "./transactionrenderer.js";
 
-const mod = 32;
+const mod = 48;
 const exp = 1.5;
 
 export default class TransactionManager {
@@ -17,6 +17,7 @@ export default class TransactionManager {
     this.virtualCanvas = virtualCanvas;
 
     this.transactions = [];
+    this.uninsertedTransactions = [];
     this.unsentTransactions = [];
 
     this.firstTransactionOfOperation = new Map();
@@ -29,15 +30,18 @@ export default class TransactionManager {
     this.rendered = 0;
     this.correct = 0;
     this.currentTask = [];
+    this.needToRenderCanvas = false;
+
+    this.overshoot = 0;
 
     this.simulateLag = false;
     this.lastVirtualError = 0;
-    setTimeout(() => this.transactionRenderLoop(32), 0);
+    setTimeout(() => this.transactionRenderLoop(16), 0);
   }
 
   simulateVirtualLag() {
     if (this.simulateLag && this.correct > this.lastVirtualError) {
-      this.lastVirtualError = this.correct;
+      this.lastVirtualError = this.correct + 1;
       this.correct -= Math.random() < 0.5 ? 30 : 60;
     }
   }
@@ -45,21 +49,21 @@ export default class TransactionManager {
   transactionRenderLoop(loopTargetms) {
     const startTime = performance.now();
 
-    this.virtualCanvas.render();
-
-    if (this.rendered >= this.transactions.length) {
-      this.virtualCanvas.fill();
-    }
+    if (this.uninsertedTransactions.length > 0) this.pushTransactions();
 
     const needToSyncCanvas = this.correct < this.rendered;
     if (needToSyncCanvas) this.syncCanvas();
 
-    let rendered = false;
-    while (performance.now() - startTime < loopTargetms) {
-      if (performance.now() - startTime < 16 && !rendered) {
-        rendered = true;
-        this.virtualCanvas.render();
-      }
+    if (this.rendered >= this.transactions.length) {
+      this.virtualCanvas.fill();
+      this.needToRenderCanvas = true;
+    }
+
+    if (this.needToRenderCanvas) this.virtualCanvas.render();
+
+    this.needToRenderCanvas = false;
+
+    while (performance.now() - startTime < loopTargetms - this.overshoot) {
       const taskIsFinished = this.currentTask.length === 0;
       if (taskIsFinished) {
         const allTransactionsAreRendered =
@@ -83,16 +87,24 @@ export default class TransactionManager {
       if (optionalNextTask) this.currentTask.push(optionalNextTask);
       if (this.currentTask.length === 0 && this.rendered % mod === mod - 1)
         this.takeSnapShot();
+      this.needToRenderCanvas = true;
     }
 
-    this.simulateVirtualLag();
+    this.overshoot =
+      (this.overshoot * 99 +
+        performance.now() -
+        startTime -
+        (loopTargetms - this.overshoot)) /
+      100;
+
 
     setTimeout(() => this.transactionRenderLoop(loopTargetms), 0);
   }
 
   transactionIsUndone(transaction) {
-    const operationId = readOperationIdAsNumber(transaction);
-    const potentialUndoRedo = this.lastUndoRedoOperation.get(operationId);
+    const potentialUndoRedo = this.lastUndoRedoOperation.get(
+      readOperationIdAsNumber(transaction)
+    );
     if (!potentialUndoRedo) return false;
     return potentialUndoRedo[TOOLCODEINDEX] === toolCodes.undo[0];
   }
@@ -176,16 +188,10 @@ export default class TransactionManager {
     );
   }
 
-  pushServer(transactions) {
-    let offset = 0;
-    while (offset < transactions.length) {
-      const transactionType = transactions[offset + TOOLCODEINDEX];
-      const transactionLength = toolLength[transactionType];
-      const transaction = transactions.subarray(
-        offset,
-        offset + transactionLength
-      );
-      offset += transactionLength;
+  pushTransactions() {
+    for (let index = 0; index < this.uninsertedTransactions.length; index++) {
+      const transaction = this.uninsertedTransactions[index];
+      const transactionType = transaction[TOOLCODEINDEX];
 
       if (
         transactionType === toolCodes.undo[0] ||
@@ -199,6 +205,8 @@ export default class TransactionManager {
         this.correct = Math.min(this.correct, sortedPosition);
       }
     }
+
+    this.uninsertedTransactions.length = 0;
   }
 
   handleUndoRedo(undoRedo) {
@@ -241,10 +249,21 @@ export default class TransactionManager {
       this.firstTransactionOfOperation.set(operationId, transaction);
   }
 
+  pushServer(transactions) {
+    let offset = 0;
+    while (offset < transactions.length) {
+      const transactionLength =
+        toolLength[transactions[offset + TOOLCODEINDEX]];
+      this.uninsertedTransactions.push(
+        transactions.subarray(offset, offset + transactionLength)
+      );
+      offset += transactionLength;
+    }
+  }
+
   pushClient(transaction) {
-    this.pushServer(transaction);
     this.unsentTransactions.push(transaction);
-    return;
+    this.uninsertedTransactions.push(transaction);
   }
 
   transactionIndex(transaction) {

@@ -57,16 +57,19 @@ function renderPencil(virtualCanvas, transaction) {
   //CALM: benchmark this so you can figure out what is a good number for this.
   const chunkSize = Math.ceil(100000); // Number of pixels to process per chunk
   const task = []; // Array to store the lambdas
+  task.push(() => {
+    for (let dx = 0; dx < brushsize; dx++)
+      for (let dy = 0; dy < brushsize; dy++)
+        virtualCanvas.setPixel(pixels[0][0] + dx, pixels[0][1] + dy, color);
+  });
 
   for (let index = 0; index < pixels.length; index += chunkSize) {
     const start = index;
     const end = Math.min(index + chunkSize, pixels.length);
 
-    // Create a lambda for this chunk
     task.push(() => {
       for (let i = start; i < end; i++) {
         const [x, y] = pixels[i];
-        // Draw the top edge
         for (let dx = 0; dx < brushsize; dx++) {
           virtualCanvas.setPixel(x + dx, y, color);
           virtualCanvas.setPixel(x + dx, y + brushsize - 1, color);

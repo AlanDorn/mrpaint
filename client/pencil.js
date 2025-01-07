@@ -54,25 +54,36 @@ export default class Pencil {
 
     if (this.points.length === 4) {
       this.transactionManager.pushClient(
-        pencilTransaction(this.operationId, this.currentColor, this.brushsize.size, ...this.points)
+        pencilTransaction(
+          this.operationId,
+          this.currentColor,
+          this.brushsize.size,
+          ...this.points
+        )
       );
     }
   }
 
   handleMouseUp() {
     this.isDrawing = false;
+    if (this.points.length == 1) {
+      this.transactionManager.pushClient(
+        pixelTransaction(
+          this.operationId,
+          this.currentColor,
+          this.brushsize.size,
+          this.points[0]
+        )
+      );
+    }
     this.points = [];
   }
-  
 
   handleMouseDown(input) {
     this.isDrawing = true;
     const startPoint = this.virtualCanvas.positionInCanvas(input.x, input.y);
     this.points.push(startPoint);
     this.operationId = operationId();
-    this.transactionManager.pushClient(
-      pixelTransaction(this.operationId, this.currentColor, this.brushsize.size, startPoint)
-    );
     this.toolbar.undo.pushOperation(this.operationId);
   }
 }

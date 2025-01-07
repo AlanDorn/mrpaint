@@ -34,7 +34,7 @@ export default function socket(input, transactionManager) {
   setInterval(() => {
     if (!firstMessage)
       ws.send(transactionManager.buildServerMessage(userId, input.x, input.y));
-  }, 64);
+  }, 16);
 }
 
 function handleCursorData(cursorData) {

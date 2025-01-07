@@ -56,7 +56,7 @@ export default class Input {
 
       // 2. because of mouse move works you can get it so that you mouse stops but the pencil line isn't under the cursor. It waits until the mouse either moves again or lift to complete.
 
-      if (performance.now() - lastMove > 32) {
+      if (performance.now() - lastMove > 16) {
         toolbar.mouseMove(this);
         lastMove = performance.now();
       }
