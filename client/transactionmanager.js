@@ -12,6 +12,8 @@ import buildRenderTask from "./transactionrenderer.js";
 const mod = 48;
 const exp = 1.5;
 
+
+
 export default class TransactionManager {
   constructor(virtualCanvas) {
     this.virtualCanvas = virtualCanvas;
