@@ -46,7 +46,7 @@ body {
 #toolbar {
   width: 100svw;
   height: var(--toolheight);
-  background-color: black;
+  background-color: #363636;
   overflow: visible;
   display: flex;
 }
@@ -55,6 +55,7 @@ body {
   width: 100svw;
   height: calc(100svh - var(--toolheight));
   touch-action: none; /* for screen users */
+  background-color: #363636;
 }
 
 input[type="color"] {

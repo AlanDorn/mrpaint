@@ -87,8 +87,6 @@ function renderFill(virtualCanvas, transaction) {
   const color = transaction.subarray(15, 18);
   const [x, y] = decodePosition(transaction.subarray(18, 22));
 
-  virtualCanvas.resizeVirtualIfNeeded(x, y);
-
   const targetColor = virtualCanvas.virtualCanvas[y][x];
 
   if (colorsMatch(targetColor, color)) return [doNothing];

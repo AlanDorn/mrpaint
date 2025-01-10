@@ -1,102 +1,145 @@
 const white = [255, 255, 255];
 export default class VirtualCanvas {
   constructor() {
-    this.canvas = document.getElementById("myCanvas");
     this.drawingarea = document.getElementById("drawingarea");
+    this.canvas = document.getElementById("myCanvas");
     this.ctx = this.canvas.getContext("2d");
+
+    this.virtualHeight = 200;
+    this.virtualWidth = 350;
+    this.pixelZoom = 3;
+    this.zoom = 2; // Default zoom level
+    this.offset = [0, 0]; // Default offset [x, y]
+
     this.imageData = this.ctx.createImageData(
-      this.canvas.width,
-      this.canvas.height
+      this.virtualWidth * this.pixelZoom,
+      this.virtualHeight * this.pixelZoom
     );
 
-    // [y][x][r,g,b]
-    this.virtualCanvas = Array.from({ length: this.canvas.height }, () =>
-      Array(this.canvas.width).fill(white)
+    this.virtualCanvas = Array.from({ length: this.virtualHeight }, () =>
+      Array(this.virtualWidth).fill(white)
     );
-    this.virtualWidth = this.canvas.width;
-    this.virtualHeight = this.canvas.height;
 
     this.fillGeneration = [];
     window.addEventListener("resize", () => {
-      this.resize();
+      this.resizeCanvasToWindow();
     });
-    this.resize();
+    this.resizeCanvasToWindow();
+
+    // Prepare an offscreen canvas
+    this.offscreenCanvas = document.createElement("canvas");
+    this.offscreenCanvas.width = this.virtualWidth * this.pixelZoom;
+    this.offscreenCanvas.height = this.virtualHeight * this.pixelZoom;
+    this.offscreenCtx = this.offscreenCanvas.getContext("2d");
   }
 
   render() {
-    this.ctx.putImageData(this.imageData, 0, 0);
-  }
+    this.offscreenCtx.putImageData(this.imageData, 0, 0);
 
+    // Apply zoom and offset transformations using drawImage
+    this.ctx.drawImage(
+      this.offscreenCanvas, // Source
+      0,
+      0,
+      this.virtualWidth * this.pixelZoom,
+      this.virtualHeight * this.pixelZoom, // Source rectangle
+      this.offset[0],
+      this.offset[1],
+      this.virtualWidth * this.zoom,
+      this.virtualHeight * this.zoom // Destination rectangle
+    );
+  }
   fill() {
     if (this.fillGeneration.length !== 0) this.fillGeneration.pop()();
   }
 
   setPixel(x, y, color) {
-    if (x >= 0 && y >= 0) {
-      if (x < this.canvas.width && y < this.canvas.height) {
-        let index = (y * this.imageData.width + x) * 4; // Calculate pixel index
-        const data = this.imageData.data;
-        data[index++] = color[0]; // Red
-        data[index++] = color[1]; // Green
-        data[index++] = color[2]; // Blue
-        data[index] = 255; // Alpha
+    if (x >= 0 && y >= 0 && x < this.virtualWidth && y < this.virtualHeight) {
+      for (let ythick = 0; ythick < this.pixelZoom; ythick++) {
+        for (let xthick = 0; xthick < this.pixelZoom; xthick++) {
+          let index =
+            ((y * this.pixelZoom + ythick) * this.imageData.width +
+              x * this.pixelZoom +
+              xthick) *
+            4; 
+          const data = this.imageData.data;
+          data[index++] = color[0]; // Red
+          data[index++] = color[1]; // Green
+          data[index++] = color[2]; // Blue
+          data[index] = 255; // Alpha
+        }
       }
-      this.resizeVirtualIfNeeded(x, y);
       this.virtualCanvas[y][x] = color;
     }
   }
 
-  resizeVirtualIfNeeded(x, y) {
-    if (y >= this.virtualHeight) {
-      const rowsToAdd = y - this.virtualHeight + 1;
-      for (let i = 0; i < rowsToAdd; i++) 
-        this.virtualCanvas.push(Array(this.virtualWidth).fill(white));
-      
-      this.virtualHeight += rowsToAdd;
-    }
+  setSize(width, height) {
+    if (height !== this.virtualHeight)
+      if (height > this.virtualHeight)
+        for (let index = 0; index < height - this.virtualCanvas; index++)
+          this.virtualCanvas.push(Array(this.virtualWidth).fill(white));
+      else this.virtualCanvas.length = height;
 
-    // Extend canvas width (columns) for all rows
-    if (x >= this.virtualWidth) {
-      const colsToAdd = x - this.virtualWidth + 1;
-      for (let row of this.virtualCanvas)
-        row.push(...Array(colsToAdd).fill(white));
-      
-      this.virtualWidth += colsToAdd;
+    if (width !== this.virtualWidth)
+      if (width > this.virtualWidth)
+        for (let index = 0; index < this.virtualCanvas.length; index++)
+          this.virtualCanvas[index].push(
+            ...Array(width - this.virtualWidth).fill(white)
+          );
+      else
+        for (let index = 0; index < this.virtualCanvas.length; index++)
+          this.virtualCanvas[index].length = width;
+
+    this.virtualWidth = width;
+    this.virtualHeight = height;
+
+    if (height !== this.virtualHeight || width !== this.virtualWidth) {
+      this.imageData = this.ctx.createImageData(
+        this.virtualWidth,
+        this.virtualHeight
+      );
+      this.fillImageData();
     }
   }
 
-  resize() {
-    this.filling = true;
+  resizeCanvasToWindow() {
     const rect = this.drawingarea.getBoundingClientRect();
-    this.canvas.width = rect.width;
-    this.canvas.height = rect.height;
-    this.imageData = this.ctx.createImageData(
-      this.canvas.width,
-      this.canvas.height
+    this.canvas.width = Math.min(
+      rect.width,
+      this.virtualWidth * this.zoom * this.pixelZoom
     );
-
-    this.resizeVirtualIfNeeded(Math.ceil(rect.width), Math.ceil(rect.height));
-
+    this.canvas.height = Math.min(
+      rect.height,
+      this.virtualHeight * this.zoom * this.pixelZoom
+    );
     this.fillImageData();
   }
 
   fillImageData() {
-    const { width, height } = this.canvas;
     const chunkSize = 512;
-    // Pre-generate all chunks
     this.fillGeneration = [];
-    const totalChunks = Math.ceil(height / chunkSize);
+
+    const totalChunks = Math.ceil(this.virtualHeight / chunkSize);
     for (let i = 0; i < totalChunks; i++) {
       const startY = i * chunkSize;
-      const endY = Math.min(startY + chunkSize, height);
+      const endY = Math.min(startY + chunkSize, this.virtualHeight);
       this.fillGeneration.push(() => {
         for (let y = startY; y < endY; y++) {
-          for (let x = 0; x < width; x++) {
-            const newIndex = (y * width + x) * 4;
-            this.imageData.data[newIndex] = this.virtualCanvas[y][x][0]; // Red
-            this.imageData.data[newIndex + 1] = this.virtualCanvas[y][x][1]; // Green
-            this.imageData.data[newIndex + 2] = this.virtualCanvas[y][x][2]; // Blue
-            this.imageData.data[newIndex + 3] = 255; // Alpha
+          for (let x = 0; x < this.virtualWidth; x++) {
+            for (let ythick = 0; ythick < this.pixelZoom; ythick++) {
+              for (let xthick = 0; xthick < this.pixelZoom; xthick++) {
+                let newIndex =
+                  ((y * this.pixelZoom + ythick) * this.imageData.width +
+                    x * this.pixelZoom +
+                    xthick) *
+                  4; // Calculate pixel index
+                const data = this.imageData.data;
+                data[newIndex] = this.virtualCanvas[y][x][0]; // Red
+                data[newIndex + 1] = this.virtualCanvas[y][x][1]; // Green
+                data[newIndex + 2] = this.virtualCanvas[y][x][2]; // Blue
+                data[newIndex + 3] = 255; // Alpha
+              }
+            }
           }
         }
       });
@@ -119,7 +162,6 @@ export default class VirtualCanvas {
     this.virtualCanvas = newVirtualCanvas;
     this.virtualWidth = this.virtualCanvas[0].length;
     this.virtualHeight = this.virtualCanvas.length;
-    this.resizeVirtualIfNeeded(this.virtualWidth, this.virtualHeight);
     setTimeout(() => this.fillImageData());
     return oldVirtualCanvas;
   }
@@ -140,31 +182,31 @@ export default class VirtualCanvas {
         clone[y] = newRow;
       }
       return clone;
-    } else {
-      // Reuse existing snapshot arrays if possible
-      recycledSnapshot.length = srcHeight;
-      for (let y = 0; y < srcHeight; y++) {
-        const srcRow = this.virtualCanvas[y];
-        const rowLength = srcRow.length;
-        let targetRow = recycledSnapshot[y];
-
-        if (!targetRow || targetRow.length !== rowLength) {
-          targetRow = new Array(rowLength);
-          recycledSnapshot[y] = targetRow;
-        }
-
-        for (let x = 0; x < rowLength; x++) {
-          targetRow[x] = srcRow[x];
-        }
-      }
-      return recycledSnapshot;
     }
+
+    // Reuse existing snapshot arrays if possible
+    recycledSnapshot.length = srcHeight;
+    for (let y = 0; y < srcHeight; y++) {
+      const srcRow = this.virtualCanvas[y];
+      const rowLength = srcRow.length;
+      let targetRow = recycledSnapshot[y];
+
+      if (!targetRow || targetRow.length !== rowLength) {
+        targetRow = new Array(rowLength);
+        recycledSnapshot[y] = targetRow;
+      }
+
+      for (let x = 0; x < rowLength; x++) {
+        targetRow[x] = srcRow[x];
+      }
+    }
+    return recycledSnapshot;
   }
 
   positionInCanvas(clientX, clientY) {
     const rect = this.canvas.getBoundingClientRect();
-    const x = Math.round(clientX - rect.left);
-    const y = Math.round(clientY - rect.top);
+    const x = Math.round((clientX - rect.left - this.offset[0]) / this.zoom);
+    const y = Math.round((clientY - rect.top - this.offset[0]) / this.zoom);
     return [x, y];
   }
 }
