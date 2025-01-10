@@ -155,11 +155,9 @@ export default class VirtualCanvas {
 
   reset() {
     const oldVirtualCanvas = this.virtualCanvas;
-    this.virtualCanvas = Array.from({ length: this.canvas.height }, () =>
-      Array(this.canvas.width).fill(white)
+    this.virtualCanvas = Array.from({ length: this.virtualHeight }, () =>
+      Array(this.virtualWidth).fill(white)
     );
-    this.virtualWidth = this.canvas.width;
-    this.virtualHeight = this.canvas.height;
     setTimeout(() => this.fillImageData());
     return oldVirtualCanvas;
   }
@@ -169,6 +167,7 @@ export default class VirtualCanvas {
     this.virtualCanvas = newVirtualCanvas;
     this.virtualWidth = this.virtualCanvas[0].length;
     this.virtualHeight = this.virtualCanvas.length;
+    //CALM: something here is supposed to set the canvas size, for now the size is static
     setTimeout(() => this.fillImageData());
     return oldVirtualCanvas;
   }
