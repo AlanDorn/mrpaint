@@ -87,13 +87,21 @@ function renderFill(virtualCanvas, transaction) {
   const color = transaction.subarray(15, 18);
   const [x, y] = decodePosition(transaction.subarray(18, 22));
 
-  const targetColor = virtualCanvas.virtualCanvas[y][x];
-
-  if (colorsMatch(targetColor, color)) return [doNothing];
-
   const stack = [[x, y]];
   const width = virtualCanvas.virtualWidth;
   const height = virtualCanvas.virtualHeight;
+
+  if (
+    x < 0 ||
+    x >= width ||
+    y < 0 ||
+    y >= height ||
+    colorsMatch(virtualCanvas.virtualCanvas[y][x], color)
+  ) {
+    return [doNothing]
+  }
+
+  const targetColor = virtualCanvas.virtualCanvas[y][x];
 
   const nextRender = () => {
     const startTime = performance.now();

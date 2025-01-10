@@ -1,3 +1,5 @@
+import Viewport from "./viewport.js";
+
 const white = [255, 255, 255];
 export default class VirtualCanvas {
   constructor() {
@@ -7,9 +9,12 @@ export default class VirtualCanvas {
 
     this.virtualHeight = 200;
     this.virtualWidth = 350;
-    this.pixelZoom = 3;
+    this.pixelZoom = 4; // each pixel is represented by a 3x3 square, this improves clarity.
+    this.zoomExp = 1;
     this.zoom = 2; // Default zoom level
     this.offset = [0, 0]; // Default offset [x, y]
+
+    this.viewport = new Viewport(this);
 
     this.imageData = this.ctx.createImageData(
       this.virtualWidth * this.pixelZoom,
@@ -37,6 +42,8 @@ export default class VirtualCanvas {
     this.offscreenCtx.putImageData(this.imageData, 0, 0);
 
     // Apply zoom and offset transformations using drawImage
+    this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+
     this.ctx.drawImage(
       this.offscreenCanvas, // Source
       0,
@@ -206,7 +213,7 @@ export default class VirtualCanvas {
   positionInCanvas(clientX, clientY) {
     const rect = this.canvas.getBoundingClientRect();
     const x = Math.round((clientX - rect.left - this.offset[0]) / this.zoom);
-    const y = Math.round((clientY - rect.top - this.offset[0]) / this.zoom);
+    const y = Math.round((clientY - rect.top - this.offset[1]) / this.zoom);
     return [x, y];
-  }
+  } 
 }
