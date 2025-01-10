@@ -12,8 +12,6 @@ import buildRenderTask from "./transactionrenderer.js";
 const mod = 48;
 const exp = 1.5;
 
-
-
 export default class TransactionManager {
   constructor(virtualCanvas) {
     this.virtualCanvas = virtualCanvas;
@@ -98,7 +96,6 @@ export default class TransactionManager {
         startTime -
         (loopTargetms - this.overshoot)) /
       100;
-
 
     setTimeout(() => this.transactionRenderLoop(loopTargetms), 0);
   }
@@ -239,8 +236,11 @@ export default class TransactionManager {
     if (undoRedo[TOOLCODEINDEX] === toolCodes.undo[0]) {
       const firstTransaction =
         this.firstTransactionOfOperation.get(operationId);
-      const sortedPosition = this.transactionIndex(firstTransaction);
-      this.correct = Math.min(this.correct, sortedPosition);
+      if (firstTransaction)
+        this.correct = Math.min(
+          this.correct,
+          this.transactionIndex(firstTransaction)
+        );
     }
   }
 
