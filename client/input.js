@@ -1,5 +1,5 @@
 export default class Input {
-  constructor(toolbar) {
+  constructor(toolbar, virtualcanvas) {
     this.x = 0;
     this.y = 0;
     this.mouseDown = false;
@@ -66,5 +66,18 @@ export default class Input {
         lastMove = performance.now();
       }, 32);
     });
+
+    document.addEventListener(
+      "wheel",
+      (event) => {
+        event.preventDefault();
+        if (toolbar.activeSelector == null) {
+          virtualcanvas.viewport.handleWheel(event);
+        } else {
+          toolbar.brushsize.handleWheel(event);
+        }
+      },
+      { passive: false } // Makes preventDefault() work
+    );
   }
 }

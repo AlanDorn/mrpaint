@@ -93,8 +93,7 @@ export default class BrushSize {
       }
     };
 
-    const handleMouseScroll = (event) => { 
-      event.preventDefault(); //prevent page scrolling
+    this.handleWheel = (event) => { 
       const delta = event.deltaY < 0 ? 1: -1;
       adjustBrushSize(delta);
     };
@@ -107,7 +106,6 @@ export default class BrushSize {
     input.addEventListener("click", toggleDropdown);
     input.addEventListener("focus", selectOnFocus); // highlight text on focus!!!
     input.addEventListener("keydown", handleArrowKeys); //arrow keys 
-    input.addEventListener("wheel", handleMouseScroll); //mouse scroll
     document.addEventListener("click", closeDropdown);
     dropdownList.addEventListener("click", handleSelection);
     input.addEventListener("input", handleInput);
@@ -116,8 +114,9 @@ export default class BrushSize {
     updateInputPreview(null);
   }
 
+
+
   setBrushSize(newSize) {
     this.size = newSize;
-    // console.log(`Brush size set to: ${this.size}px`);
   }
 }

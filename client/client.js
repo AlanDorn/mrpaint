@@ -8,5 +8,5 @@ import Toolbar from "./toolbar.js";
 const virtualCanvas = new VirtualCanvas();
 const transactionManager = new TransactionManager(virtualCanvas);
 const toolbar = new Toolbar(virtualCanvas, transactionManager);
-const input = new Input(toolbar);
+const input = new Input(toolbar, virtualCanvas);
 new socket(input, transactionManager, toolbar);

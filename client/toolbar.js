@@ -4,7 +4,7 @@ import Pencil from "./pencil.js";
 import FillTool from "./filltool.js";
 import Undo from "./undo.js";
 
-//TODO Gotta add straight line tool! 
+//TODO Gotta add straight line tool!
 //TODO add the active button coloring logic, not sure if goes here or somewhere else yet!
 
 export default class Toolbar {
@@ -17,6 +17,7 @@ export default class Toolbar {
 
     //set the default tool to pencil
     this.activeTool = this.pencil;
+    this.activeSelector = null;
 
     this.setupToolSwitcher();
   }
@@ -26,6 +27,8 @@ export default class Toolbar {
     const fillToolButton = document.getElementById("fillTool");
     const undoButton = document.getElementById("undo");
     const redoButton = document.getElementById("redo");
+    const brushSizeSelector = document.getElementById("brushsize");
+    const drawingarea = document.getElementById("drawingarea");
 
     undoButton.addEventListener("click", () => {
       // const cntrlzEvent = new KeyboardEvent("keydown", {
@@ -43,19 +46,22 @@ export default class Toolbar {
     });
 
     pencilButton.addEventListener("click", () => {
-      this.setActiveTool(this.pencil);
+      this.activeTool = this.pencil;
       this.updateActiveButton(pencilButton);
     });
 
     fillToolButton.addEventListener("click", () => {
-      this.setActiveTool(this.fillTool);
+      this.activeTool = this.fillTool;
       this.updateActiveButton(fillToolButton);
     });
-  }
 
-  setActiveTool(tool) {
-    this.activeTool = tool;
-    console.log(`switched to ${tool.constructor.name}`);
+    brushSizeSelector.addEventListener("click", () => {
+      this.activeSelector = this.brushsize;
+    });
+
+    drawingarea.addEventListener("click", () => {
+      this.activeSelector = null;
+    })
   }
 
   updateActiveButton(activeButton) {

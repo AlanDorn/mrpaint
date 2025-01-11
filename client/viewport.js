@@ -1,28 +1,22 @@
 export default class Viewport {
   constructor(virtualCanvas) {
     this.virtualCanvas = virtualCanvas;
+  }
 
-    document.addEventListener(
-      "wheel",
-      (event) => {
-        event.preventDefault();
-
-        if (event.deltaY < 0) {
-          event.ctrlKey
-            ? this.zoomIn() // If the user does both it does the scroll up
-            : event.shiftKey
-            ? this.scrollLeft()
-            : this.scrollUp();
-        } else if (event.deltaY > 0) {
-          event.ctrlKey
-            ? this.zoomOut()
-            : event.shiftKey
-            ? this.scrollRight()
-            : this.scrollDown();
-        }
-      },
-      { passive: false } // Makes preventDefault() work
-    );
+  handleWheel(event) {
+    if (event.deltaY < 0) {
+      event.ctrlKey
+        ? this.zoomIn() // If the user does both it does the scroll up
+        : event.shiftKey
+        ? this.scrollLeft()
+        : this.scrollUp();
+    } else if (event.deltaY > 0) {
+      event.ctrlKey
+        ? this.zoomOut()
+        : event.shiftKey
+        ? this.scrollRight()
+        : this.scrollDown();
+    }
   }
 
   scrollUp() {
