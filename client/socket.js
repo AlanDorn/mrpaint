@@ -3,7 +3,7 @@ import { decodePosition } from "./transaction.js";
 let userId = -1;
 let firstMessage = true;
 
-export default function socket(input, transactionManager) {
+export default function socket(input, transactionManager, virtualCanvas) {
   const socketString = window.location.href
     .slice(0, -15)
     .replace(/^http/, "ws")
@@ -12,7 +12,7 @@ export default function socket(input, transactionManager) {
   const ws = new WebSocket(socketString);
 
   ws.onopen = () => ws.send(lobbyCode);
-  
+
   ws.onmessage = (event) => {
     event.data.arrayBuffer().then((buffer) => {
       if (firstMessage) {
@@ -25,7 +25,7 @@ export default function socket(input, transactionManager) {
         return;
       }
       const eventData = new Uint8Array(buffer);
-      handleCursorData(eventData.subarray(0, 5));
+      handleCursorData(eventData.subarray(0, 5), virtualCanvas);
       if (eventData.length > 5)
         transactionManager.pushServer(eventData.subarray(5));
     });
@@ -33,11 +33,16 @@ export default function socket(input, transactionManager) {
 
   setInterval(() => {
     if (!firstMessage)
-      ws.send(transactionManager.buildServerMessage(userId, input.x, input.y));
+      ws.send(
+        transactionManager.buildServerMessage(
+          userId,
+          ...virtualCanvas.positionInCanvas(input.x, input.y)
+        )
+      );
   }, 16);
 }
 
-function handleCursorData(cursorData) {
+function handleCursorData(cursorData, virtualCanvas) {
   const id = cursorData[0];
   if (id === userId) return;
 
@@ -49,7 +54,9 @@ function handleCursorData(cursorData) {
     document.body.appendChild(cursorElement);
   }
 
-  const cursorPosition = decodePosition(cursorData.subarray(1));
+  const cursorPosition = virtualCanvas.positionInScreen(
+    ...decodePosition(cursorData.subarray(1))
+  );
   cursorElement.style.left = `${cursorPosition[0]}px`; // Ensure units are added
   cursorElement.style.top = `${cursorPosition[1]}px`;
 

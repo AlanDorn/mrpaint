@@ -239,4 +239,11 @@ export default class VirtualCanvas {
     const y = Math.round((clientY - rect.top - this.offset[1]) / this.zoom);
     return [x, y];
   }
+
+  positionInScreen(x, y) {
+    const rect = this.canvas.getBoundingClientRect();
+    const clientX = x * this.zoom + this.offset[0] + rect.left;
+    const clientY = y * this.zoom + this.offset[1] + rect.top;
+    return [clientX, clientY];
+  }
 }
