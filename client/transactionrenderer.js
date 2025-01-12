@@ -84,7 +84,9 @@ function renderFill(virtualCanvas, transaction) {
     return [doNothing];
   }
 
+
   const targetColor = virtualCanvas.virtualCanvas[y][x];
+  virtualCanvas.setPixel(x, y, targetColor, 1);
 
   const nextRender = () => {
     const startTime = performance.now();

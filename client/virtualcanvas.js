@@ -3,8 +3,8 @@ import Viewport from "./viewport.js";
 const white = [255, 255, 255];
 export default class VirtualCanvas {
   constructor() {
-    this.virtualHeight = 300;
-    this.virtualWidth = 500;
+    this.virtualHeight = 600;
+    this.virtualWidth = 1000;
     this.pixelZoom = 16; // each pixel is represented by a nxn square, this improves clarity.
     this.zoomExp = 1;
     this.zoom = 2; // Default zoom level
@@ -53,8 +53,26 @@ export default class VirtualCanvas {
   }
 
   setPixel(x, y, color, thickness) {
+    if (
+      thickness === 1 &&
+      x >= 0 &&
+      y >= 0 &&
+      x < this.virtualWidth &&
+      y < this.virtualHeight
+    ) {
+        this.offscreenCtx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, 1)`;
+      this.offscreenCtx.fillRect(
+        x * this.pixelZoom,
+        y * this.pixelZoom,
+        this.pixelZoom * thickness,
+        this.pixelZoom * thickness
+      );
+      this.virtualCanvas[y][x] = color;
+      return;
+    }
+
     const halfThickness = Math.floor(thickness / 2);
-    this.offscreenCtx.fillStyle = `rgba(${color[1]}, ${color[1]}, ${color[2]}, 1)`;
+    this.offscreenCtx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, 1)`;
     this.offscreenCtx.fillRect(
       (x - halfThickness) * this.pixelZoom,
       (y - halfThickness) * this.pixelZoom,
