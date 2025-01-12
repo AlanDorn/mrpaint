@@ -57,11 +57,21 @@ export default class Toolbar {
 
     brushSizeSelector.addEventListener("click", () => {
       this.activeSelector = this.brushsize;
+      this.activeReason = "click";
+    });
+
+    brushSizeSelector.addEventListener("mouseenter", () => {
+      this.activeSelector = this.brushsize;
+      this.activeReason = "mouseenter";
+    });
+
+    brushSizeSelector.addEventListener("mouseleave", () => {
+      if (this.activeReason === "mouseenter") this.activeSelector = null;
     });
 
     drawingarea.addEventListener("click", () => {
       this.activeSelector = null;
-    })
+    });
   }
 
   updateActiveButton(activeButton) {

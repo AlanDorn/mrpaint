@@ -3,45 +3,37 @@ import Viewport from "./viewport.js";
 const white = [255, 255, 255];
 export default class VirtualCanvas {
   constructor() {
-    this.drawingarea = document.getElementById("drawingarea");
-    this.canvas = document.getElementById("myCanvas");
-    this.ctx = this.canvas.getContext("2d");
-
-    this.virtualHeight = 200;
-    this.virtualWidth = 350;
-    this.pixelZoom = 4; // each pixel is represented by a 3x3 square, this improves clarity.
+    this.virtualHeight = 300;
+    this.virtualWidth = 500;
+    this.pixelZoom = 16; // each pixel is represented by a nxn square, this improves clarity.
     this.zoomExp = 1;
     this.zoom = 2; // Default zoom level
     this.offset = [0, 0]; // Default offset [x, y]
+    this.fillGeneration = [];
 
     this.viewport = new Viewport(this);
-
-    this.imageData = this.ctx.createImageData(
-      this.virtualWidth * this.pixelZoom,
-      this.virtualHeight * this.pixelZoom
-    );
 
     this.virtualCanvas = Array.from({ length: this.virtualHeight }, () =>
       Array(this.virtualWidth).fill(white)
     );
 
-    this.fillGeneration = [];
-    window.addEventListener("resize", () => {
-      this.resizeCanvasToWindow();
-    });
-    this.resizeCanvasToWindow();
+    this.drawingarea = document.getElementById("drawingarea");
+    this.canvas = document.getElementById("myCanvas");
+    this.ctx = this.canvas.getContext("2d");
 
     // Prepare an offscreen canvas
     this.offscreenCanvas = document.createElement("canvas");
     this.offscreenCanvas.width = this.virtualWidth * this.pixelZoom;
     this.offscreenCanvas.height = this.virtualHeight * this.pixelZoom;
     this.offscreenCtx = this.offscreenCanvas.getContext("2d");
+
+    window.addEventListener("resize", () => {
+      this.resizeCanvasToWindow();
+    });
+    this.resizeCanvasToWindow();
   }
 
   render() {
-    this.offscreenCtx.putImageData(this.imageData, 0, 0);
-
-    // Apply zoom and offset transformations using drawImage
     this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 
     this.ctx.drawImage(
@@ -60,22 +52,34 @@ export default class VirtualCanvas {
     if (this.fillGeneration.length !== 0) this.fillGeneration.pop()();
   }
 
-  setPixel(x, y, color) {
+  setPixel(x, y, color, thickness) {
     if (x >= 0 && y >= 0 && x < this.virtualWidth && y < this.virtualHeight) {
-      for (let ythick = 0; ythick < this.pixelZoom; ythick++) {
-        for (let xthick = 0; xthick < this.pixelZoom; xthick++) {
-          let index =
-            ((y * this.pixelZoom + ythick) * this.imageData.width +
-              x * this.pixelZoom +
-              xthick) *
-            4; 
-          const data = this.imageData.data;
-          data[index++] = color[0]; // Red
-          data[index++] = color[1]; // Green
-          data[index++] = color[2]; // Blue
-          data[index] = 255; // Alpha
-        }
-      }
+      const thicknessOffset = Math.floor(thickness / 2);
+      this.offscreenCtx.fillStyle = `rgba(${color[1]}, ${color[1]}, ${color[2]}, 1)`;
+      this.offscreenCtx.fillRect(
+        (x - thicknessOffset) * this.pixelZoom,
+        (y - thicknessOffset) * this.pixelZoom,
+        this.pixelZoom * thickness,
+        this.pixelZoom * thickness
+      );
+      this.virtualCanvas[y][x] = color;
+    }
+  }
+
+  setPixelOutline(x, y, color, thickness) {
+    if (x >= 0 && y >= 0 && x < this.virtualWidth && y < this.virtualHeight) {
+      const halfThickness = Math.floor(thickness / 2);
+      const halfPixelZoom = Math.floor(this.pixelZoom / 2);
+
+      this.offscreenCtx.strokeStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, 1)`;
+      this.offscreenCtx.lineWidth = this.pixelZoom;
+
+      this.offscreenCtx.strokeRect(
+        (x - halfThickness) * this.pixelZoom + halfPixelZoom,
+        (y - halfThickness) * this.pixelZoom + halfPixelZoom,
+        this.pixelZoom * thickness - this.pixelZoom,
+        this.pixelZoom * thickness - this.pixelZoom
+      );
       this.virtualCanvas[y][x] = color;
     }
   }
@@ -101,10 +105,8 @@ export default class VirtualCanvas {
     this.virtualHeight = height;
 
     if (height !== this.virtualHeight || width !== this.virtualWidth) {
-      this.imageData = this.ctx.createImageData(
-        this.virtualWidth,
-        this.virtualHeight
-      );
+      this.offscreenCanvas.width = this.virtualWidth * this.pixelZoom;
+      this.offscreenCanvas.height = this.virtualHeight * this.pixelZoom;
       this.fillImageData();
     }
   }
@@ -133,20 +135,13 @@ export default class VirtualCanvas {
       this.fillGeneration.push(() => {
         for (let y = startY; y < endY; y++) {
           for (let x = 0; x < this.virtualWidth; x++) {
-            for (let ythick = 0; ythick < this.pixelZoom; ythick++) {
-              for (let xthick = 0; xthick < this.pixelZoom; xthick++) {
-                let newIndex =
-                  ((y * this.pixelZoom + ythick) * this.imageData.width +
-                    x * this.pixelZoom +
-                    xthick) *
-                  4; // Calculate pixel index
-                const data = this.imageData.data;
-                data[newIndex] = this.virtualCanvas[y][x][0]; // Red
-                data[newIndex + 1] = this.virtualCanvas[y][x][1]; // Green
-                data[newIndex + 2] = this.virtualCanvas[y][x][2]; // Blue
-                data[newIndex + 3] = 255; // Alpha
-              }
-            }
+            this.offscreenCtx.fillStyle = `rgba(${this.virtualCanvas[y][x][0]}, ${this.virtualCanvas[y][x][1]}, ${this.virtualCanvas[y][x][2]}, 1)`;
+            this.offscreenCtx.fillRect(
+              x * this.pixelZoom,
+              y * this.pixelZoom,
+              this.pixelZoom,
+              this.pixelZoom
+            );
           }
         }
       });
@@ -214,5 +209,5 @@ export default class VirtualCanvas {
     const x = Math.round((clientX - rect.left - this.offset[0]) / this.zoom);
     const y = Math.round((clientY - rect.top - this.offset[1]) / this.zoom);
     return [x, y];
-  } 
+  }
 }

@@ -8,8 +8,7 @@ export function mirrorAcross(basePoint, pointToMirror) {
 
 // Catmull-Rom pixel rendering (running t backwards)
 const tolerance = 0.5;
-export function splinePixels(fourPoints) {
-  const [p0, p1, p2, p3] = fourPoints;
+export function splinePixels(p0, p1, p2, p3) {
 
   const interpolate = (t, p0, p1, p2, p3) =>
     0.5 *

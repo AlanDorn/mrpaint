@@ -224,8 +224,10 @@ export default class TransactionManager {
         if (lastUndoRedoIsDifferent) {
           const firstTransaction =
             this.firstTransactionOfOperation.get(operationId);
-          const sortedPosition = this.transactionIndex(firstTransaction);
-          this.correct = Math.min(this.correct, sortedPosition);
+          if (firstTransaction) {
+            const sortedPosition = this.transactionIndex(firstTransaction);
+            this.correct = Math.min(this.correct, sortedPosition);
+          }
         }
       }
       return;

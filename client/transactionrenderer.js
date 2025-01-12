@@ -23,19 +23,10 @@ export default function buildRenderTask(virtualCanvas, transaction) {
 function renderPixel(virtualCanvas, transaction) {
   const color = transaction.subarray(15, 18);
   const brushsize = decodeLargeNumber(transaction.subarray(18, 20));
-  const pixel = centerToBrushSize(
-    brushsize,
-    decodePosition(transaction.subarray(20, 24))
-  )[0];
+  const pixel = decodePosition(transaction.subarray(20, 24));
 
   const task = [
-    () => {
-      for (let dx = 0; dx < brushsize; dx++) {
-        for (let dy = 0; dy < brushsize; dy++) {
-          virtualCanvas.setPixel(pixel[0] + dx, pixel[1] + dy, color);
-        }
-      }
-    },
+    () => virtualCanvas.setPixel(pixel[0], pixel[1], color, brushsize),
   ];
 
   return task;
@@ -45,23 +36,17 @@ function renderPencil(virtualCanvas, transaction) {
   const color = transaction.subarray(15, 18);
   const brushsize = decodeLargeNumber(transaction.subarray(18, 20));
   const pixels = splinePixels(
-    centerToBrushSize(
-      brushsize,
-      decodePosition(transaction.subarray(20, 24)),
-      decodePosition(transaction.subarray(24, 28)),
-      decodePosition(transaction.subarray(28, 32)),
-      decodePosition(transaction.subarray(32, 36))
-    )
+    decodePosition(transaction.subarray(20, 24)),
+    decodePosition(transaction.subarray(24, 28)),
+    decodePosition(transaction.subarray(28, 32)),
+    decodePosition(transaction.subarray(32, 36))
   );
 
   //CALM: benchmark this so you can figure out what is a good number for this.
   const chunkSize = Math.ceil(100000); // Number of pixels to process per chunk
-  const task = []; // Array to store the lambdas
-  task.push(() => {
-    for (let dx = 0; dx < brushsize; dx++)
-      for (let dy = 0; dy < brushsize; dy++)
-        virtualCanvas.setPixel(pixels[0][0] + dx, pixels[0][1] + dy, color);
-  });
+  const task = [
+    () => virtualCanvas.setPixel(pixels[0][0], pixels[0][1], color, brushsize),
+  ]; // Array to store the lambdas
 
   for (let index = 0; index < pixels.length; index += chunkSize) {
     const start = index;
@@ -70,12 +55,10 @@ function renderPencil(virtualCanvas, transaction) {
     task.push(() => {
       for (let i = start; i < end; i++) {
         const [x, y] = pixels[i];
-        for (let dx = 0; dx < brushsize; dx++) {
-          virtualCanvas.setPixel(x + dx, y, color);
-          virtualCanvas.setPixel(x + dx, y + brushsize - 1, color);
-          virtualCanvas.setPixel(x, y + dx, color);
-          virtualCanvas.setPixel(x + brushsize - 1, y + dx, color);
+        if(brushsize <= 2) {
+          virtualCanvas.setPixel(x,y,color, brushsize);
         }
+        virtualCanvas.setPixelOutline(x,y,color, brushsize);
       }
     });
   }
@@ -98,7 +81,7 @@ function renderFill(virtualCanvas, transaction) {
     y >= height ||
     colorsMatch(virtualCanvas.virtualCanvas[y][x], color)
   ) {
-    return [doNothing]
+    return [doNothing];
   }
 
   const targetColor = virtualCanvas.virtualCanvas[y][x];
