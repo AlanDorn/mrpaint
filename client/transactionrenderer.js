@@ -102,7 +102,7 @@ function renderFill(virtualCanvas, transaction) {
           continue;
         }
 
-        virtualCanvas.setPixel(curX, curY, color);
+        virtualCanvas.setPixel(curX, curY, color, 1);
 
         const neighbors = [
           [curX + 1, curY],

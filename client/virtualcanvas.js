@@ -3,9 +3,9 @@ import Viewport from "./viewport.js";
 const white = [255, 255, 255];
 export default class VirtualCanvas {
   constructor() {
-    this.virtualHeight = 300;
-    this.virtualWidth = 500;
-    this.pixelZoom = 16; // each pixel is represented by a nxn square, this improves clarity.
+    this.virtualHeight = 3000;
+    this.virtualWidth = 5000;
+    this.pixelZoom = 2; // each pixel is represented by a nxn square, this improves clarity.
     this.zoomExp = 1;
     this.zoom = 2; // Default zoom level
     this.offset = [0, 0]; // Default offset [x, y]
@@ -125,7 +125,7 @@ export default class VirtualCanvas {
   }
 
   fillImageData() {
-    const chunkSize = 512;
+    const chunkSize = 1000;
     this.fillGeneration = [];
 
     const totalChunks = Math.ceil(this.virtualHeight / chunkSize);
