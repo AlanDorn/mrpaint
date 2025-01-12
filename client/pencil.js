@@ -66,7 +66,7 @@ export default class Pencil {
 
   handleMouseUp() {
     this.isDrawing = false;
-    if (this.points.length < 4) {
+    if (this.points.length < 4 && this.points.length !== 0) {
       this.transactionManager.pushClient(
         pixelTransaction(
           this.operationId,

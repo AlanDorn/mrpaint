@@ -6,8 +6,8 @@ export default class VirtualCanvas {
     this.virtualHeight = 600;
     this.virtualWidth = 1000;
     this.pixelZoom = 16; // each pixel is represented by a nxn square, this improves clarity.
-    this.zoomExp = 1;
-    this.zoom = 2; // Default zoom level
+    this.zoomExp = 0;
+    this.zoom = 1; // Default zoom level
     this.offset = [0, 0]; // Default offset [x, y]
     this.fillGeneration = [];
 
@@ -20,17 +20,14 @@ export default class VirtualCanvas {
     this.drawingarea = document.getElementById("drawingarea");
     this.canvas = document.getElementById("myCanvas");
     this.ctx = this.canvas.getContext("2d");
-
-    // Prepare an offscreen canvas
+    this.canvas.width = this.virtualWidth * this.pixelZoom;
+    this.canvas.height = this.virtualHeight * this.pixelZoom;
     this.offscreenCanvas = document.createElement("canvas");
     this.offscreenCanvas.width = this.virtualWidth * this.pixelZoom;
     this.offscreenCanvas.height = this.virtualHeight * this.pixelZoom;
     this.offscreenCtx = this.offscreenCanvas.getContext("2d");
 
-    window.addEventListener("resize", () => {
-      this.resizeCanvasToWindow();
-    });
-    this.resizeCanvasToWindow();
+    this.fillImageData();
   }
 
   render() {
@@ -48,6 +45,7 @@ export default class VirtualCanvas {
       this.virtualHeight * this.zoom // Destination rectangle
     );
   }
+
   fill() {
     if (this.fillGeneration.length !== 0) this.fillGeneration.pop()();
   }
@@ -60,7 +58,7 @@ export default class VirtualCanvas {
       x < this.virtualWidth &&
       y < this.virtualHeight
     ) {
-        this.offscreenCtx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, 1)`;
+      this.offscreenCtx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, 1)`;
       this.offscreenCtx.fillRect(
         x * this.pixelZoom,
         y * this.pixelZoom,
@@ -153,19 +151,6 @@ export default class VirtualCanvas {
       this.offscreenCanvas.height = this.virtualHeight * this.pixelZoom;
       this.fillImageData();
     }
-  }
-
-  resizeCanvasToWindow() {
-    const rect = this.drawingarea.getBoundingClientRect();
-    this.canvas.width = Math.min(
-      rect.width,
-      this.virtualWidth * this.zoom * this.pixelZoom
-    );
-    this.canvas.height = Math.min(
-      rect.height,
-      this.virtualHeight * this.zoom * this.pixelZoom
-    );
-    this.fillImageData();
   }
 
   fillImageData() {
