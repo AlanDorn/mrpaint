@@ -53,34 +53,60 @@ export default class VirtualCanvas {
   }
 
   setPixel(x, y, color, thickness) {
-    if (x >= 0 && y >= 0 && x < this.virtualWidth && y < this.virtualHeight) {
-      const thicknessOffset = Math.floor(thickness / 2);
-      this.offscreenCtx.fillStyle = `rgba(${color[1]}, ${color[1]}, ${color[2]}, 1)`;
-      this.offscreenCtx.fillRect(
-        (x - thicknessOffset) * this.pixelZoom,
-        (y - thicknessOffset) * this.pixelZoom,
-        this.pixelZoom * thickness,
-        this.pixelZoom * thickness
-      );
-      this.virtualCanvas[y][x] = color;
+    const halfThickness = Math.floor(thickness / 2);
+    this.offscreenCtx.fillStyle = `rgba(${color[1]}, ${color[1]}, ${color[2]}, 1)`;
+    this.offscreenCtx.fillRect(
+      (x - halfThickness) * this.pixelZoom,
+      (y - halfThickness) * this.pixelZoom,
+      this.pixelZoom * thickness,
+      this.pixelZoom * thickness
+    );
+
+    for (let dy = 0; dy < thickness; dy++) {
+      for (let dx = 0; dx < thickness; dx++) {
+        const newX = x - halfThickness + dx;
+        const newY = y - halfThickness + dy;
+        if (
+          newX >= 0 &&
+          newY >= 0 &&
+          newX < this.virtualWidth &&
+          newY < this.virtualHeight
+        )
+          this.virtualCanvas[newY][newX] = color;
+      }
     }
   }
 
   setPixelOutline(x, y, color, thickness) {
-    if (x >= 0 && y >= 0 && x < this.virtualWidth && y < this.virtualHeight) {
-      const halfThickness = Math.floor(thickness / 2);
-      const halfPixelZoom = Math.floor(this.pixelZoom / 2);
+    const halfThickness = Math.floor(thickness / 2);
+    const halfPixelZoom = Math.floor(this.pixelZoom / 2);
 
-      this.offscreenCtx.strokeStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, 1)`;
-      this.offscreenCtx.lineWidth = this.pixelZoom;
+    this.offscreenCtx.strokeStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, 1)`;
+    this.offscreenCtx.lineWidth = this.pixelZoom;
 
-      this.offscreenCtx.strokeRect(
-        (x - halfThickness) * this.pixelZoom + halfPixelZoom,
-        (y - halfThickness) * this.pixelZoom + halfPixelZoom,
-        this.pixelZoom * thickness - this.pixelZoom,
-        this.pixelZoom * thickness - this.pixelZoom
-      );
-      this.virtualCanvas[y][x] = color;
+    this.offscreenCtx.strokeRect(
+      (x - halfThickness) * this.pixelZoom + halfPixelZoom,
+      (y - halfThickness) * this.pixelZoom + halfPixelZoom,
+      this.pixelZoom * thickness - this.pixelZoom,
+      this.pixelZoom * thickness - this.pixelZoom
+    );
+
+    for (let dy = 0; dy < thickness; dy++) {
+      for (let dx = 0; dx < thickness; dx++) {
+        const newX = x - halfThickness + dx;
+        const newY = y - halfThickness + dy;
+        if (
+          (dx === 0 ||
+            dy === 0 ||
+            dx === thickness - 1 ||
+            dy === thickness - 1) &&
+          newX >= 0 &&
+          newY >= 0 &&
+          newX < this.virtualWidth &&
+          newY < this.virtualHeight
+        )
+          this.virtualCanvas[newY][newX] = color;
+      }
     }
   }
 
