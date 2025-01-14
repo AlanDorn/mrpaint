@@ -5,7 +5,7 @@ export default class CanvasLobby {
   userIdCounter = 0;
   activeUsers: Map<number, WebSocket> = new Map();
 
-  transactionIndex = 1;
+  transactionIndex = 1; //To init a user the first byte has to be the userId
   transactions: Uint8Array = new Uint8Array(2 ** 27);
 
   constructor(id: string) {

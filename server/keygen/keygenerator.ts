@@ -3,6 +3,7 @@ import { promises as fs } from "fs";
 const adjectives: string[] = [];
 const nouns: string[] = [];
 let combinations = 0;
+let initialized = false;
 
 async function readLinesFromFile(filePath: string): Promise<string[]> {
   try {
@@ -28,6 +29,7 @@ async function readLinesFromFile(filePath: string): Promise<string[]> {
   const adjPairCount = (A * (A - 1)) / 2;
   combinations = N * adjPairCount;
   startPoint = Math.floor(Math.random() * combinations);
+  initialized = true;
 })();
 
 let keyIndex = 0;
@@ -35,6 +37,9 @@ const prime = 3469;
 let startPoint: number;
 
 export default function keyGen() {
+  while (!initialized) {
+    
+  }
   // Compute the randomIndex
   const randomIndex = (prime * keyIndex + startPoint) % combinations;
 

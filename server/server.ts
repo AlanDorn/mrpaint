@@ -33,13 +33,18 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 wss.on("connection", (ws) => {
-  let lobby: CanvasLobby | null = null;
+  let lobby: CanvasLobby | undefined;
   let userId = 0;
 
   ws.on("message", (event) => {
     if (!lobby) {
       const id = event.toString("utf-8");
-      lobby = lobbies.get(id)!;
+      lobby = lobbies.get(id);
+      console.log(id);
+
+      if(!lobby) {
+        return;
+      }
       userId = lobby.addUser(ws);
       lobby.print();
       return;

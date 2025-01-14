@@ -43,12 +43,12 @@ export default class Viewport {
 
   zoomIn() {
     //takes 8 clicks to zoom in/out 2x
-    this.virtualCanvas.zoomExp += 0.125;
+    this.virtualCanvas.zoomExp += 1/16;
     this.virtualCanvas.zoom = 2 ** this.virtualCanvas.zoomExp;
   }
 
   zoomOut() {
-    this.virtualCanvas.zoomExp -= 0.125;
+    this.virtualCanvas.zoomExp -= 1/16;
     this.virtualCanvas.zoom = 2 ** this.virtualCanvas.zoomExp;
   }
 }

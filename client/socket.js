@@ -4,11 +4,12 @@ let userId = -1;
 let firstMessage = true;
 
 export default function socket(input, transactionManager, virtualCanvas) {
-  const socketString = window.location.href
-    .slice(0, -15)
+  const url = new URL(window.location.href);
+  const lobbyCode = url.pathname.split("/").pop();
+
+  const socketString = url.origin
     .replace(/^http/, "ws")
     .replace(/3000/, "3001");
-  const lobbyCode = window.location.href.slice(-15);
   const ws = new WebSocket(socketString);
 
   ws.onopen = () => ws.send(lobbyCode);

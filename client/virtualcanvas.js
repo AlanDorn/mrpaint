@@ -3,9 +3,9 @@ import Viewport from "./viewport.js";
 const white = [255, 255, 255];
 export default class VirtualCanvas {
   constructor() {
-    this.virtualHeight = 600;
-    this.virtualWidth = 1000;
-    this.pixelZoom = 16; // each pixel is represented by a nxn square, this improves clarity.
+    this.virtualHeight = 500;
+    this.virtualWidth = 700;
+    this.pixelZoom = 4; // each pixel is represented by a nxn square, this improves clarity.
     this.zoomExp = 0;
     this.zoom = 1; // Default zoom level
     this.offset = [0, 0]; // Default offset [x, y]
@@ -154,36 +154,51 @@ export default class VirtualCanvas {
   }
 
   fillImageData() {
-    const chunkSize = 1000;
+    const chunkSize = 512;
     this.fillGeneration = [];
 
     const totalChunks = Math.ceil(this.virtualHeight / chunkSize);
     for (let i = 0; i < totalChunks; i++) {
       const startY = i * chunkSize;
       const endY = Math.min(startY + chunkSize, this.virtualHeight);
+
       this.fillGeneration.push(() => {
+        const width = this.virtualWidth * this.pixelZoom;
+        const height = (endY - startY) * this.pixelZoom;
+        const imageData = this.offscreenCtx.createImageData(width, height);
+        const data = imageData.data;
+
         for (let y = startY; y < endY; y++) {
           for (let x = 0; x < this.virtualWidth; x++) {
-            this.offscreenCtx.fillStyle = `rgba(${this.virtualCanvas[y][x][0]}, ${this.virtualCanvas[y][x][1]}, ${this.virtualCanvas[y][x][2]}, 1)`;
-            this.offscreenCtx.fillRect(
-              x * this.pixelZoom,
-              y * this.pixelZoom,
-              this.pixelZoom,
-              this.pixelZoom
-            );
+            const [r, g, b] = this.virtualCanvas[y][x];
+
+            // Calculate starting index for the top-left corner of the zoomed pixel
+            for (let zoomY = 0; zoomY < this.pixelZoom; zoomY++) {
+              const rowStart =
+                ((y - startY) * this.pixelZoom + zoomY) * width * 4;
+              for (let zoomX = 0; zoomX < this.pixelZoom; zoomX++) {
+                const colOffset = (x * this.pixelZoom + zoomX) * 4;
+                const index = rowStart + colOffset;
+
+                data[index] = r; // Red
+                data[index + 1] = g; // Green
+                data[index + 2] = b; // Blue
+                data[index + 3] = 255; // Alpha
+              }
+            }
           }
         }
+
+        this.offscreenCtx.putImageData(imageData, 0, startY * this.pixelZoom);
       });
     }
   }
 
   reset() {
-    const oldVirtualCanvas = this.virtualCanvas;
-    this.virtualCanvas = Array.from({ length: this.virtualHeight }, () =>
-      Array(this.virtualWidth).fill(white)
-    );
+    for (let y = 0; y < this.virtualHeight; y++)
+      for (let x = 0; x < this.virtualWidth; x++)
+        this.virtualCanvas[y][x] = white;
     setTimeout(() => this.fillImageData());
-    return oldVirtualCanvas;
   }
 
   set(newVirtualCanvas) {
@@ -206,9 +221,7 @@ export default class VirtualCanvas {
         const srcRow = this.virtualCanvas[y];
         const rowLength = srcRow.length;
         const newRow = new Array(rowLength);
-        for (let x = 0; x < rowLength; x++) {
-          newRow[x] = srcRow[x];
-        }
+        for (let x = 0; x < rowLength; x++) newRow[x] = srcRow[x];
         clone[y] = newRow;
       }
       return clone;
@@ -220,15 +233,11 @@ export default class VirtualCanvas {
       const srcRow = this.virtualCanvas[y];
       const rowLength = srcRow.length;
       let targetRow = recycledSnapshot[y];
-
       if (!targetRow || targetRow.length !== rowLength) {
         targetRow = new Array(rowLength);
         recycledSnapshot[y] = targetRow;
       }
-
-      for (let x = 0; x < rowLength; x++) {
-        targetRow[x] = srcRow[x];
-      }
+      for (let x = 0; x < rowLength; x++) targetRow[x] = srcRow[x];
     }
     return recycledSnapshot;
   }
