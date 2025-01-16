@@ -1,5 +1,5 @@
 export default class Input {
-  constructor(toolbar) {
+  constructor(toolbar, transactionManager) {
     this.x = 0;
     this.y = 0;
     this.mouseDown = false;
@@ -43,8 +43,8 @@ export default class Input {
 
     document.addEventListener("pointermove", (event) => {
       clearTimeout(debounceTimeout);
-      this.x = event.clientX;
-      this.y = event.clientY;
+      this.x = Math.round(event.clientX);
+      this.y = Math.round(event.clientY);
 
       //AGI: I originally used the if statement below to throttle the polling rate of the mouse. The throttling has it limitations which I think you were trying to over come with this if statement above. The only issue is that the event loop is blocked because toolbar.mouseMove() is blocking and gets called everytime there is a mouse move. I think throttling is necessary but I think the way I had done it was not really that good of an implementation. I think we should outline a list of issues here about mouse movements so that by the time we actually fix it we can remember all the problems we had with the mouse.
 
@@ -52,7 +52,11 @@ export default class Input {
 
       // 2. because of mouse move works you can get it so that you mouse stops but the pencil line isn't under the cursor. It waits until the mouse either moves again or lift to complete.
 
-      toolbar.mouseMove(this);
+
+      if(transactionManager.newRender) {
+        toolbar.mouseMove(this);
+        transactionManager.newRender = false;
+      }
 
       debounceTimeout = setTimeout(() => {
         toolbar.mouseMove(this);

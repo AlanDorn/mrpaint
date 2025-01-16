@@ -91,8 +91,8 @@ function renderFill(virtualCanvas, transaction) {
 
   const nextRender = () => {
     const startTime = performance.now();
-    while (performance.now() - startTime < 32 && stack.length > 0) {
-      for (let fast = 0; fast < 20000 && stack.length > 0; fast++) {
+    while (performance.now() - startTime < 3 && stack.length > 0) {
+      for (let fast = 0; fast < 10000 && stack.length > 0; fast++) {
         const [curX, curY] = stack.pop();
 
         if (
@@ -114,14 +114,14 @@ function renderFill(virtualCanvas, transaction) {
           [curX, curY - 1],
         ];
 
-        if (Math.random() < 1 / 3)
-          for (let i = 0; i < neighbors.length; i++) {
+        if (Math.random() < 1 / 3) // mixture of bfs and dfs looks cool
+          for (let i = 0; i < neighbors.length; i++) { // bfs
             const pos = Math.floor(Math.random() * stack.length);
             stack.push(stack[pos]);
             stack[pos] = neighbors[i];
           }
         else
-          for (let i = neighbors.length; i > 0; ) {
+          for (let i = neighbors.length; i > 0; ) { // dfs
             const rand = Math.floor(Math.random() * i);
             stack.push(neighbors[rand]);
             neighbors[rand] = neighbors[--i];

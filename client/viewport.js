@@ -149,7 +149,6 @@ export default class Viewport {
   }
 
   mouseUpLeft(input) {
-    console.log("mouseup");
     const positionInCanvas = this.virtualCanvas.positionInCanvas(
       input.x,
       input.y
