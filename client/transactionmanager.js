@@ -4,6 +4,7 @@ import {
   encodePosition,
   readOperationIdAsNumber,
   TOOLCODEINDEX,
+  toolCodeInverse,
   toolCodes,
   toolLength,
 } from "./transaction.js";
@@ -36,84 +37,86 @@ export default class TransactionManager {
 
     this.simulateLag = false;
     this.lastVirtualError = 0;
-    setTimeout(() => this.transactionRenderLoop(16), 0);
+    setTimeout(() => this.transactionRenderLoop(3), 0);
   }
 
   simulateVirtualLag() {
     if (this.simulateLag && this.correct > this.lastVirtualError) {
       this.lastVirtualError = this.correct + 15;
-      this.correct -= Math.random() < 0.5 ? 30 : 60;
+      this.correct -= Math.random() < 0.5 ? 15 : 30;
     }
   }
 
   transactionRenderLoop(loopTargetms) {
-    const startTime = performance.now();
+    const renderFrame = () => {
+      const startTime = performance.now();
 
-    if (this.uninsertedTransactions.length > 0) this.pushTransactions();
+      if (this.uninsertedTransactions.length > 0) this.pushTransactions();
 
-    const needToSyncCanvas = this.correct < this.rendered;
-    if (needToSyncCanvas) this.syncCanvas();
+      const needToSyncCanvas = this.correct < this.rendered;
+      if (needToSyncCanvas) {
+        this.syncCanvas();
+      }
 
-    if (this.rendered >= this.transactions.length) {
-      this.virtualCanvas.fill();
-      this.needToRenderCanvas = true;
-    }
+      if (this.rendered >= this.transactions.length) {
+        this.virtualCanvas.fill();
+        this.needToRenderCanvas = true;
+      }
 
-    if (this.needToRenderCanvas) this.virtualCanvas.render();
-    this.needToRenderCanvas = false;
+      if (this.needToRenderCanvas) this.virtualCanvas.render();
+      this.needToRenderCanvas = false;
 
-    while (performance.now() - startTime < loopTargetms - this.overshoot) {
-      const processStartTime = performance.now();
-      const taskIsFinished = this.currentTask.length === 0;
-      if (taskIsFinished) {
-        const allTransactionsAreRendered =
-          this.rendered >= this.transactions.length;
-        if (allTransactionsAreRendered) {
-          const timeLeft = loopTargetms - this.overshoot - (performance.now() - startTime);
-          this.simulateVirtualLag();
-          setTimeout(() => this.transactionRenderLoop(loopTargetms), timeLeft);
-          this.overshoot = (this.overshoot * 99) / 100;
-          return;
-        }
+      while (performance.now() - startTime < loopTargetms) {
+        const processStartTime = performance.now();
+        const taskIsFinished = this.currentTask.length === 0;
+        if (taskIsFinished) {
+          const allTransactionsAreRendered =
+            this.rendered >= this.transactions.length;
+          if (allTransactionsAreRendered) {
+            this.simulateVirtualLag();
+            requestAnimationFrame(renderFrame);
+            return;
+          }
 
-        let transaction = this.transactions[this.rendered];
-        this.rendered++;
-        this.correct++;
-        while (
-          this.transactionIsUndone(transaction) &&
-          this.rendered < this.transactions.length
-        ) {
-          transaction = this.transactions[this.rendered];
+          let transaction = this.transactions[this.rendered];
           this.rendered++;
           this.correct++;
+          while (
+            this.transactionIsUndone(transaction) &&
+            this.rendered < this.transactions.length
+          ) {
+            transaction = this.transactions[this.rendered];
+            this.rendered++;
+            this.correct++;
+          }
+
+          if (this.transactionIsUndone(transaction)) continue;
+
+          this.currentTask = buildRenderTask(this.virtualCanvas, transaction);
         }
 
-        if (this.transactionIsUndone(transaction)) continue;
-
-        this.currentTask = buildRenderTask(this.virtualCanvas, transaction);
+        const optionalNextTask = this.currentTask.pop()(); // run the next bit of task
+        if (optionalNextTask) this.currentTask.push(optionalNextTask);
+        if (
+          this.currentTask.length === 0 &&
+          (this.msSinceLastSnapShot > 32 ||
+            toolCodeInverse[
+              this.transactions[this.rendered - 1][TOOLCODEINDEX]
+            ] == "resize")
+        ) {
+          this.takeSnapShot();
+          this.msSinceLastSnapShot = 0;
+        }
+        this.needToRenderCanvas = true;
+        this.msSinceLastSnapShot += performance.now() - processStartTime;
       }
 
-      const optionalNextTask = this.currentTask.pop()(); // run the next bit of task
-      if (optionalNextTask) this.currentTask.push(optionalNextTask);
-      if (this.currentTask.length === 0 && this.msSinceLastSnapShot > 32) {
-        console.log("snapshotTaken");
-        console.log(this.overshoot);
-        this.takeSnapShot();
-        this.msSinceLastSnapShot = 0;
-      }
-      this.needToRenderCanvas = true;
-      this.msSinceLastSnapShot += performance.now() - processStartTime;
-    }
+      // Schedule the next frame
+      requestAnimationFrame(renderFrame);
+    };
 
-    this.overshoot =
-      (this.overshoot * 99 +
-        performance.now() -
-        startTime +
-        this.overshoot -
-        loopTargetms) /
-      100;
-
-    setTimeout(() => this.transactionRenderLoop(loopTargetms), 0);
+    // Start the loop
+    requestAnimationFrame(renderFrame);
   }
 
   transactionIsUndone(transaction) {
@@ -215,6 +218,8 @@ export default class TransactionManager {
     for (let index = 0; index < this.uninsertedTransactions.length; index++) {
       const transaction = this.uninsertedTransactions[index];
       const transactionType = transaction[TOOLCODEINDEX];
+
+      if(!transaction) continue;
 
       if (
         transactionType === toolCodes.undo[0] ||

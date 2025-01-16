@@ -41,6 +41,13 @@ export default class Pencil {
     if (!this.isDrawing) return;
 
     const newPoint = this.virtualCanvas.positionInCanvas(input.x, input.y);
+    if (
+      this.points.length > 0 &&
+      newPoint[0] === this.points[this.points.length - 1][0] &&
+      newPoint[1] === this.points[this.points.length - 1][1]
+    )
+      return;
+
     this.points.push(newPoint);
 
     if (this.points.length === 2) {
