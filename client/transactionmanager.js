@@ -95,7 +95,7 @@ export default class TransactionManager {
 
       const optionalNextTask = this.currentTask.pop()(); // run the next bit of task
       if (optionalNextTask) this.currentTask.push(optionalNextTask);
-      if (this.currentTask.length === 0 && this.msSinceLastSnapShot > 64) {
+      if (this.currentTask.length === 0 && this.msSinceLastSnapShot > 32) {
         console.log("snapshotTaken");
         console.log(this.overshoot);
         this.takeSnapShot();
