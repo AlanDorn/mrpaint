@@ -123,8 +123,7 @@ export default class VirtualCanvas {
   }
 
   setSize(width, height) {
-
-    const heightChanged = height !== this.virtualHeight
+    const heightChanged = height !== this.virtualHeight;
     if (heightChanged)
       if (height > this.virtualHeight)
         for (let index = 0; index < height - this.virtualHeight; index++)
@@ -202,11 +201,19 @@ export default class VirtualCanvas {
   }
 
   set(newVirtualCanvas) {
+    if (
+      this.virtualHeight !== newVirtualCanvas.length ||
+      this.virtualWidth !== newVirtualCanvas[0].length
+    ) {
+      this.offscreenCanvas.width = this.virtualWidth * this.pixelZoom;
+      this.offscreenCanvas.height = this.virtualHeight * this.pixelZoom;
+    }
+
     const oldVirtualCanvas = this.virtualCanvas;
     this.virtualCanvas = newVirtualCanvas;
     this.virtualWidth = this.virtualCanvas[0].length;
     this.virtualHeight = this.virtualCanvas.length;
-    //CALM: something here is supposed to set the canvas size, for now the size is static
+
     this.fillImageData();
     return oldVirtualCanvas;
   }
@@ -258,7 +265,10 @@ export default class VirtualCanvas {
 
   centerOfScreenInCanvas() {
     const rect = this.drawingarea.getBoundingClientRect();
-    return this.positionInCanvas(rect.width / 2 + rect.left, rect.height / 2 + rect.top)
+    return this.positionInCanvas(
+      rect.width / 2 + rect.left,
+      rect.height / 2 + rect.top
+    );
   }
 
   setCanvasSize() {
