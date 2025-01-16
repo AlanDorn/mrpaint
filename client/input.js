@@ -1,5 +1,5 @@
 export default class Input {
-  constructor(toolbar, virtualcanvas) {
+  constructor(toolbar) {
     this.x = 0;
     this.y = 0;
     this.mouseDown = false;
@@ -71,8 +71,9 @@ export default class Input {
       "wheel",
       (event) => {
         event.preventDefault();
+        //CALM: This should be handled by the toolbar instead of here.
         if (toolbar.activeSelector == null) {
-          virtualcanvas.viewport.handleWheel(event);
+          toolbar.viewport.handleWheel(event);
         } else {
           toolbar.brushsize.handleWheel(event);
         }

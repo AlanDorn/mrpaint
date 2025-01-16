@@ -1,33 +1,29 @@
-import Viewport from "./viewport.js";
-
 const white = [255, 255, 255];
 export default class VirtualCanvas {
   constructor() {
     this.virtualHeight = 500;
     this.virtualWidth = 700;
-    this.pixelZoom = 4; // each pixel is represented by a nxn square, this improves clarity.
+    this.pixelZoom = 2; // each pixel is represented by a nxn square, this improves clarity.
     this.zoomExp = 0;
     this.zoom = 1; // Default zoom level
     this.offset = [0, 0]; // Default offset [x, y]
     this.fillGeneration = [];
-
-    this.viewport = new Viewport(this);
 
     this.virtualCanvas = Array.from({ length: this.virtualHeight }, () =>
       Array(this.virtualWidth).fill(white)
     );
 
     this.drawingarea = document.getElementById("drawingarea");
-    this.canvas = document.getElementById("myCanvas");
-    this.ctx = this.canvas.getContext("2d");
-    this.canvas.width = this.virtualWidth * this.pixelZoom;
-    this.canvas.height = this.virtualHeight * this.pixelZoom;
     this.offscreenCanvas = document.createElement("canvas");
     this.offscreenCanvas.width = this.virtualWidth * this.pixelZoom;
     this.offscreenCanvas.height = this.virtualHeight * this.pixelZoom;
     this.offscreenCtx = this.offscreenCanvas.getContext("2d");
-
     this.fillImageData();
+
+    this.canvas = document.getElementById("myCanvas");
+    this.ctx = this.canvas.getContext("2d");
+    this.setCanvasSize();
+    window.addEventListener("resize", () => this.setCanvasSize());
   }
 
   render() {
@@ -127,26 +123,30 @@ export default class VirtualCanvas {
   }
 
   setSize(width, height) {
-    if (height !== this.virtualHeight)
+
+    const heightChanged = height !== this.virtualHeight
+    if (heightChanged)
       if (height > this.virtualHeight)
-        for (let index = 0; index < height - this.virtualCanvas; index++)
+        for (let index = 0; index < height - this.virtualHeight; index++)
           this.virtualCanvas.push(Array(this.virtualWidth).fill(white));
       else this.virtualCanvas.length = height;
 
-    if (width !== this.virtualWidth)
+    this.virtualHeight = height;
+
+    const widthChanged = width !== this.virtualWidth;
+    if (widthChanged)
       if (width > this.virtualWidth)
-        for (let index = 0; index < this.virtualCanvas.length; index++)
+        for (let index = 0; index < this.virtualHeight; index++)
           this.virtualCanvas[index].push(
             ...Array(width - this.virtualWidth).fill(white)
           );
       else
-        for (let index = 0; index < this.virtualCanvas.length; index++)
+        for (let index = 0; index < this.virtualHeight; index++)
           this.virtualCanvas[index].length = width;
 
     this.virtualWidth = width;
-    this.virtualHeight = height;
 
-    if (height !== this.virtualHeight || width !== this.virtualWidth) {
+    if (heightChanged || widthChanged) {
       this.offscreenCanvas.width = this.virtualWidth * this.pixelZoom;
       this.offscreenCanvas.height = this.virtualHeight * this.pixelZoom;
       this.fillImageData();
@@ -154,7 +154,7 @@ export default class VirtualCanvas {
   }
 
   fillImageData() {
-    const chunkSize = 512;
+    const chunkSize = 5000;
     this.fillGeneration = [];
 
     const totalChunks = Math.ceil(this.virtualHeight / chunkSize);
@@ -198,7 +198,7 @@ export default class VirtualCanvas {
     for (let y = 0; y < this.virtualHeight; y++)
       for (let x = 0; x < this.virtualWidth; x++)
         this.virtualCanvas[y][x] = white;
-    setTimeout(() => this.fillImageData());
+    this.fillImageData();
   }
 
   set(newVirtualCanvas) {
@@ -207,7 +207,7 @@ export default class VirtualCanvas {
     this.virtualWidth = this.virtualCanvas[0].length;
     this.virtualHeight = this.virtualCanvas.length;
     //CALM: something here is supposed to set the canvas size, for now the size is static
-    setTimeout(() => this.fillImageData());
+    this.fillImageData();
     return oldVirtualCanvas;
   }
 
@@ -243,16 +243,32 @@ export default class VirtualCanvas {
   }
 
   positionInCanvas(clientX, clientY) {
-    const rect = this.canvas.getBoundingClientRect();
+    const rect = this.drawingarea.getBoundingClientRect();
     const x = Math.round((clientX - rect.left - this.offset[0]) / this.zoom);
     const y = Math.round((clientY - rect.top - this.offset[1]) / this.zoom);
     return [x, y];
   }
 
   positionInScreen(x, y) {
-    const rect = this.canvas.getBoundingClientRect();
+    const rect = this.drawingarea.getBoundingClientRect();
     const clientX = x * this.zoom + this.offset[0] + rect.left;
     const clientY = y * this.zoom + this.offset[1] + rect.top;
     return [clientX, clientY];
+  }
+
+  centerOfScreenInCanvas() {
+    const rect = this.drawingarea.getBoundingClientRect();
+    return this.positionInCanvas(rect.width / 2 + rect.left, rect.height / 2 + rect.top)
+  }
+
+  setCanvasSize() {
+    if (this.debounceTimer) clearTimeout(this.debounceTimer);
+
+    this.debounceTimer = setTimeout(() => {
+      const rect = this.drawingarea.getBoundingClientRect();
+      this.canvas.width = rect.width;
+      this.canvas.height = rect.height;
+      this.render();
+    }, 50);
   }
 }

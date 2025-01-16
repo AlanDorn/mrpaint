@@ -3,6 +3,7 @@ import ColorPicker from "./colorpicker.js";
 import Pencil from "./pencil.js";
 import FillTool from "./filltool.js";
 import Undo from "./undo.js";
+import Viewport from "./viewport.js";
 
 //TODO Gotta add straight line tool!
 //TODO add the active button coloring logic, not sure if goes here or somewhere else yet!
@@ -14,6 +15,7 @@ export default class Toolbar {
     this.pencil = new Pencil(virtualCanvas, transactionManager, this);
     this.fillTool = new FillTool(virtualCanvas, transactionManager, this);
     this.undo = new Undo(transactionManager);
+    this.viewport = new Viewport(virtualCanvas, this, transactionManager);
 
     //set the default tool to pencil
     this.activeTool = this.pencil;
@@ -71,6 +73,38 @@ export default class Toolbar {
 
     drawingarea.addEventListener("click", () => {
       this.activeSelector = null;
+    });
+
+    this.viewport.widthAdjuster.addEventListener("mousedown", (event) => {
+      if (this.activeTool == this.viewport) return;
+      this.viewport.activeAdjuster = this.viewport.widthAdjuster;
+      this.viewport.lastActiveTool = this.activeTool;
+      this.activeTool = this.viewport;
+    });
+
+    this.viewport.heightAdjuster.addEventListener("mousedown", (event) => {
+      if (this.activeTool == this.viewport) return;
+      this.viewport.activeAdjuster = this.viewport.heightAdjuster;
+      this.viewport.lastActiveTool = this.activeTool;
+      this.activeTool = this.viewport;
+    });
+
+    this.viewport.bothAdjuster.addEventListener("mousedown", (event) => {
+      if (this.activeTool == this.viewport) return;
+      this.viewport.activeAdjuster = this.viewport.bothAdjuster;
+      this.viewport.lastActiveTool = this.activeTool;
+      this.activeTool = this.viewport;
+    });
+
+    document.addEventListener("mousedown", (event) => {
+      if (event.button === 1) {
+        this.viewport.startPosition[0] = event.clientX;
+        this.viewport.startPosition[1] = event.clientY;
+        
+        this.viewport.activeAdjuster = this.viewport.middleMouseAdjuster;
+        this.viewport.lastActiveTool = this.activeTool;
+        this.activeTool = this.viewport;
+      }
     });
   }
 

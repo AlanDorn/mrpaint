@@ -41,7 +41,7 @@ export default class TransactionManager {
 
   simulateVirtualLag() {
     if (this.simulateLag && this.correct > this.lastVirtualError) {
-      this.lastVirtualError = this.correct + 1;
+      this.lastVirtualError = this.correct + 15;
       this.correct -= Math.random() < 0.5 ? 30 : 60;
     }
   }
@@ -60,7 +60,6 @@ export default class TransactionManager {
     }
 
     if (this.needToRenderCanvas) this.virtualCanvas.render();
-
     this.needToRenderCanvas = false;
 
     while (performance.now() - startTime < loopTargetms - this.overshoot) {
@@ -70,16 +69,25 @@ export default class TransactionManager {
         const allTransactionsAreRendered =
           this.rendered >= this.transactions.length;
         if (allTransactionsAreRendered) {
-          const timeLeft = loopTargetms - (performance.now() - startTime);
+          const timeLeft = loopTargetms - this.overshoot - (performance.now() - startTime);
           this.simulateVirtualLag();
           setTimeout(() => this.transactionRenderLoop(loopTargetms), timeLeft);
-          this.overshoot = this.overshoot * 99 / 100;
+          this.overshoot = (this.overshoot * 99) / 100;
           return;
         }
 
-        const transaction = this.transactions[this.rendered];
+        let transaction = this.transactions[this.rendered];
         this.rendered++;
         this.correct++;
+        while (
+          this.transactionIsUndone(transaction) &&
+          this.rendered < this.transactions.length
+        ) {
+          transaction = this.transactions[this.rendered];
+          this.rendered++;
+          this.correct++;
+        }
+
         if (this.transactionIsUndone(transaction)) continue;
 
         this.currentTask = buildRenderTask(this.virtualCanvas, transaction);
@@ -152,7 +160,18 @@ export default class TransactionManager {
     this.correct = snapshotIndex + 1;
     this.snapshots.length--;
     this.snapshotTransactions.length--;
-    this.takeSnapShot();
+
+    // Create a new snapshot from an old one if available
+    let reusedSnapshot = null;
+    if (this.snapshotGraveyard.length > 0) {
+      // Pop from graveyard and reuse it
+      reusedSnapshot = this.snapshotGraveyard.pop();
+    }
+
+    this.snapshots.push(this.virtualCanvas.cloneCanvas(reusedSnapshot));
+    this.snapshotTransactions.push(this.transactions[this.rendered - 1]);
+
+    this.msSinceLastSnapShot = 0;
   }
 
   takeSnapShot() {

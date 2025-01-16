@@ -4,9 +4,10 @@ export const toolCodes = {
   fill: new Uint8Array([2]),
   undo: new Uint8Array([3]),
   redo: new Uint8Array([4]),
+  resize: new Uint8Array([5]),
 };
-export const toolCodeInverse = ["pixel", "pencil", "fill", "undo", "redo"];
-export const toolLength = [24, 36, 22, 15, 15];
+export const toolCodeInverse = ["pixel", "pencil", "fill", "undo", "redo", "resize"];
+export const toolLength = [24, 36, 22, 15, 15, 19];
 export const TOOLCODEINDEX = 14;
 
 export function pixelTransaction(operationId, color, brushsize, position) {
@@ -67,6 +68,27 @@ export function redoTransaction(operationId) {
     toolCodes["redo"] //1 bytes
   );
 }
+
+export function resizeTransaction(operationId, position) {
+  return buildTransaction(
+    touuid(), //8 bytes
+    operationId, //6 bytes
+    toolCodes["resize"], //1 bytes
+    encodePosition(position) //4 bytes
+  );
+}
+
+//
+//                           ,,
+//  `7MMF'  `7MMF'         `7MM
+//    MM      MM             MM
+//    MM      MM   .gP"Ya    MM  `7MMpdMAo.  .gP"Ya  `7Mb,od8
+//    MMmmmmmmMM  ,M'   Yb   MM    MM   `Wb ,M'   Yb   MM' "'
+//    MM      MM  8M""""""   MM    MM    M8 8M""""""   MM
+//    MM      MM  YM.    ,   MM    MM   ,AP YM.    ,   MM
+//  .JMML.  .JMML. `Mbmmd' .JMML.  MMbmmd'   `Mbmmd' .JMML.
+//                                 MM
+//                               .JMML.
 
 export function buildTransaction(...components) {
   let transactionLength = 0;
@@ -152,18 +174,18 @@ export function decodeLargeNumber(byteArray) {
 
 export function encodePosition(position) {
   const array = new Uint8Array(4);
-  array[0] = position[0] & 0xFF; // Lower 8 bits
-  array[1] = (position[0] >> 8) & 0xFF; // Upper 8 bits
-  array[2] = position[1] & 0xFF; // Lower 8 bits
-  array[3] = (position[1] >> 8) & 0xFF; // Upper 8 bits
+  array[0] = position[0] & 0xff; // Lower 8 bits
+  array[1] = (position[0] >> 8) & 0xff; // Upper 8 bits
+  array[2] = position[1] & 0xff; // Lower 8 bits
+  array[3] = (position[1] >> 8) & 0xff; // Upper 8 bits
   return array;
 }
 
 // Function to decode a Uint8Array back into two Int16 values
 export function decodePosition(position) {
   const int1 = (position[1] << 8) | position[0];
-  const signedInt1 = int1 > 0x7FFF ? int1 - 0x10000 : int1;
+  const signedInt1 = int1 > 0x7fff ? int1 - 0x10000 : int1;
   const int2 = (position[3] << 8) | position[2];
-  const signedInt2 = int2 > 0x7FFF ? int2 - 0x10000 : int2;
+  const signedInt2 = int2 > 0x7fff ? int2 - 0x10000 : int2;
   return [signedInt1, signedInt2];
 }

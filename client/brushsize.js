@@ -16,7 +16,7 @@ export default class BrushSize {
         input.placeholder = "Enter brush size..."; // Show placeholder
       } else {
         input.placeholder = ""; // Remove placeholder when there's input
-        input.style.backgroundImage = "linear-gradient(to right, black 0%, black 100%)";
+        input.style.backgroundImage = "linear-gradient(to right, var(--secondary) 0%, var(--secondary) 100%)";
         input.style.backgroundSize = `${previewLength}px ${size}px`; // Fixed length, dynamic height
         input.style.backgroundPosition = `62px`; // Align to the right
       }

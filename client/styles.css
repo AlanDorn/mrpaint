@@ -1,14 +1,19 @@
 :root {
+  color-scheme: light dark;
+
   --toolheight: 6rem;
   --purple: #ddc6f0;
   --font: "Hack"; /* Hack, "Courier New", Courier, monospace */
   --fontsize: 14px;
+
+  --background: light-dark(#d1d1d1, #454545);
+  --secondary: light-dark(#6d6d6d, #b0b0b0);
 }
 
 @font-face {
   font-family: Hack;
-  src: url('./fonts/Hack-Regular.ttf');
-   }
+  src: url("./fonts/Hack-Regular.ttf");
+}
 
 * {
   margin: 0;
@@ -22,10 +27,10 @@ body {
   width: 100svw;
 }
 
-.cursor{
-  width:10px;
-  height:10px;
-  background-color:darkgrey;
+.cursor {
+  width: 10px;
+  height: 10px;
+  background-color: var(--secondary);
   position: absolute;
 }
 
@@ -46,7 +51,7 @@ body {
 #toolbar {
   width: 100svw;
   height: var(--toolheight);
-  background-color: #666;
+  background-color: var(--background);
   overflow: visible;
   display: flex;
 }
@@ -55,7 +60,7 @@ body {
   width: 100svw;
   height: calc(100svh - var(--toolheight));
   touch-action: none; /* for screen users */
-  background-color: #666;
+  background-color: var(--background);
 }
 
 input[type="color"] {
@@ -73,7 +78,7 @@ canvas {
 .cursor {
   height: 10px;
   width: 10px;
-  background-color: brown;
+  background-color: var(--secondary);;
   position: absolute;
 }
 
@@ -83,6 +88,14 @@ canvas {
   width: 175px;
   margin-right: 15px;
   overflow: visible;
+  background-color: var(--background);
+  color: var(--secondary);
+}
+
+#customInput {
+  background-color: var(--background);
+  color: var(--secondary);
+  border: var(--secondary) 2px solid;
 }
 
 /* Input field with dynamic brush size preview */
@@ -91,8 +104,7 @@ canvas {
   width: 100%;
   margin-top: 5px;
   height: calc(var(--toolheight) - 14px);
-  border: 1px solid #000000;
-  box-shadow: inset 0 0 0 1px #ffffff;
+  border: var(--secondary) 2px solid;
   font-size: var(--fontsize);
   font-family: var(--font);
   outline: none;
@@ -109,7 +121,7 @@ canvas {
 
 /* Ensure no change on focus */
 .custom-dropdown input:focus {
-  border: 1px solid #000000; /* Keep the same border */
+  border: 1px solid var(--secondary); /* Keep the same border */
   /* box-shadow: inset 0 0 0 1px #ffffff; */ /* box-shadow: 0 0 10px 2px #ddc6f0;; Prevent focus shadow */
   outline: none; /* Prevent focus outline */
   transition: none; /* Ensure no visual transition */
@@ -123,8 +135,8 @@ canvas {
   top: 100%; /* Below the input */
   left: 0;
   width: 187px;
-  border: 2px solid #000;
-  background-color: white;
+  border: 1px solid var(--secondary);
+  background-color: var(--background);
   padding: 0;
   margin: 0;
   list-style: none;
@@ -156,12 +168,12 @@ canvas {
 }
 
 .size-line {
-  background-color: #000000; /* Line color */
+  background-color: var(--secondary); /* Line color */
   display: inline-block;
   width: 115px; /* Consistent width for all line previews */
 }
 
-#main-tools{
+#main-tools {
   display: grid;
   grid-template-columns: repeat(2, 2rem);
   grid-template-rows: repeat(2, 2rem);
@@ -170,7 +182,7 @@ canvas {
   justify-content: center;
   /* margin: auto 1rem; */
   margin-left: 0.25rem;
-  padding-top: .2rem;
+  padding-top: 0.2rem;
   padding-right: 1rem;
 }
 
@@ -187,18 +199,18 @@ canvas {
   /* display: flex; */
   align-items: center;
   position: relative;
-  
-  background-color: #ffffff;
-  border: 1px solid #000000;
-  
+
+  background-color: var(--background);
+  border:var(--secondary) 2px solid ;
+
   margin-top: 1rem;
   margin-right: 0.5em;
   margin-left: 0.5em;
 }
 #fillTool img,
 #pencil img,
-#undo img, 
-#redo img{
+#undo img,
+#redo img {
   margin: auto;
   width: 25px;
   height: 25px;
@@ -206,14 +218,14 @@ canvas {
 
 #fillTool:hover,
 #pencil:hover,
-#undo:hover, 
+#undo:hover,
 #redo:hover {
   background-color: var(--purple);
 }
 
 #fillTool:active,
 #pencil:active,
-#undo:active, 
+#undo:active,
 #redo:active {
   box-shadow: 0px 0px 1px 1px var(--purple);
   background-color: var(--purple);
@@ -228,13 +240,12 @@ canvas {
   margin-left: 10px;
   position: relative;
   overflow: visible;
-
 }
 
 .swatch {
   /* box-sizing:border-box; */
-  border: 1px solid #ffffff;
-  outline: 1px solid #a0a0a0;
+  border: 0px solid var(--background);
+  outline: 1px solid var(--secondary);
   cursor: pointer;
   /* overflow: visible; */
   margin-left: 1.5px;
@@ -246,4 +257,13 @@ canvas {
 .swatch:hover {
   overflow: visible;
   outline: 1px solid #b217fb;
+}
+
+.adjuster {
+  background-color: var(--background);
+  width: 5px;
+  height: 5px;
+  position: absolute;
+  border: var(--secondary) solid 2px;
+  cursor: pointer;
 }

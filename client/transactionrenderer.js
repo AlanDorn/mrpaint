@@ -15,6 +15,8 @@ export default function buildRenderTask(virtualCanvas, transaction) {
       return renderPencil(virtualCanvas, transaction);
     case 2:
       return renderFill(virtualCanvas, transaction);
+    case 5:
+      return renderResize(virtualCanvas, transaction);
   }
 
   return [doNothing];
@@ -55,10 +57,10 @@ function renderPencil(virtualCanvas, transaction) {
     task.push(() => {
       for (let i = start; i < end; i++) {
         const [x, y] = pixels[i];
-        if(brushsize <= 2) {
-          virtualCanvas.setPixel(x,y,color, brushsize);
+        if (brushsize <= 2) {
+          virtualCanvas.setPixel(x, y, color, brushsize);
         }
-        virtualCanvas.setPixelOutline(x,y,color, brushsize);
+        virtualCanvas.setPixelOutline(x, y, color, brushsize);
       }
     });
   }
@@ -83,7 +85,6 @@ function renderFill(virtualCanvas, transaction) {
   ) {
     return [doNothing];
   }
-
 
   const targetColor = virtualCanvas.virtualCanvas[y][x];
   virtualCanvas.setPixel(x, y, targetColor, 1);
@@ -140,4 +141,15 @@ function colorsMatch(first, second) {
   return (
     first[0] === second[0] && first[1] === second[1] && first[2] === second[2]
   );
+}
+
+function renderResize(virtualCanvas, transaction) {
+  const [newWidth, newHeight] = decodePosition(transaction.subarray(15, 19));
+
+  return [
+    () => {
+      virtualCanvas.setSize(newWidth, newHeight);
+      virtualCanvas.viewport.setAdjusters();
+    },
+  ];
 }
