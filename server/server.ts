@@ -19,17 +19,14 @@ app.get("/", (req, res) => {
 });
 
 app.get("/:lobby", (req, res) => {
-  if(!lobbies.has(req.params.lobby))
-    res.redirect('/');
-  else
-    res.sendFile(path.join(__dirname, "../client", "client.html"));
+  if (!lobbies.has(req.params.lobby)) res.redirect("/");
+  else res.sendFile(path.join(__dirname, "../client", "client.html"));
 });
 
-app.listen(3000, () => {
-  console.log("Server running on port 3000 - http://localhost:3000/");
-});
-
+// Create a single HTTP server
 const server = http.createServer(app);
+
+// Attach WebSocket server to the same HTTP server
 const wss = new WebSocket.Server({ server });
 
 wss.on("connection", (ws) => {
@@ -42,7 +39,7 @@ wss.on("connection", (ws) => {
       lobby = lobbies.get(id);
       console.log(id);
 
-      if(!lobby) {
+      if (!lobby) {
         return;
       }
       userId = lobby.addUser(ws);
@@ -55,12 +52,14 @@ wss.on("connection", (ws) => {
 
   // Kick the user from the active users
   ws.on("close", () => {
-    if(lobby)
-      lobby.deleteUser(userId);
+    if (lobby) lobby.deleteUser(userId);
   });
 });
 
-server.listen(3001, () => console.log("WebSocket server running on port 3001"));
+// Start listening on a single port
+const PORT = process.env.PORT || 3000; // Render provides the port in the `PORT` env variable
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
 
 mrpaint();
-

@@ -9,7 +9,6 @@ export default function socket(input, transactionManager, virtualCanvas) {
 
   const socketString = url.origin
     .replace(/^http/, "ws")
-    .replace(/3000/, "3001");
   const ws = new WebSocket(socketString);
 
   ws.onopen = () => ws.send(lobbyCode);
