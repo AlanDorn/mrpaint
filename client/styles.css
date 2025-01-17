@@ -25,6 +25,7 @@ regular size monitor, wide/ultra wide */
 body {
   height: 100svh;
   width: 100svw;
+  background: linear-gradient(135deg, rgba(209,209,209,1) 0%, rgba(171,171,171,1) 100%);
 }
 
 .cursor {
@@ -51,7 +52,7 @@ body {
 #toolbar {
   width: 100svw;
   height: var(--toolheight);
-  background-color: var(--background);
+  background-color: #8f8f8f00;
   overflow: visible;
   display: flex;
 }
@@ -60,7 +61,8 @@ body {
   width: 100svw;
   height: calc(100svh - var(--toolheight));
   touch-action: none; /* for screen users */
-  background-color: var(--background);
+  background-color: #8f8f8f00
+   
 }
 
 input[type="color"] {

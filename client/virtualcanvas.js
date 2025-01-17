@@ -205,8 +205,8 @@ export default class VirtualCanvas {
       this.virtualHeight !== newVirtualCanvas.length ||
       this.virtualWidth !== newVirtualCanvas[0].length
     ) {
-      this.offscreenCanvas.width = this.virtualWidth * this.pixelZoom;
-      this.offscreenCanvas.height = this.virtualHeight * this.pixelZoom;
+      this.offscreenCanvas.width = newVirtualCanvas[0].length * this.pixelZoom;
+      this.offscreenCanvas.height = newVirtualCanvas.length * this.pixelZoom;
     }
 
     const oldVirtualCanvas = this.virtualCanvas;

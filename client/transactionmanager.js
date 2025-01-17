@@ -159,6 +159,7 @@ export default class TransactionManager {
     );
 
     this.snapshotGraveyard.push(this.virtualCanvas.set(snapshot));
+    this.virtualCanvas.viewport.setAdjusters();
     this.rendered = snapshotIndex + 1;
     this.correct = snapshotIndex + 1;
     this.snapshots.length--;
