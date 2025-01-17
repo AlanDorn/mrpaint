@@ -7,8 +7,7 @@ export default function socket(input, transactionManager, virtualCanvas) {
   const url = new URL(window.location.href);
   const lobbyCode = url.pathname.split("/").pop();
 
-  const socketString = url.origin
-    .replace(/^http/, "ws")
+  const socketString = url.origin.replace(/^http/, "ws");
   const ws = new WebSocket(socketString);
 
   ws.onopen = () => ws.send(lobbyCode);
@@ -19,9 +18,9 @@ export default function socket(input, transactionManager, virtualCanvas) {
         firstMessage = false;
         const eventData = new Uint8Array(buffer);
         userId = eventData[0];
-        console.log(userId);
         if (eventData.length > 1)
           transactionManager.pushServer(eventData.subarray(1));
+        transactionManager.transactionRenderLoop();
         return;
       }
       const eventData = new Uint8Array(buffer);

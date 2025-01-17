@@ -37,7 +37,8 @@ export default class TransactionManager {
 
     this.simulateLag = false;
     this.lastVirtualError = 0;
-    setTimeout(() => this.transactionRenderLoop(3), 0);
+
+    this.newRender = false; // used to control mousemove input,
   }
 
   simulateVirtualLag() {
@@ -47,9 +48,10 @@ export default class TransactionManager {
     }
   }
 
-  transactionRenderLoop(loopTargetms) {
+  transactionRenderLoop(loopTargetms = 3) {// Having loopTargetms too high blocks the mouse
     const renderFrame = () => {
       const startTime = performance.now();
+      this.newRender = true;
 
       if (this.uninsertedTransactions.length > 0) this.pushTransactions();
 
