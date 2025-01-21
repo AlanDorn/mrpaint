@@ -5,6 +5,8 @@ export default class Ruler {
     this.top = document.getElementById("top-ruler");
     this.left = document.getElementById("left-ruler");
     this.topIndicator = document.getElementById("topIndicator");
+    this.leftIndicator = document.getElementById("leftIndicator");
+
     this.topSegments = [];
     this.leftSegments = [];
 
@@ -13,20 +15,10 @@ export default class Ruler {
       this.addLeftSegment();
     }
 
-    let start = 0;
-    for (let index = 0; index < this.topSegments.length; index++) {
-      this.topSegments[index].style.width = "80px";
-      this.topSegments[index].rulerNumber.innerText = start;
-
-      this.leftSegments[index].style.height = "120px";
-      this.leftSegments[index].rulerNumber.innerText = start;
-      start += 30;
-    }
-
     this.set();
   }
 
-  set() {
+  set(input) {
     const rect = this.virtualCanvas.drawingarea.getBoundingClientRect();
     const topLeftInCanvas = this.virtualCanvas.positionInCanvas(
       rect.left,
@@ -36,6 +28,14 @@ export default class Ruler {
       rect.left + rect.width,
       rect.top + rect.height
     );
+
+    if (input) {
+      const normalizedPosition = this.virtualCanvas.positionInScreen(
+        ...this.virtualCanvas.positionInCanvas(input.x, input.y)
+      );
+      this.topIndicator.style.width = Math.max(0, normalizedPosition[0] - rect.left) + "px";
+      this.leftIndicator.style.height = Math.max(0, normalizedPosition[1] - rect.top) + "px";
+    }
 
     // Handle width (top segments)
     const canvasWidth = bottomRightInCanvas[0] - topLeftInCanvas[0];

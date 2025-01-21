@@ -360,6 +360,8 @@ canvas {
   grid-row: 2 / 3;
   background-color: transparent;
   width: var(--rulerheight);
+  display:flex; 
+  flex-direction: column;
   padding: 0;
   height: 100%;
   position: relative;
@@ -400,7 +402,13 @@ canvas {
 #topIndicator {
   position: absolute;
   height: 100%;
-  border-right: var(--purple) 1px solid;
+  border-right: var(--secondary) 1px solid;
+}
+
+#leftIndicator {
+  position: absolute;
+  width: 100%;
+  border-bottom: var(--secondary) 1px solid;
 }
 
 
@@ -408,6 +416,7 @@ canvas {
   border-bottom: var(--secondary) 1px solid;
   box-sizing: border-box;
   display: flex;
+  flex-shrink: 0;
 }
 
 .leftNumber {

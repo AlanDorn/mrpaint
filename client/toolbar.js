@@ -142,6 +142,6 @@ export default class Toolbar {
   mouseMove(input) {
     this.activeTool.mouseMove(input);
     this.statusbar.setMousePosition(input);
-    this.ruler.set();
+    this.ruler.set(input);
   }
 }
