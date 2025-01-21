@@ -33,52 +33,36 @@ export default class TransactionManager {
     this.currentTask = [];
     this.needToRenderCanvas = false;
 
-    this.overshoot = 0;
-
-    this.simulateLag = false;
-    this.lastVirtualError = 0;
-
     this.newRender = false; // used to control mousemove input,
+    this.transactionRenderLoop();
   }
 
-  simulateVirtualLag() {
-    if (this.simulateLag && this.correct > this.lastVirtualError) {
-      this.lastVirtualError = this.correct + 15;
-      this.correct -= Math.random() < 0.5 ? 15 : 30;
-    }
-  }
-
-  transactionRenderLoop(loopTargetms = 3) {// Having loopTargetms too high blocks the mouse
+  transactionRenderLoop(loopTargetms = 8) {
+    // Having loopTargetms too high blocks the mouse
     const renderFrame = () => {
       const startTime = performance.now();
       this.newRender = true;
+      this.virtualCanvas.statusbar.setCompletionBar(
+        this.correct / this.transactions.length
+      );
+      this.virtualCanvas.ruler.set();
 
-      if (this.uninsertedTransactions.length > 0) this.pushTransactions();
+      if (this.uninsertedTransactions.length) this.pushTransactions();
 
-      const needToSyncCanvas = this.correct < this.rendered;
-      if (needToSyncCanvas) {
-        this.syncCanvas();
-      }
+      if (this.correct < this.rendered) this.syncCanvas();
 
-      if (this.rendered >= this.transactions.length) {
-        this.virtualCanvas.fill();
+      if (this.rendered >= this.transactions.length - 100) {
         this.needToRenderCanvas = true;
       }
 
-      if (this.needToRenderCanvas) this.virtualCanvas.render();
-      this.needToRenderCanvas = false;
+      this.virtualCanvas.fill();
+      this.virtualCanvas.render();
+      if (this.needToRenderCanvas) this.needToRenderCanvas = false;
 
       while (performance.now() - startTime < loopTargetms) {
         const processStartTime = performance.now();
-        const taskIsFinished = this.currentTask.length === 0;
-        if (taskIsFinished) {
-          const allTransactionsAreRendered =
-            this.rendered >= this.transactions.length;
-          if (allTransactionsAreRendered) {
-            this.simulateVirtualLag();
-            requestAnimationFrame(renderFrame);
-            return;
-          }
+        if (this.currentTask.length === 0) {
+          if (this.rendered >= this.transactions.length) continue; //let it rip
 
           let transaction = this.transactions[this.rendered];
           this.rendered++;
@@ -101,7 +85,8 @@ export default class TransactionManager {
         if (optionalNextTask) this.currentTask.push(optionalNextTask);
         if (
           this.currentTask.length === 0 &&
-          (this.msSinceLastSnapShot > 32 ||
+          this.rendered >= this.transactions.length - 1000 &&
+          (this.msSinceLastSnapShot > 8 ||
             toolCodeInverse[
               this.transactions[this.rendered - 1][TOOLCODEINDEX]
             ] == "resize")
@@ -113,11 +98,9 @@ export default class TransactionManager {
         this.msSinceLastSnapShot += performance.now() - processStartTime;
       }
 
-      // Schedule the next frame
       requestAnimationFrame(renderFrame);
     };
 
-    // Start the loop
     requestAnimationFrame(renderFrame);
   }
 
@@ -162,6 +145,7 @@ export default class TransactionManager {
 
     this.snapshotGraveyard.push(this.virtualCanvas.set(snapshot));
     this.virtualCanvas.viewport.setAdjusters();
+    this.virtualCanvas.statusbar.setCanvasSize();
     this.rendered = snapshotIndex + 1;
     this.correct = snapshotIndex + 1;
     this.snapshots.length--;
@@ -181,29 +165,21 @@ export default class TransactionManager {
   }
 
   takeSnapShot() {
-    // Clean up older snapshots that are in the same "magnitude" tier
-    // - 5 so that the last 5 snapshots don't get removed
     for (let index = this.snapshots.length - 1 - 5; index > 0; index--) {
-      const previousBase =
+      const olderAge =
         this.rendered -
         this.transactionIndex(this.snapshotTransactions[index - 1]);
-      const currentBase =
+      const currentAge =
         this.rendered - this.transactionIndex(this.snapshotTransactions[index]);
-      if (previousBase < exp * currentBase) {
-        // Remove the snapshot and push it into the graveyard
+      if (olderAge < exp * currentAge) {
         this.snapshotTransactions.splice(index, 1);
         this.snapshotGraveyard.push(...this.snapshots.splice(index, 1));
       }
     }
 
-    // Create a new snapshot from an old one if available
-    let reusedSnapshot = null;
-    if (this.snapshotGraveyard.length > 0) {
-      // Pop from graveyard and reuse it
-      reusedSnapshot = this.snapshotGraveyard.pop();
-    }
-
-    this.snapshots.push(this.virtualCanvas.cloneCanvas(reusedSnapshot));
+    this.snapshots.push(
+      this.virtualCanvas.cloneCanvas(this.snapshotGraveyard.pop())
+    );
     this.snapshotTransactions.push(this.transactions[this.rendered - 1]);
   }
 
@@ -221,8 +197,6 @@ export default class TransactionManager {
     for (let index = 0; index < this.uninsertedTransactions.length; index++) {
       const transaction = this.uninsertedTransactions[index];
       const transactionType = transaction[TOOLCODEINDEX];
-
-      if(!transaction) continue;
 
       if (
         transactionType === toolCodes.undo[0] ||
@@ -242,9 +216,6 @@ export default class TransactionManager {
 
   handleUndoRedo(undoRedo) {
     const operationId = readOperationIdAsNumber(undoRedo);
-    const strings = [];
-    strings[3] = "undo";
-    strings[4] = "redo";
 
     const potentialUndoRedo = this.lastUndoRedoOperation.get(operationId);
 
@@ -280,6 +251,7 @@ export default class TransactionManager {
 
   setIfFirstInstanceOfOperation(transaction) {
     const operationId = readOperationIdAsNumber(transaction);
+    if (!operationId) return;
     const firstTransaction = this.firstTransactionOfOperation.get(operationId);
     if (!firstTransaction || compareTouuid(transaction, firstTransaction) < 0)
       this.firstTransactionOfOperation.set(operationId, transaction);

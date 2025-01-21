@@ -6,7 +6,14 @@ export const toolCodes = {
   redo: new Uint8Array([4]),
   resize: new Uint8Array([5]),
 };
-export const toolCodeInverse = ["pixel", "pencil", "fill", "undo", "redo", "resize"];
+export const toolCodeInverse = [
+  "pixel",
+  "pencil",
+  "fill",
+  "undo",
+  "redo",
+  "resize",
+];
 export const toolLength = [24, 36, 22, 15, 15, 19];
 export const TOOLCODEINDEX = 14;
 

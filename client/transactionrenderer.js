@@ -3,7 +3,7 @@ import {
   decodePosition,
   TOOLCODEINDEX,
 } from "./transaction.js";
-import { centerToBrushSize, splinePixels } from "./util2d.js";
+import { splinePixels } from "./util2d.js";
 
 const doNothing = () => {};
 
@@ -114,14 +114,17 @@ function renderFill(virtualCanvas, transaction) {
           [curX, curY - 1],
         ];
 
-        if (Math.random() < 1 / 3) // mixture of bfs and dfs looks cool
-          for (let i = 0; i < neighbors.length; i++) { // bfs
+        if (Math.random() < 1 / 3)
+          // mixture of bfs and dfs looks cool
+          for (let i = 0; i < neighbors.length; i++) {
+            // bfs
             const pos = Math.floor(Math.random() * stack.length);
             stack.push(stack[pos]);
             stack[pos] = neighbors[i];
           }
         else
-          for (let i = neighbors.length; i > 0; ) { // dfs
+          for (let i = neighbors.length; i > 0; ) {
+            // dfs
             const rand = Math.floor(Math.random() * i);
             stack.push(neighbors[rand]);
             neighbors[rand] = neighbors[--i];
@@ -150,6 +153,7 @@ function renderResize(virtualCanvas, transaction) {
     () => {
       virtualCanvas.setSize(newWidth, newHeight);
       virtualCanvas.viewport.setAdjusters();
+      virtualCanvas.statusbar.setCanvasSize();
     },
   ];
 }
