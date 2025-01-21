@@ -2,7 +2,9 @@
   color-scheme: light dark;
 
   --toolheight: 6rem;
-  --purple2: #ddc6f0;
+  --statusheight: 1.25rem;
+  --rulerheight: 1.25rem;
+  --purple2: light-dark(#e5c4ff, #650191);
   --purple: #b78fd8;
   --font: "Hack"; /* Hack, "Courier New", Courier, monospace */
   --fontsize: 14px;
@@ -18,7 +20,10 @@
 
 * {
   margin: 0;
+  padding: 0;
   overflow: hidden;
+  font-size: var(--fontsize);
+  font-family: var(--font);
 }
 
 /* TODO Need to change some things to allow consistent viewing across different screen sizes like phone, 
@@ -26,7 +31,11 @@ regular size monitor, wide/ultra wide */
 body {
   height: 100svh;
   width: 100svw;
-  background: linear-gradient(135deg, rgba(209,209,209,1) 0%, rgba(171,171,171,1) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(209, 209, 209, 1) 0%,
+    rgba(171, 171, 171, 1) 100%
+  );
 }
 
 .cursor {
@@ -62,7 +71,6 @@ body {
 #toolbar {
   width: 100svw;
   height: var(--toolheight);
-  background-color: #8f8f8f00;
   overflow: visible;
   display: flex;
 }
@@ -70,10 +78,12 @@ body {
 /* in the name drawing area */
 #drawingarea {
   width: 100svw;
-  height: calc(100svh - var(--toolheight));
+  height: calc(
+    100svh - var(--toolheight) - var(--rulerheight) - var(--statusheight)
+  );
   touch-action: none; /* for screen users */
-  background-color: #8f8f8f00
-   
+  grid-column: 2 / 3;
+  grid-row: 2 / 3;
 }
 
 /* For the color pickers === primary/secondary */
@@ -89,7 +99,12 @@ canvas {
   image-rendering: crisp-edges;
 }
 
-
+.cursor {
+  height: 10px;
+  width: 10px;
+  background-color: var(--secondary);
+  position: absolute;
+}
 
 .custom-dropdown {
   position: relative;
@@ -214,7 +229,7 @@ canvas {
   margin-left: 0.25em;
 
   background-color: var(--background);
-  border:var(--secondary) 2px solid ;
+  border: var(--secondary) 2px solid;
 }
 #fillTool img,
 #pencil img,
@@ -283,4 +298,141 @@ canvas {
 #toolbar button.active {
   background-color: var(--purple);
   /* box-shadow: 0px 0px 1px 1px var(--purple); */
+}
+
+#toolbar button.active {
+  background-color: var(--purple);
+  /* box-shadow: 0px 0px 1px 1px var(--purple); */
+}
+
+#mainbody {
+  margin: 0;
+  display: grid;
+  height: calc(100svh - var(--toolheight) - var(--statusheight));
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto 1fr;
+}
+
+#statusbar {
+  height: var(--statusheight);
+  padding: 0;
+  background-color: transparent;
+  width: 100svw;
+  display: flex;
+}
+
+.statusbarValue {
+  height: 100%;
+  width: 12rem;
+  font-size: 1rem;
+  padding-right: 0.125rem;
+  padding-left: 0.125rem;
+  color: var(--secondary);
+  font-weight: 500;
+}
+
+#completionbarContainer {
+  border: var(--secondary) 1px solid;
+  padding: 0;
+  padding-bottom: 0.125rem;
+}
+
+#completionbar {
+  height: 100%;
+  width: 0%;
+  background-color: var(--secondary);
+  transition: width 0.2s ease-out; /* Adjust duration and easing as needed */
+}
+
+#top-ruler {
+  grid-column: 2 / 3;
+  grid-row: 1 / 2;
+  background-color: transparent;
+  height: var(--rulerheight);
+  display: flex;
+  padding: 0;
+  width: 100%;
+  position: relative;
+}
+
+#left-ruler {
+  grid-column: 1 / 2;
+  grid-row: 2 / 3;
+  background-color: transparent;
+  width: var(--rulerheight);
+  padding: 0;
+  height: 100%;
+  position: relative;
+}
+
+.topSegment {
+  border-right: var(--secondary) 1px solid;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.topNumber {
+  height: 75%;
+  width: 100%;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--secondary);
+}
+
+.topTick {
+  height: 25%;
+  width: 100%;
+  display: flex;
+  padding: 0;
+}
+
+.topSubtick {
+  width: 10%;
+  height: 100%;
+  border-right: var(--secondary) 1px solid;
+  box-sizing: border-box;
+}
+
+.topSubtick:last-child {
+  border-right: var(--secondary) 0px solid;
+}
+
+#topIndicator {
+  position: absolute;
+  height: 100%;
+  border-right: var(--purple) 1px solid;
+}
+
+
+.leftSegment {
+  border-bottom: var(--secondary) 1px solid;
+  box-sizing: border-box;
+  display: flex;
+}
+
+.leftNumber {
+  height: 100%;
+  width: 75%;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--secondary);
+  writing-mode:sideways-lr;
+  text-align: right;
+}
+
+.leftTick {
+  height: 100%;
+  width: 25%;
+  padding: 0;
+}
+
+.leftSubtick {
+  width: 100%;
+  height: 10%;
+  border-bottom: var(--secondary) 1px solid;
+  box-sizing: border-box;
+}
+
+.leftSubtick:last-child {
+  border-bottom: var(--secondary) 0px solid;
 }

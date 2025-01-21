@@ -5,6 +5,8 @@ import Eraser from "./eraser.js";
 import FillTool from "./filltool.js";
 import Undo from "./undo.js";
 import Viewport from "./viewport.js";
+import StatusBar from "./statusbar.js";
+import Ruler from "./ruler.js";
 
 //TODO Gotta add straight line tool!
 //TODO add the active button coloring logic, not sure if goes here or somewhere else yet!
@@ -18,6 +20,8 @@ export default class Toolbar {
     this.fillTool = new FillTool(virtualCanvas, transactionManager, this);
     this.undo = new Undo(transactionManager);
     this.viewport = new Viewport(virtualCanvas, this, transactionManager);
+    this.statusbar = new StatusBar(virtualCanvas);
+    this.ruler = new Ruler(virtualCanvas);
 
     //set the default tool to pencil
     this.activeTool = this.pencil;
@@ -137,5 +141,7 @@ export default class Toolbar {
 
   mouseMove(input) {
     this.activeTool.mouseMove(input);
+    this.statusbar.setMousePosition(input);
+    this.ruler.set();
   }
 }

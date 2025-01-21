@@ -18,14 +18,18 @@ export default function socket(input, transactionManager, virtualCanvas) {
         firstMessage = false;
         const eventData = new Uint8Array(buffer);
         userId = eventData[0];
+        if(eventData.length < 10) {
+          firstMessage = true;
+          return;
+        }
         if (eventData.length > 1)
           transactionManager.pushServer(eventData.subarray(1));
-        transactionManager.transactionRenderLoop();
+        console.log(eventData)
         return;
       }
       const eventData = new Uint8Array(buffer);
       handleCursorData(eventData.subarray(0, 5), virtualCanvas);
-      if (eventData.length > 5)
+      if (eventData.length > 15)
         transactionManager.pushServer(eventData.subarray(5));
     });
   };
@@ -38,7 +42,7 @@ export default function socket(input, transactionManager, virtualCanvas) {
           ...virtualCanvas.positionInCanvas(input.x, input.y)
         )
       );
-  }, 16);
+  }, 8);
 }
 
 function handleCursorData(cursorData, virtualCanvas) {

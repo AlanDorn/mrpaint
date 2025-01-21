@@ -55,41 +55,53 @@ export default class Viewport {
       event.ctrlKey
         ? this.zoomIn(event) // If the user does both it does the scroll up
         : event.shiftKey
-        ? this.scrollLeft()
-        : this.scrollUp();
+        ? this.scrollLeft(event)
+        : this.scrollUp(event);
     } else if (event.deltaY > 0) {
       event.ctrlKey
         ? this.zoomOut(event)
         : event.shiftKey
-        ? this.scrollRight()
-        : this.scrollDown();
+        ? this.scrollRight(event)
+        : this.scrollDown(event);
     }
   }
 
-  scrollUp() {
-    this.virtualCanvas.offset[1] = Math.min(
-      0,
-      this.virtualCanvas.offset[1] + 16 * this.virtualCanvas.zoom
-    );
+  scrollUp(event) {
+    this.virtualCanvas.offset[1] =
+      this.virtualCanvas.offset[1] + 16 * this.virtualCanvas.zoom;
+    this.toolbar.statusbar.setMousePosition({
+      x: event.clientX,
+      y: event.clientY,
+    });
     this.setAdjusters();
   }
 
-  scrollDown() {
+  scrollDown(event) {
     this.virtualCanvas.offset[1] -= 16 * this.virtualCanvas.zoom;
     this.setAdjusters();
+    this.toolbar.statusbar.setMousePosition({
+      x: event.clientX,
+      y: event.clientY,
+    });
   }
 
-  scrollLeft() {
-    this.virtualCanvas.offset[0] = Math.min(
-      0,
-      this.virtualCanvas.offset[0] + 16 * this.virtualCanvas.zoom
-    );
+  scrollLeft(event) {
+    this.virtualCanvas.offset[0] =
+      this.virtualCanvas.offset[0] + 16 * this.virtualCanvas.zoom;
     this.setAdjusters();
+    this.toolbar.statusbar.setMousePosition({
+      x: event.clientX,
+      y: event.clientY,
+    });
   }
 
-  scrollRight() {
+  scrollRight(event) {
     this.virtualCanvas.offset[0] -= 16 * this.virtualCanvas.zoom;
     this.setAdjusters();
+    this.toolbar.statusbar.setMousePosition({
+      x: event.clientX,
+      y: event.clientY,
+    });
   }
 
   zoomIn(event) {
@@ -109,15 +121,10 @@ export default class Viewport {
 
       Math.round((mouseAfter[1] - moustBefore[1]) * this.virtualCanvas.zoom),
     ];
-    this.virtualCanvas.offset[0] = Math.min(
-      0,
-      this.virtualCanvas.offset[0] + delta[0]
-    );
-    this.virtualCanvas.offset[1] = Math.min(
-      0,
-      this.virtualCanvas.offset[1] + delta[1]
-    );
+    this.virtualCanvas.offset[0] = this.virtualCanvas.offset[0] + delta[0];
+    this.virtualCanvas.offset[1] = this.virtualCanvas.offset[1] + delta[1];
     this.setAdjusters();
+    this.toolbar.statusbar.setZoomPower(this.virtualCanvas.zoom);
   }
 
   zoomOut(event) {
@@ -137,15 +144,10 @@ export default class Viewport {
 
       Math.round((mouseAfter[1] - moustBefore[1]) * this.virtualCanvas.zoom),
     ];
-    this.virtualCanvas.offset[0] = Math.min(
-      0,
-      this.virtualCanvas.offset[0] + delta[0]
-    );
-    this.virtualCanvas.offset[1] = Math.min(
-      0,
-      this.virtualCanvas.offset[1] + delta[1]
-    );
+    this.virtualCanvas.offset[0] = this.virtualCanvas.offset[0] + delta[0];
+    this.virtualCanvas.offset[1] = this.virtualCanvas.offset[1] + delta[1];
     this.setAdjusters();
+    this.toolbar.statusbar.setZoomPower(this.virtualCanvas.zoom);
   }
 
   mouseUpLeft(input) {
@@ -225,14 +227,8 @@ export default class Viewport {
             (currentInCanvas[1] - startInCanvas[1]) * this.virtualCanvas.zoom
           ),
         ];
-        this.virtualCanvas.offset[0] = Math.min(
-          0,
-          this.virtualCanvas.offset[0] + delta[0]
-        );
-        this.virtualCanvas.offset[1] = Math.min(
-          0,
-          this.virtualCanvas.offset[1] + delta[1]
-        );
+        this.virtualCanvas.offset[0] = this.virtualCanvas.offset[0] + delta[0];
+        this.virtualCanvas.offset[1] = this.virtualCanvas.offset[1] + delta[1];
         this.startPosition = [input.x, input.y];
         this.setAdjusters();
         break;

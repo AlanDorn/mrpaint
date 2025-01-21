@@ -3,7 +3,7 @@ export default class VirtualCanvas {
   constructor() {
     this.virtualHeight = 500;
     this.virtualWidth = 700;
-    this.pixelZoom = 2; // each pixel is represented by a nxn square, this improves clarity.
+    this.pixelZoom = 2; // each pixel is represented by a nxn square, this improves clarity. Use an even number or else you get a fill glitch.
     this.zoomExp = 0;
     this.zoom = 1; // Default zoom level
     this.offset = [0, 0]; // Default offset [x, y]
@@ -37,8 +37,8 @@ export default class VirtualCanvas {
       this.virtualHeight * this.pixelZoom, // Source rectangle
       this.offset[0],
       this.offset[1],
-      this.virtualWidth * this.zoom,
-      this.virtualHeight * this.zoom // Destination rectangle
+      Math.ceil(this.virtualWidth * this.zoom),
+      Math.ceil(this.virtualHeight * this.zoom) // Destination rectangle
     );
   }
 
@@ -153,43 +153,61 @@ export default class VirtualCanvas {
   }
 
   fillImageData() {
-    const chunkSize = 5000;
+    const chunkSize = 250; // Size of each square chunk
     this.fillGeneration = [];
 
-    const totalChunks = Math.ceil(this.virtualHeight / chunkSize);
-    for (let i = 0; i < totalChunks; i++) {
-      const startY = i * chunkSize;
-      const endY = Math.min(startY + chunkSize, this.virtualHeight);
+    const horizontalChunks = Math.ceil(this.virtualWidth / chunkSize);
+    const verticalChunks = Math.ceil(this.virtualHeight / chunkSize);
 
-      this.fillGeneration.push(() => {
-        const width = this.virtualWidth * this.pixelZoom;
-        const height = (endY - startY) * this.pixelZoom;
-        const imageData = this.offscreenCtx.createImageData(width, height);
-        const data = imageData.data;
+    for (let chunkY = 0; chunkY < verticalChunks; chunkY++) {
+      for (let chunkX = 0; chunkX < horizontalChunks; chunkX++) {
+        const startX = chunkX * chunkSize;
+        const startY = chunkY * chunkSize;
+        const endX = Math.min(startX + chunkSize, this.virtualWidth);
+        const endY = Math.min(startY + chunkSize, this.virtualHeight);
 
-        for (let y = startY; y < endY; y++) {
-          for (let x = 0; x < this.virtualWidth; x++) {
-            const [r, g, b] = this.virtualCanvas[y][x];
+        this.fillGeneration.push(() => {
+          const width = (endX - startX) * this.pixelZoom;
+          const height = (endY - startY) * this.pixelZoom;
+          const imageData = this.offscreenCtx.createImageData(width, height);
+          const data = imageData.data;
 
-            // Calculate starting index for the top-left corner of the zoomed pixel
-            for (let zoomY = 0; zoomY < this.pixelZoom; zoomY++) {
-              const rowStart =
-                ((y - startY) * this.pixelZoom + zoomY) * width * 4;
-              for (let zoomX = 0; zoomX < this.pixelZoom; zoomX++) {
-                const colOffset = (x * this.pixelZoom + zoomX) * 4;
-                const index = rowStart + colOffset;
+          for (let y = startY; y < endY; y++) {
+            for (let x = startX; x < endX; x++) {
+              const [r, g, b] = this.virtualCanvas[y][x];
 
-                data[index] = r; // Red
-                data[index + 1] = g; // Green
-                data[index + 2] = b; // Blue
-                data[index + 3] = 255; // Alpha
+              // Fill the zoomed-in pixels for the current chunk
+              for (let zoomY = 0; zoomY < this.pixelZoom; zoomY++) {
+                const rowStart =
+                  ((y - startY) * this.pixelZoom + zoomY) * width * 4;
+                for (let zoomX = 0; zoomX < this.pixelZoom; zoomX++) {
+                  const colOffset = (x - startX) * this.pixelZoom + zoomX;
+                  const index = rowStart + colOffset * 4;
+
+                  data[index] = r; // Red
+                  data[index + 1] = g; // Green
+                  data[index + 2] = b; // Blue
+                  data[index + 3] = 255; // Alpha
+                }
               }
             }
           }
-        }
 
-        this.offscreenCtx.putImageData(imageData, 0, startY * this.pixelZoom);
-      });
+          this.offscreenCtx.putImageData(
+            imageData,
+            startX * this.pixelZoom,
+            startY * this.pixelZoom
+          );
+        });
+      }
+    }
+
+    // Shuffle the fillGeneration array
+    for (let i = 0; i < this.fillGeneration.length / 2; i++) {
+      [this.fillGeneration[i], this.fillGeneration[2 * i]] = [
+        this.fillGeneration[2 * i],
+        this.fillGeneration[i],
+      ];
     }
   }
 
@@ -251,15 +269,19 @@ export default class VirtualCanvas {
 
   positionInCanvas(clientX, clientY) {
     const rect = this.drawingarea.getBoundingClientRect();
-    const x = Math.round((clientX - rect.left - this.offset[0]) / this.zoom);
-    const y = Math.round((clientY - rect.top - this.offset[1]) / this.zoom);
+    const x = Math.round(
+      (clientX - rect.left - this.offset[0]) / this.zoom - 0.5
+    );
+    const y = Math.round(
+      (clientY - rect.top - this.offset[1]) / this.zoom - 0.5
+    );
     return [x, y];
   }
 
   positionInScreen(x, y) {
     const rect = this.drawingarea.getBoundingClientRect();
-    const clientX = x * this.zoom + this.offset[0] + rect.left;
-    const clientY = y * this.zoom + this.offset[1] + rect.top;
+    const clientX = (x + 0.5) * this.zoom + this.offset[0] + rect.left;
+    const clientY = (y + 0.5) * this.zoom + this.offset[1] + rect.top;
     return [clientX, clientY];
   }
 

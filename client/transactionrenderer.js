@@ -3,7 +3,7 @@ import {
   decodePosition,
   TOOLCODEINDEX,
 } from "./transaction.js";
-import { centerToBrushSize, splinePixels } from "./util2d.js";
+import { splinePixels } from "./util2d.js";
 
 const doNothing = () => {};
 
@@ -155,6 +155,7 @@ function renderResize(virtualCanvas, transaction) {
     () => {
       virtualCanvas.setSize(newWidth, newHeight);
       virtualCanvas.viewport.setAdjusters();
+      virtualCanvas.statusbar.setCanvasSize();
     },
   ];
 }
