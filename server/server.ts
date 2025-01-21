@@ -35,19 +35,14 @@ wss.on("connection", (ws) => {
 
   ws.on("message", (event) => {
     if (!lobby) {
-      const id = event.toString("utf-8");
-      lobby = lobbies.get(id);
-      console.log(id);
-
-      if (!lobby) {
-        return;
-      }
+      lobby = lobbies.get(event.toString("utf-8"));
+      if (!lobby) return;
       userId = lobby.addUser(ws);
       lobby.print();
       return;
     }
 
-    lobby.send(userId, event);
+    lobby.handle(userId, event);
   });
 
   // Kick the user from the active users
