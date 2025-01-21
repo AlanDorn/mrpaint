@@ -1,6 +1,7 @@
 import BrushSize from "./brushsize.js";
 import ColorPicker from "./colorpicker.js";
 import Pencil from "./pencil.js";
+import Eraser from "./eraser.js";
 import FillTool from "./filltool.js";
 import Undo from "./undo.js";
 import Viewport from "./viewport.js";
@@ -13,6 +14,7 @@ export default class Toolbar {
     this.colorpicker = new ColorPicker();
     this.brushsize = new BrushSize();
     this.pencil = new Pencil(virtualCanvas, transactionManager, this);
+    this.eraser = new Eraser(virtualCanvas, transactionManager, this);
     this.fillTool = new FillTool(virtualCanvas, transactionManager, this);
     this.undo = new Undo(transactionManager);
     this.viewport = new Viewport(virtualCanvas, this, transactionManager);
@@ -22,10 +24,14 @@ export default class Toolbar {
     this.activeSelector = null;
 
     this.setupToolSwitcher();
+
+    const pencilButton = document.getElementById("pencil");
+    this.updateActiveButton(pencilButton);
   }
 
   setupToolSwitcher() {
     const pencilButton = document.getElementById("pencil");
+    const eraserButton = document.getElementById("eraser");
     const fillToolButton = document.getElementById("fillTool");
     const undoButton = document.getElementById("undo");
     const redoButton = document.getElementById("redo");
@@ -33,13 +39,6 @@ export default class Toolbar {
     const drawingarea = document.getElementById("drawingarea");
 
     undoButton.addEventListener("click", () => {
-      // const cntrlzEvent = new KeyboardEvent("keydown", {
-      //   key: "z",
-      //   cntrlKey: true,
-      //   bubbles: true,
-      //   cancelable: true
-      // });
-      // document.dispatchEvent(cntrlzEvent);
       this.undo.undo();
     });
 
@@ -50,6 +49,11 @@ export default class Toolbar {
     pencilButton.addEventListener("click", () => {
       this.activeTool = this.pencil;
       this.updateActiveButton(pencilButton);
+    });
+
+    eraserButton.addEventListener("click", () => {
+      this.activeTool = this.eraser;
+      this.updateActiveButton(eraserButton);
     });
 
     fillToolButton.addEventListener("click", () => {

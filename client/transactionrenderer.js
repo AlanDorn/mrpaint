@@ -17,6 +17,8 @@ export default function buildRenderTask(virtualCanvas, transaction) {
       return renderFill(virtualCanvas, transaction);
     case 5:
       return renderResize(virtualCanvas, transaction);
+    case 6:
+      return renderEraser(virtualCanvas, transaction);
   }
 
   return [doNothing];
@@ -114,14 +116,17 @@ function renderFill(virtualCanvas, transaction) {
           [curX, curY - 1],
         ];
 
-        if (Math.random() < 1 / 3) // mixture of bfs and dfs looks cool
-          for (let i = 0; i < neighbors.length; i++) { // bfs
+        if (Math.random() < 1 / 3)
+          // mixture of bfs and dfs looks cool
+          for (let i = 0; i < neighbors.length; i++) {
+            // bfs
             const pos = Math.floor(Math.random() * stack.length);
             stack.push(stack[pos]);
             stack[pos] = neighbors[i];
           }
         else
-          for (let i = neighbors.length; i > 0; ) { // dfs
+          for (let i = neighbors.length; i > 0; ) {
+            // dfs
             const rand = Math.floor(Math.random() * i);
             stack.push(neighbors[rand]);
             neighbors[rand] = neighbors[--i];
@@ -152,4 +157,70 @@ function renderResize(virtualCanvas, transaction) {
       virtualCanvas.viewport.setAdjusters();
     },
   ];
+}
+
+function renderEraser(virtualCanvas, transaction) {
+  const color = transaction.subarray(15, 18);
+  const primarycolor = transaction.subarray(18, 21); // to make things more complicated i spliced and changed vals for rest when i coulda put primarycolor at the back
+  const brushsize = decodeLargeNumber(transaction.subarray(21, 23));
+  const pixels = splinePixels(
+    decodePosition(transaction.subarray(23, 27)),
+    decodePosition(transaction.subarray(27, 31)),
+    decodePosition(transaction.subarray(31, 35)),
+    decodePosition(transaction.subarray(35, 39))
+  );
+  const mode = transaction[39];
+
+  //CALM: benchmark this so you can figure out what is a good number for this.
+  const chunkSize = Math.ceil(100000); // Number of pixels to process per chunk
+
+  const task = [() => processPixel(pixels[0][0], pixels[0][1])];
+
+  function processPixel(x, y) {
+    if (mode === 1) {
+      // Right-click => Eraser logic with subpixel checks
+      const halfThickness = Math.floor(brushsize / 2);
+      for (let dy = 0; dy < brushsize; dy++) {
+        for (let dx = 0; dx < brushsize; dx++) {
+          const newX = x - halfThickness + dx;
+          const newY = y - halfThickness + dy;
+  
+          if (
+            newX >= 0 &&
+            newY >= 0 &&
+            newX < virtualCanvas.virtualWidth &&
+            newY < virtualCanvas.virtualHeight
+          ) {
+            const existingColor = virtualCanvas.getPixelColor(newX, newY);
+            if (colorsMatch(existingColor, primarycolor)) {
+              // Overwrite single subpixel
+              virtualCanvas.setPixel(newX, newY, color, 1);
+            }
+          }
+        }
+      }
+    } else {
+      // Left-click => Just do one call that draws the entire brush area
+      // No need to check existing color for each subpixel.
+      virtualCanvas.setPixel(x, y, color, brushsize);
+    }
+  }
+  
+
+  for (let index = 0; index < pixels.length; index += chunkSize) {
+    const start = index;
+    const end = Math.min(index + chunkSize, pixels.length);
+
+    task.push(() => {
+      for (let i = start; i < end; i++) {
+        const [x, y] = pixels[i];
+
+        processPixel(x, y);
+
+        // virtualCanvas.setPixelOutline(x, y, color, brushsize);
+      }
+    });
+  }
+
+  return task;
 }

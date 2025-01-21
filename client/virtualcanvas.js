@@ -281,4 +281,19 @@ export default class VirtualCanvas {
       this.render();
     }, 50);
   }
+
+  getPixelColor(x, y) {
+    if (
+      x >= 0 &&
+      y >= 0 &&
+      x < this.virtualWidth &&
+      y < this.virtualHeight
+    ) {
+      // const [clientX, clientY] = this.positionInCanvas(x, y);
+      const color = this.virtualCanvas[y][x];
+      return [color[0], color[1], color[2]];
+    }else{
+      return white;
+    }
+  }
 }

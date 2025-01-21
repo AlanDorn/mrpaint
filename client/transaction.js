@@ -5,9 +5,10 @@ export const toolCodes = {
   undo: new Uint8Array([3]),
   redo: new Uint8Array([4]),
   resize: new Uint8Array([5]),
+  eraser: new Uint8Array([6])
 };
-export const toolCodeInverse = ["pixel", "pencil", "fill", "undo", "redo", "resize"];
-export const toolLength = [24, 36, 22, 15, 15, 19];
+export const toolCodeInverse = ["pixel", "pencil", "fill", "undo", "redo", "resize", "eraser"];
+export const toolLength = [24, 36, 22, 15, 15, 19, 40];
 export const TOOLCODEINDEX = 14;
 
 export function pixelTransaction(operationId, color, brushsize, position) {
@@ -77,6 +78,33 @@ export function resizeTransaction(operationId, position) {
     encodePosition(position) //4 bytes
   );
 }
+
+export function eraserTransaction(
+  operationId,
+  color,
+  primarycolor,
+  brushsize,
+  p0,
+  p1,
+  p2,
+  p3,
+  mode
+) {
+  return buildTransaction(
+    touuid(), //8 bytes
+    operationId, //6 bytes
+    toolCodes["eraser"], //1 bytes
+    encodeColor(color), //3 bytes
+    encodeColor(primarycolor), //3 bytes
+    encodeLargeNumber(brushsize), //2 bytes
+    encodePosition(p0), //4 bytes
+    encodePosition(p1), //4 bytes
+    encodePosition(p2), //4 bytes
+    encodePosition(p3), //4 bytes
+    new Uint8Array([mode])  //1 bytes
+  );
+}
+
 
 //
 //                           ,,
