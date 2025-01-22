@@ -69,6 +69,12 @@ body {
   height: var(--toolheight);
   overflow: visible;
   display: flex;
+  margin-left: -.4rem;
+}
+
+#toolbar button.active {
+  background-color: var(--purple);
+  /* box-shadow: 0px 0px 1px 1px var(--purple); */
 }
 
 /* in the name: drawing area */
@@ -102,7 +108,7 @@ canvas {
   display: inline-block;
   width: 175px;
   /* margin-right: 17.5px; */
-  margin-right: 18.5px;
+  margin-right: 8.5px;
   overflow: visible;
   background-color: transparent;
   color: var(--secondary);
@@ -110,9 +116,11 @@ canvas {
 }
 
 #customInputBrushsizeBox {
-  background-color: var(--background);
+  /* background-color: var(--background); */
+  background-color: transparent;
   color: var(--secondary);
-  border: var(--secondary) 2px solid;
+  /* border: var(--secondary) 2px solid; */
+  border: transparent 2px solid;
 }
 
 /* Input field with dynamic brush size preview */
@@ -150,9 +158,12 @@ canvas {
   display: none; /* Hidden by default */
   position: absolute;
   /* top: 100%;  */
-  left: 0;
-  width: 177.5px;
-  border: 1px solid var(--secondary);
+  left: .7rem;
+  width: 158px;
+  /* border-top: 1px solid var(--secondary);
+  border-left: 1px solid var(--secondary);
+  border-right: 1px solid var(--secondary);
+  border-bottom: 1px solid var(--secondary); */
   background-color: var(--background);
   padding-right: 12px;
   margin: 0;
@@ -167,16 +178,23 @@ canvas {
 .dropdown-item {
   display: flex; /* Align text and line horizontally */
   align-items: center;
-  justify-content: space-between; /* Space between the number and the line preview */
-  padding: 10px;
+  justify-content: start; /* Space between the number and the line preview */
+  /* justify-content: space-evenly; */
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-right: 0px;
+  padding-left: 5px;
   font-family: var(--font); /* Match input font */
   font-size: 14px;
   cursor: pointer;
   height: calc(var(--toolheight) / 4); /* Ensure consistent height */
-  width: 12.1rem;
+  width: 11.6rem;
 }
 
 .dropdown-item:hover {
+  background-color: var(--purple2);
+}
+.dropdown-item:active {
   background-color: var(--purple);
 }
 
@@ -189,7 +207,8 @@ canvas {
 .size-line {
   background-color: var(--secondary); /* Line color */
   display: inline-block;
-  width: 130px; /* Consistent width for all line previews */
+  margin-left: 3px;
+  width: 131px; /* Consistent width for all line previews */
 }
 
 #main-tools {
@@ -203,7 +222,9 @@ canvas {
   
   margin-left: 0.25rem;
   padding-top: var(--top);
-  padding-right: 0.55rem;
+  /* margin-right: -.2rem; /* super debateable option right here no kizzy no cappy */ 
+  z-index: 1;
+  overflow: visible;
 }
 
 #fillTool,
@@ -227,15 +248,22 @@ canvas {
   background-color: transparent;
   /* border: var(--secondary) 2px solid; */
   border: transparent 2px solid;
+  
 }
-#fillTool img,
-#pencil img,
-#undo img,
-#redo img,
-#eraser img {
+
+
+#fillTool svg,
+#pencil svg,
+#undo svg,
+#redo svg,
+#eraser svg {
   /* margin: auto; */
   width: 20px;
   height: 20px;
+  /* color: red;
+  fill: red; */
+  fill: var(--secondary);
+  
 }
 
 #fillTool:hover,
@@ -244,15 +272,18 @@ canvas {
 #redo:hover,
 #eraser:hover {
   background-color: var(--purple2);
+  
 }
 
-#fillTool:active,
-#pencil:active,
-#undo:active,
-#redo:active,
-#eraser:active {
+#fillTool svg:active,
+#pencil svg:active,
+#undo svg:active,
+#redo svg:active,
+#eraser svg:active,
+#undo svg:active {
   /* box-shadow: 0px 0px 1px 0.5px var(--purple); */
-  background-color: var(--purple);
+  /* background-color: var(--purple); */
+  fill: var(--background);
 }
 
 #colorpalette {
@@ -292,10 +323,7 @@ canvas {
   cursor: pointer;
 }
 
-#toolbar button.active {
-  background-color: var(--purple);
-  /* box-shadow: 0px 0px 1px 1px var(--purple); */
-}
+
 
 #mainbody {
   margin: 0;
