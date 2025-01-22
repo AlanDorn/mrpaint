@@ -153,18 +153,19 @@ export default class VirtualCanvas {
   }
 
   fillImageData() {
-    const chunkSize = 250; // Size of each square chunk
+    const widthChunkSize = Math.ceil(this.virtualWidth / 7); // Size of each square chunk
+    const heightChunkSize = Math.ceil(this.virtualHeight / 7);
     this.fillGeneration = [];
 
-    const horizontalChunks = Math.ceil(this.virtualWidth / chunkSize);
-    const verticalChunks = Math.ceil(this.virtualHeight / chunkSize);
+    const horizontalChunks = Math.ceil(this.virtualWidth / widthChunkSize);
+    const verticalChunks = Math.ceil(this.virtualHeight / heightChunkSize);
 
     for (let chunkY = 0; chunkY < verticalChunks; chunkY++) {
       for (let chunkX = 0; chunkX < horizontalChunks; chunkX++) {
-        const startX = chunkX * chunkSize;
-        const startY = chunkY * chunkSize;
-        const endX = Math.min(startX + chunkSize, this.virtualWidth);
-        const endY = Math.min(startY + chunkSize, this.virtualHeight);
+        const startX = chunkX * widthChunkSize;
+        const startY = chunkY * heightChunkSize;
+        const endX = Math.min(startX + widthChunkSize, this.virtualWidth);
+        const endY = Math.min(startY + heightChunkSize, this.virtualHeight);
 
         this.fillGeneration.push(() => {
           const width = (endX - startX) * this.pixelZoom;

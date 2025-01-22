@@ -12,7 +12,8 @@
   --top: .2rem;
 
   --background: light-dark(#d1d1d1, #454545);
-  --secondary: light-dark(#6d6d6d, #b0b0b0);
+  --secondary: light-dark(#6d6d6d, #ababab);
+  --background-gradient: light-dark(#ababab, rgb(87, 87, 87));
 }
 
 @font-face {
@@ -35,8 +36,8 @@ body {
   width: 100svw;
   background: linear-gradient(
     135deg,
-    rgba(209, 209, 209, 1) 0%,
-    rgba(171, 171, 171, 1) 100%
+    var(--background) 0%,
+    var(--background-gradient) 100%
   );
 }
 
