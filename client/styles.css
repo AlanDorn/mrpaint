@@ -9,6 +9,8 @@
   --font: "Hack"; /* Hack, "Courier New", Courier, monospace */
   --fontsize: 14px;
 
+  --top: .2rem;
+
   --background: light-dark(#d1d1d1, #454545);
   --secondary: light-dark(#6d6d6d, #b0b0b0);
 }
@@ -45,13 +47,6 @@ body {
   position: absolute;
 }
 
-.cursor {
-  height: 10px;
-  width: 10px;
-  background-color: var(--secondary);;
-  position: absolute;
-}
-
 /* Nothing */
 /* #ribbon {
   width: 100svw;
@@ -75,7 +70,7 @@ body {
   display: flex;
 }
 
-/* in the name drawing area */
+/* in the name: drawing area */
 #drawingarea {
   width: 100svw;
   height: calc(
@@ -88,10 +83,12 @@ body {
 
 /* For the color pickers === primary/secondary */
 input[type="color"] {
-  width: 4rem;
-  height: 4rem;
-  margin-top: 1rem;
-  margin-left: 0.5rem;
+  width: 5.85rem;
+  height: 5.85rem;
+  margin-top: -1px;
+  margin-left: -0.2rem;
+  border: transparent;
+  background-color: transparent;
 }
 
 canvas {
@@ -99,24 +96,19 @@ canvas {
   image-rendering: crisp-edges;
 }
 
-.cursor {
-  height: 10px;
-  width: 10px;
-  background-color: var(--secondary);
-  position: absolute;
-}
-
-.custom-dropdown {
+.custom-dropdown-brushsize-box {
   position: relative;
   display: inline-block;
   width: 175px;
-  margin-right: 15px;
+  /* margin-right: 17.5px; */
+  margin-right: 18.5px;
   overflow: visible;
-  background-color: var(--background);
+  background-color: transparent;
   color: var(--secondary);
+  
 }
 
-#customInput {
+#customInputBrushsizeBox {
   background-color: var(--background);
   color: var(--secondary);
   border: var(--secondary) 2px solid;
@@ -124,9 +116,9 @@ canvas {
 
 /* Input field with dynamic brush size preview */
 /* Input field with brush size preview on the right */
-.custom-dropdown input {
+.custom-dropdown-brushsize-box input {
   width: 100%;
-  margin-top: 5px;
+  margin-top: 3px;
   height: calc(var(--toolheight) - 14px);
   border: var(--secondary) 2px solid;
   font-size: var(--fontsize);
@@ -139,13 +131,13 @@ canvas {
   background-repeat: no-repeat;
 }
 
-.custom-dropdown input::selection {
+.custom-dropdown-brushsize-box input::selection {
   background-color: var(--purple);
 }
 
 /* Ensure no change on focus */
-.custom-dropdown input:focus {
-  border: 1px solid var(--secondary); /* Keep the same border */
+.custom-dropdown-brushsize-box input:focus {
+  border: 1px solid var(--secondary);
   /* box-shadow: inset 0 0 0 1px #ffffff; */ /* box-shadow: 0 0 10px 2px #ddc6f0;; Prevent focus shadow */
   outline: none; /* Prevent focus outline */
   transition: none; /* Ensure no visual transition */
@@ -153,20 +145,21 @@ canvas {
 }
 
 /* Dropdown list styling */
-.dropdown-list {
+.actual-dropdown-list-brushsize-box {
   display: none; /* Hidden by default */
   position: absolute;
-  top: 100%; /* Below the input */
+  /* top: 100%;  */
   left: 0;
-  width: 187px;
+  width: 177.5px;
   border: 1px solid var(--secondary);
   background-color: var(--background);
-  padding: 0;
+  padding-right: 12px;
   margin: 0;
   list-style: none;
+  z-index: 1; /* LUL */
 }
 
-.dropdown-list.show {
+.actual-dropdown-list-brushsize-box.show {
   display: block;
 }
 
@@ -179,6 +172,7 @@ canvas {
   font-size: 14px;
   cursor: pointer;
   height: calc(var(--toolheight) / 4); /* Ensure consistent height */
+  width: 12.1rem;
 }
 
 .dropdown-item:hover {
@@ -194,20 +188,21 @@ canvas {
 .size-line {
   background-color: var(--secondary); /* Line color */
   display: inline-block;
-  width: 115px; /* Consistent width for all line previews */
+  width: 130px; /* Consistent width for all line previews */
 }
 
 #main-tools {
   display: grid;
   grid-template-columns: repeat(2, 1.5rem);
   grid-template-rows: repeat(3, 1.5rem);
-  gap: 0.5rem;
+  gap: 0.3rem;
   align-items: center;
   justify-content: center;
   /* margin: auto 1rem; */
+  
   margin-left: 0.25rem;
-  padding-top: 0.2rem;
-  padding-right: 1rem;
+  padding-top: var(--top);
+  padding-right: 0.55rem;
 }
 
 #fillTool,
@@ -221,15 +216,16 @@ canvas {
   cursor: pointer;
   position: relative;
 
-  width: 1.5rem;
-  height: 1.5rem;
-  padding: 0px;
+  width: 1.7rem;
+  height: 1.7rem;
+  padding: 1px;
   margin-top: 0.2rem;
-  /* margin-right: 0.25em; */
+  margin-right: 0.25em;
   margin-left: 0.25em;
 
-  background-color: var(--background);
-  border: var(--secondary) 2px solid;
+  background-color: transparent;
+  /* border: var(--secondary) 2px solid; */
+  border: transparent 2px solid;
 }
 #fillTool img,
 #pencil img,
@@ -260,11 +256,11 @@ canvas {
 
 #colorpalette {
   display: grid;
-  grid-template-columns: repeat(10, 20px);
-  grid-template-rows: repeat(3, 20px);
+  grid-template-columns: repeat(10, 25px);
+  grid-template-rows: repeat(3, 25px);
   /* gap:1px; */
-  top: 1rem;
-  margin-left: 10px;
+  padding-top: 2.5px;
+  margin-left: -.07rem;
   position: relative;
   overflow: visible;
 }
@@ -293,11 +289,6 @@ canvas {
   position: absolute;
   border: var(--secondary) solid 2px;
   cursor: pointer;
-}
-
-#toolbar button.active {
-  background-color: var(--purple);
-  /* box-shadow: 0px 0px 1px 1px var(--purple); */
 }
 
 #toolbar button.active {

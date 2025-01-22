@@ -3,10 +3,10 @@ export default class BrushSize {
     this.size = 1;
     this.maxSize = 400;
 
-    const dropdown = document.querySelector(".custom-dropdown");
-    const input = document.getElementById("customInput");
+    const dropdown = document.querySelector(".custom-dropdown-brushsize-box");
+    const input = document.getElementById("customInputBrushsizeBox");
     const dropdownList = document.getElementById("dropdownOptions");
-    const previewLength = 115; // Fixed length for all previews
+    const previewLength = 132; // Fixed length for all previews
 
 
     // Function to update the input background for line preview
@@ -18,7 +18,7 @@ export default class BrushSize {
         input.placeholder = ""; // Remove placeholder when there's input
         input.style.backgroundImage = "linear-gradient(to right, var(--secondary) 0%, var(--secondary) 100%)";
         input.style.backgroundSize = `${previewLength}px ${size}px`; // Fixed length, dynamic height
-        input.style.backgroundPosition = `62px`; // Align to the right
+        input.style.backgroundPosition = `47px`; // Align to the right
       }
     };
     
