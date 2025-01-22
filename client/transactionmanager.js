@@ -51,7 +51,7 @@ export default class TransactionManager {
 
       if (this.correct < this.rendered) this.syncCanvas();
 
-      if (this.rendered >= this.transactions.length - 100) {
+      if (this.rendered >= this.transactions.length ||  this.rendered <= this.transactions.length - 1000) {
         this.needToRenderCanvas = true;
       }
 
