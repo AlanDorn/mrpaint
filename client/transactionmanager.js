@@ -31,7 +31,7 @@ export default class TransactionManager {
     this.rendered = 0;
     this.correct = 0;
     this.currentTask = [];
-    this.needToRenderCanvas = false;
+    this.rerenderCauseOfUndo = false;
 
     this.newRender = false; // used to control mousemove input,
     this.transactionRenderLoop();
@@ -51,13 +51,10 @@ export default class TransactionManager {
 
       if (this.correct < this.rendered) this.syncCanvas();
 
-      if (this.rendered >= this.transactions.length ||  this.rendered <= this.transactions.length - 1000) {
-        this.needToRenderCanvas = true;
-      }
+      if (this.rerenderCauseOfUndo || this.rendered >= this.transactions.length)
+        this.virtualCanvas.fill();
 
-      this.virtualCanvas.fill();
       this.virtualCanvas.render();
-      if (this.needToRenderCanvas) this.needToRenderCanvas = false;
 
       while (performance.now() - startTime < loopTargetms) {
         const processStartTime = performance.now();
@@ -207,7 +204,10 @@ export default class TransactionManager {
         const sortedPosition = this.transactionIndex(transaction);
         this.setIfFirstInstanceOfOperation(transaction);
         this.transactions.splice(sortedPosition, 0, transaction);
-        this.correct = Math.min(this.correct, sortedPosition);
+        if (sortedPosition < this.correct) {
+          this.correct = sortedPosition;
+          this.rerenderCauseOfUndo = false;
+        }
       }
     }
 
@@ -229,7 +229,10 @@ export default class TransactionManager {
             this.firstTransactionOfOperation.get(operationId);
           if (firstTransaction) {
             const sortedPosition = this.transactionIndex(firstTransaction);
-            this.correct = Math.min(this.correct, sortedPosition);
+            if (sortedPosition < this.correct) {
+              this.correct = sortedPosition;
+              this.rerenderCauseOfUndo = true;
+            }
           }
         }
       }
@@ -241,11 +244,13 @@ export default class TransactionManager {
     if (undoRedo[TOOLCODEINDEX] === toolCodes.undo[0]) {
       const firstTransaction =
         this.firstTransactionOfOperation.get(operationId);
-      if (firstTransaction)
-        this.correct = Math.min(
-          this.correct,
-          this.transactionIndex(firstTransaction)
-        );
+      if (firstTransaction) {
+        const sortedPosition = this.transactionIndex(firstTransaction);
+        if (sortedPosition < this.correct) {
+          this.correct = sortedPosition;
+          this.rerenderCauseOfUndo = true;
+        }
+      }
     }
   }
 
