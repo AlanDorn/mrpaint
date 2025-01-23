@@ -95,7 +95,7 @@ function renderFill(virtualCanvas, transaction) {
 
   const nextRender = () => {
     const startTime = performance.now();
-    while (performance.now() - startTime < 3 && stack.length > 0) {
+    while (performance.now() - startTime < 2 && stack.length > 0) {
       for (let fast = 0; fast < 10000 && stack.length > 0; fast++) {
         const cur = stack.pop();
 
