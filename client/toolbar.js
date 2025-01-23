@@ -108,7 +108,7 @@ export default class Toolbar {
       if (event.button === 1) {
         this.viewport.startPosition[0] = event.clientX;
         this.viewport.startPosition[1] = event.clientY;
-        
+
         this.viewport.activeAdjuster = this.viewport.middleMouseAdjuster;
         this.viewport.lastActiveTool = this.activeTool;
         this.activeTool = this.viewport;
@@ -118,9 +118,15 @@ export default class Toolbar {
 
   updateActiveButton(activeButton) {
     const buttons = document.querySelectorAll("#toolbar button");
+    const svgs = document.querySelectorAll("#toolbar button svg");
 
     buttons.forEach((button) => button.classList.remove("active"));
     activeButton.classList.add("active");
+
+    svgs.forEach((button) => button.classList.remove("active"));
+    const activeSvg = activeButton.querySelector("svg");
+
+    activeSvg.classList.add("active");
   }
 
   mouseDownLeft(input) {

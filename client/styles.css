@@ -73,9 +73,15 @@ body {
 }
 
 #toolbar button.active {
-  background-color: var(--purple);
+  background-color: var(--secondary);
   /* box-shadow: 0px 0px 1px 1px var(--purple); */
+
 }
+
+#toolbar button svg.active {
+  fill: var(--background);
+}
+
 
 /* in the name: drawing area */
 #drawingarea {
@@ -275,6 +281,16 @@ canvas {
   
 }
 
+#fillTool:active,
+#pencil:active,
+#undo:active,
+#redo:active,
+#eraser:active {
+  background-color: var(--secondary);
+  fill: var(--purple2);
+  
+}
+
 #fillTool svg:active,
 #pencil svg:active,
 #undo svg:active,
@@ -282,8 +298,8 @@ canvas {
 #eraser svg:active,
 #undo svg:active {
   /* box-shadow: 0px 0px 1px 0.5px var(--purple); */
-  /* background-color: var(--purple); */
-  fill: var(--background);
+  /* background-color: var(--secondary); */
+  fill: var(--purple);
 }
 
 #colorpalette {
