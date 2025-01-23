@@ -231,7 +231,8 @@ export default class TransactionManager {
             const sortedPosition = this.transactionIndex(firstTransaction);
             if (sortedPosition < this.correct) {
               this.correct = sortedPosition;
-              this.rerenderCauseOfUndo = true;
+              this.rerenderCauseOfUndo =
+                undoRedo[TOOLCODEINDEX] === toolCodes.undo[0];
             }
           }
         }
