@@ -70,6 +70,8 @@ function renderPencil(virtualCanvas, transaction) {
   return task;
 }
 
+const garbage = [];
+
 function renderFill(virtualCanvas, transaction) {
   const color = transaction.subarray(15, 18);
   const [x, y] = decodePosition(transaction.subarray(18, 22));
@@ -95,26 +97,35 @@ function renderFill(virtualCanvas, transaction) {
     const startTime = performance.now();
     while (performance.now() - startTime < 3 && stack.length > 0) {
       for (let fast = 0; fast < 10000 && stack.length > 0; fast++) {
-        const [curX, curY] = stack.pop();
+        const cur = stack.pop();
 
         if (
-          curX < 0 ||
-          curX >= width ||
-          curY < 0 ||
-          curY >= height ||
-          !colorsMatch(virtualCanvas.virtualCanvas[curY][curX], targetColor)
+          cur[0] < 0 ||
+          cur[0] >= width ||
+          cur[1] < 0 ||
+          cur[1] >= height ||
+          !colorsMatch(virtualCanvas.virtualCanvas[cur[1]][cur[0]], targetColor)
         ) {
+          garbage.push(cur);
           continue;
         }
 
-        virtualCanvas.setPixel(curX, curY, color, 1);
+        virtualCanvas.setPixel(cur[0], cur[1], color, 1);
 
-        const neighbors = [
-          [curX + 1, curY],
-          [curX - 1, curY],
-          [curX, curY + 1],
-          [curX, curY - 1],
-        ];
+        const neighbors = [];
+
+        if (garbage.length >= 4)
+          for (let index = 0; index < 4; index++) neighbors.push(garbage.pop());
+        else for (let index = 0; index < 4; index++) neighbors.push([0, 0]);
+
+        neighbors[0][0] = cur[0] + 1;
+        neighbors[0][1] = cur[1];
+        neighbors[1][0] = cur[0] - 1;
+        neighbors[1][1] = cur[1];
+        neighbors[2][0] = cur[0];
+        neighbors[2][1] = cur[1] + 1;
+        neighbors[3][0] = cur[0];
+        neighbors[3][1] = cur[1] - 1;
 
         if (Math.random() < 1 / 3)
           // mixture of bfs and dfs looks cool
@@ -131,6 +142,7 @@ function renderFill(virtualCanvas, transaction) {
             stack.push(neighbors[rand]);
             neighbors[rand] = neighbors[--i];
           }
+        garbage.push(cur);
       }
     }
 
@@ -185,7 +197,7 @@ function renderEraser(virtualCanvas, transaction) {
         for (let dx = 0; dx < brushsize; dx++) {
           const newX = x - halfThickness + dx;
           const newY = y - halfThickness + dy;
-  
+
           if (
             newX >= 0 &&
             newY >= 0 &&
@@ -206,7 +218,6 @@ function renderEraser(virtualCanvas, transaction) {
       virtualCanvas.setPixel(x, y, color, brushsize);
     }
   }
-  
 
   for (let index = 0; index < pixels.length; index += chunkSize) {
     const start = index;

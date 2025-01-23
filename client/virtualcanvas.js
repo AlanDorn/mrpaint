@@ -153,8 +153,12 @@ export default class VirtualCanvas {
   }
 
   fillImageData() {
-    const widthChunkSize = Math.ceil(this.virtualWidth / 7); // Size of each square chunk
-    const heightChunkSize = Math.ceil(this.virtualHeight / 7);
+    const widthChunkSize = Math.floor(
+      this.virtualWidth / Math.ceil(this.virtualWidth / 1000)
+    ); // Size of each square chunk
+    const heightChunkSize = Math.floor(
+      this.virtualHeight / Math.ceil(this.virtualHeight / 1000)
+    );;
     this.fillGeneration = [];
 
     const horizontalChunks = Math.ceil(this.virtualWidth / widthChunkSize);
@@ -306,16 +310,11 @@ export default class VirtualCanvas {
   }
 
   getPixelColor(x, y) {
-    if (
-      x >= 0 &&
-      y >= 0 &&
-      x < this.virtualWidth &&
-      y < this.virtualHeight
-    ) {
+    if (x >= 0 && y >= 0 && x < this.virtualWidth && y < this.virtualHeight) {
       // const [clientX, clientY] = this.positionInCanvas(x, y);
       const color = this.virtualCanvas[y][x];
       return [color[0], color[1], color[2]];
-    }else{
+    } else {
       return white;
     }
   }
