@@ -405,7 +405,6 @@ canvas {
 
 .topSegment {
   border-right: var(--secondary) 1px solid;
-  box-sizing: border-box;
   flex-shrink: 0;
 }
 
@@ -450,7 +449,6 @@ canvas {
 
 .leftSegment {
   border-bottom: var(--secondary) 1px solid;
-  box-sizing: border-box;
   display: flex;
   flex-shrink: 0;
 }

@@ -224,14 +224,46 @@ function renderEraser(virtualCanvas, transaction) {
     const end = Math.min(index + chunkSize, pixels.length);
 
     task.push(() => {
-      for (let i = start; i < end; i++) {
-        const [x, y] = pixels[i];
-
-        processPixel(x, y);
-
-        // virtualCanvas.setPixelOutline(x, y, color, brushsize);
-      }
+      for (let i = start; i < end; i++) processOutline(...pixels[i]);
     });
+  }
+
+  function processOutline(x, y) {
+    if (mode === 1) {
+      // Right-click => Eraser logic with subpixel checks
+      const halfThickness = Math.floor(brushsize / 2);
+      for (let dy = 0; dy < brushsize; dy++) {
+        for (let dx = 0; dx < brushsize; dx++) {
+          if (
+            dy !== 0 &&
+            dx !== 0 &&
+            dy !== brushsize - 1 &&
+            dx !== brushsize - 1
+          )
+            continue;
+
+          const newX = x - halfThickness + dx;
+          const newY = y - halfThickness + dy;
+
+          if (
+            newX >= 0 &&
+            newY >= 0 &&
+            newX < virtualCanvas.virtualWidth &&
+            newY < virtualCanvas.virtualHeight
+          ) {
+            const existingColor = virtualCanvas.getPixelColor(newX, newY);
+            if (colorsMatch(existingColor, primarycolor)) {
+              // Overwrite single subpixel
+              virtualCanvas.setPixel(newX, newY, color, 1);
+            }
+          }
+        }
+      }
+    } else {
+      // Left-click => Just do one call that draws the entire brush area
+      // No need to check existing color for each subpixel.
+      virtualCanvas.setPixelOutline(x, y, color, brushsize);
+    }
   }
 
   return task;
