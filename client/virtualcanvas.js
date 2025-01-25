@@ -328,11 +328,19 @@ export default class VirtualCanvas {
 
   getPixelColor(x, y) {
     if (x >= 0 && y >= 0 && x < this.virtualWidth && y < this.virtualHeight) {
-      // const [clientX, clientY] = this.positionInCanvas(x, y);
       const color = this.virtualCanvas[y][x];
       return [color[0], color[1], color[2]];
-    } else {
-      return white;
-    }
+    } else return white;
+  }
+
+  checkPixelColor(x, y, color) {
+    if (x >= 0 && y >= 0 && x < this.virtualWidth && y < this.virtualHeight) {
+      const canvasColor = this.virtualCanvas[y][x];
+      return (
+        color[0] === canvasColor[0] &&
+        color[1] === canvasColor[1] &&
+        color[2] === canvasColor[2]
+      );
+    } else return false;
   }
 }

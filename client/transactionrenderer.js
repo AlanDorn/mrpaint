@@ -85,12 +85,12 @@ function renderFill(virtualCanvas, transaction) {
     x >= width ||
     y < 0 ||
     y >= height ||
-    colorsMatch(virtualCanvas.virtualCanvas[y][x], color)
+    virtualCanvas.checkPixelColor(x, y, color)
   ) {
     return [doNothing];
   }
 
-  const targetColor = virtualCanvas.virtualCanvas[y][x];
+  const targetColor = virtualCanvas.getPixelColor(x,y);
   virtualCanvas.setPixel(x, y, targetColor, 1);
 
   const nextRender = () => {
@@ -104,7 +104,7 @@ function renderFill(virtualCanvas, transaction) {
           cur[0] >= width ||
           cur[1] < 0 ||
           cur[1] >= height ||
-          !colorsMatch(virtualCanvas.virtualCanvas[cur[1]][cur[0]], targetColor)
+          !virtualCanvas.checkPixelColor(cur[0],cur[1], targetColor)
         ) {
           garbage.push(cur);
           continue;
