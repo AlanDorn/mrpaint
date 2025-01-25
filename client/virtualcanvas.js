@@ -146,19 +146,29 @@ export default class VirtualCanvas {
     this.virtualWidth = width;
 
     if (heightChanged || widthChanged) {
+      const imageData = this.offscreenCtx.getImageData(
+        0,
+        0,
+        this.offscreenCanvas.width,
+        this.offscreenCanvas.height
+      );
       this.offscreenCanvas.width = this.virtualWidth * this.pixelZoom;
       this.offscreenCanvas.height = this.virtualHeight * this.pixelZoom;
+      this.offscreenCtx.putImageData(imageData, 0, 0);
       this.fillImageData();
     }
+
+    this.viewport.setAdjusters();
+    this.statusbar.setCanvasSize();
   }
 
   fillImageData() {
     const widthChunkSize = Math.floor(
-      this.virtualWidth / Math.ceil(this.virtualWidth / 1000)
+      this.virtualWidth / Math.ceil(this.virtualWidth / 750)
     ); // Size of each square chunk
     const heightChunkSize = Math.floor(
-      this.virtualHeight / Math.ceil(this.virtualHeight / 1000)
-    );;
+      this.virtualHeight / Math.ceil(this.virtualHeight / 750)
+    );
     this.fillGeneration = [];
 
     const horizontalChunks = Math.ceil(this.virtualWidth / widthChunkSize);
@@ -220,7 +230,7 @@ export default class VirtualCanvas {
     for (let y = 0; y < this.virtualHeight; y++)
       for (let x = 0; x < this.virtualWidth; x++)
         this.virtualCanvas[y][x] = white;
-    this.fillImageData();
+    this.setSize(700, 500);
   }
 
   set(newVirtualCanvas) {
@@ -228,8 +238,15 @@ export default class VirtualCanvas {
       this.virtualHeight !== newVirtualCanvas.length ||
       this.virtualWidth !== newVirtualCanvas[0].length
     ) {
-      this.offscreenCanvas.width = newVirtualCanvas[0].length * this.pixelZoom;
-      this.offscreenCanvas.height = newVirtualCanvas.length * this.pixelZoom;
+      const imageData = this.offscreenCtx.getImageData(
+        0,
+        0,
+        this.offscreenCanvas.width,
+        this.offscreenCanvas.height
+      );
+      this.offscreenCanvas.width = this.virtualWidth * this.pixelZoom;
+      this.offscreenCanvas.height = this.virtualHeight * this.pixelZoom;
+      this.offscreenCtx.putImageData(imageData, 0, 0);
     }
 
     const oldVirtualCanvas = this.virtualCanvas;

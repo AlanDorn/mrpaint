@@ -166,8 +166,6 @@ function renderResize(virtualCanvas, transaction) {
   return [
     () => {
       virtualCanvas.setSize(newWidth, newHeight);
-      virtualCanvas.viewport.setAdjusters();
-      virtualCanvas.statusbar.setCanvasSize();
     },
   ];
 }

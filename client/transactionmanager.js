@@ -83,7 +83,7 @@ export default class TransactionManager {
         if (
           this.currentTask.length === 0 &&
           this.rendered >= this.transactions.length - 1000 &&
-          (this.msSinceLastSnapShot > 8 ||
+          (this.msSinceLastSnapShot > 4 ||
             toolCodeInverse[
               this.transactions[this.rendered - 1][TOOLCODEINDEX]
             ] == "resize")
