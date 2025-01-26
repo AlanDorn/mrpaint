@@ -25,10 +25,12 @@ export default class Ruler {
       const normalizedPosition = this.virtualCanvas.positionInScreen(
         ...this.virtualCanvas.positionInCanvas(input.x, input.y)
       );
-      this.topIndicator.style.width = Math.max(0, normalizedPosition[0] - rect.left) + "px";
-      this.leftIndicator.style.height = Math.max(0, normalizedPosition[1] - rect.top) + "px";
+      this.topIndicator.style.width =
+        Math.max(0, normalizedPosition[0] - rect.left) + "px";
+      this.leftIndicator.style.height =
+        Math.max(0, normalizedPosition[1] - rect.top) + "px";
     }
-    
+
     const topLeftInCanvas = this.virtualCanvas.positionInCanvas(
       rect.left,
       rect.top
@@ -47,8 +49,12 @@ export default class Ruler {
     const widthRatio = rect.width / canvasWidth;
     const heightRatio = rect.height / canvasHeight;
 
-    const canvasTopLength = roundMagnitude(canvasWidth / idealNumberOfTopSegments)
-    const canvasLeftLength = roundMagnitude(canvasHeight / idealNumberOfLeftSegments);
+    const canvasTopLength = roundMagnitude(
+      canvasWidth / idealNumberOfTopSegments
+    );
+    const canvasLeftLength = roundMagnitude(
+      canvasHeight / idealNumberOfLeftSegments
+    );
 
     const segmentTopLength = canvasTopLength * widthRatio - 1;
     const segmentLeftLength = canvasLeftLength * heightRatio - 1;
@@ -59,6 +65,13 @@ export default class Ruler {
     let startWidth = topLeftInCanvas[0] - canvasTopLength - offsetWidth;
     let startHeight = topLeftInCanvas[1] - canvasLeftLength - offsetHeight;
 
+    const margins = this.virtualCanvas.positionInScreen(startWidth - 0.5, startHeight - 0.5);
+
+    this.topSegments[0].style.marginLeft =
+      (margins[0] - rect.left) + "px";
+    this.leftSegments[0].style.marginTop =
+      (margins[1] - rect.top) + "px";
+
     for (let index = 0; index < this.topSegments.length; index++) {
       this.topSegments[index].style.width = segmentTopLength + "px";
       this.topSegments[index].rulerNumber.innerText = Math.round(startWidth);
@@ -66,16 +79,9 @@ export default class Ruler {
       this.leftSegments[index].style.height = segmentLeftLength + "px";
       this.leftSegments[index].rulerNumber.innerText = Math.round(startHeight);
 
-
       startWidth += canvasTopLength;
       startHeight += canvasLeftLength;
-
     }
-
-    this.topSegments[0].style.marginLeft =
-      -(offsetWidth * widthRatio + segmentTopLength) + "px";
-    this.leftSegments[0].style.marginTop =
-      -(offsetHeight * heightRatio + segmentLeftLength) + "px";
   }
 
   addTopSegment() {
@@ -126,12 +132,6 @@ export default class Ruler {
 }
 
 function roundMagnitude(num) {
-  const magnitude = Math.pow(
-    10,
-    Math.floor(Math.log10(num))
-  );
-  return Math.max(
-    10,
-    Math.round(num / magnitude) * magnitude
-  );
+  const magnitude = Math.pow(10, Math.floor(Math.log10(num)));
+  return Math.max(10, Math.round(num / magnitude) * magnitude);
 }

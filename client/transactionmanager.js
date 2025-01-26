@@ -91,7 +91,6 @@ export default class TransactionManager {
           this.takeSnapShot();
           this.msSinceLastSnapShot = 0;
         }
-        this.needToRenderCanvas = true;
         this.msSinceLastSnapShot += performance.now() - processStartTime;
       }
 

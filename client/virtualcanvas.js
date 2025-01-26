@@ -1,23 +1,25 @@
 const white = [255, 255, 255];
 export default class VirtualCanvas {
   constructor() {
-    this.virtualHeight = 500;
-    this.virtualWidth = 700;
+    this.height = 500;
+    this.width = 700;
     this.pixelZoom = 2; // each pixel is represented by a nxn square, this improves clarity. Use an even number or else you get a fill glitch.
     this.zoomExp = 0;
     this.zoom = 1; // Default zoom level
     this.offset = [0, 0]; // Default offset [x, y]
     this.fillGeneration = [];
 
-    this.virtualCanvas = Array.from({ length: this.virtualHeight }, () =>
-      Array(this.virtualWidth).fill(white)
+    this.virtualCanvas = Array.from({ length: this.height }, () =>
+      Array(this.width).fill(white)
     );
 
     this.drawingarea = document.getElementById("drawingarea");
     this.offscreenCanvas = document.createElement("canvas");
-    this.offscreenCanvas.width = this.virtualWidth * this.pixelZoom;
-    this.offscreenCanvas.height = this.virtualHeight * this.pixelZoom;
-    this.offscreenCtx = this.offscreenCanvas.getContext("2d");
+    this.offscreenCanvas.width = this.width * this.pixelZoom;
+    this.offscreenCanvas.height = this.height * this.pixelZoom;
+    this.offscreenCtx = this.offscreenCanvas.getContext("2d", {
+      willReadFrequently: true,
+    });
     this.fillImageData();
 
     this.canvas = document.getElementById("myCanvas");
@@ -33,12 +35,12 @@ export default class VirtualCanvas {
       this.offscreenCanvas, // Source
       0,
       0,
-      this.virtualWidth * this.pixelZoom,
-      this.virtualHeight * this.pixelZoom, // Source rectangle
+      this.width * this.pixelZoom,
+      this.height * this.pixelZoom, // Source rectangle
       this.offset[0],
       this.offset[1],
-      Math.ceil(this.virtualWidth * this.zoom),
-      Math.ceil(this.virtualHeight * this.zoom) // Destination rectangle
+      Math.ceil(this.width * this.zoom),
+      Math.ceil(this.height * this.zoom) // Destination rectangle
     );
   }
 
@@ -51,8 +53,8 @@ export default class VirtualCanvas {
       thickness === 1 &&
       x >= 0 &&
       y >= 0 &&
-      x < this.virtualWidth &&
-      y < this.virtualHeight
+      x < this.width &&
+      y < this.height
     ) {
       this.offscreenCtx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, 1)`;
       this.offscreenCtx.fillRect(
@@ -78,12 +80,7 @@ export default class VirtualCanvas {
       for (let dx = 0; dx < thickness; dx++) {
         const newX = x - halfThickness + dx;
         const newY = y - halfThickness + dy;
-        if (
-          newX >= 0 &&
-          newY >= 0 &&
-          newX < this.virtualWidth &&
-          newY < this.virtualHeight
-        )
+        if (newX >= 0 && newY >= 0 && newX < this.width && newY < this.height)
           this.virtualCanvas[newY][newX] = color;
       }
     }
@@ -114,8 +111,8 @@ export default class VirtualCanvas {
             dy === thickness - 1) &&
           newX >= 0 &&
           newY >= 0 &&
-          newX < this.virtualWidth &&
-          newY < this.virtualHeight
+          newX < this.width &&
+          newY < this.height
         )
           this.virtualCanvas[newY][newX] = color;
       }
@@ -123,27 +120,27 @@ export default class VirtualCanvas {
   }
 
   setSize(width, height) {
-    const heightChanged = height !== this.virtualHeight;
+    const heightChanged = height !== this.height;
     if (heightChanged)
-      if (height > this.virtualHeight)
-        for (let index = 0; index < height - this.virtualHeight; index++)
-          this.virtualCanvas.push(Array(this.virtualWidth).fill(white));
+      if (height > this.height)
+        for (let index = 0; index < height - this.height; index++)
+          this.virtualCanvas.push(Array(this.width).fill(white));
       else this.virtualCanvas.length = height;
 
-    this.virtualHeight = height;
+    this.height = height;
 
-    const widthChanged = width !== this.virtualWidth;
+    const widthChanged = width !== this.width;
     if (widthChanged)
-      if (width > this.virtualWidth)
-        for (let index = 0; index < this.virtualHeight; index++)
+      if (width > this.width)
+        for (let index = 0; index < this.height; index++)
           this.virtualCanvas[index].push(
-            ...Array(width - this.virtualWidth).fill(white)
+            ...Array(width - this.width).fill(white)
           );
       else
-        for (let index = 0; index < this.virtualHeight; index++)
+        for (let index = 0; index < this.height; index++)
           this.virtualCanvas[index].length = width;
 
-    this.virtualWidth = width;
+    this.width = width;
 
     if (heightChanged || widthChanged) {
       const imageData = this.offscreenCtx.getImageData(
@@ -152,10 +149,29 @@ export default class VirtualCanvas {
         this.offscreenCanvas.width,
         this.offscreenCanvas.height
       );
-      this.offscreenCanvas.width = this.virtualWidth * this.pixelZoom;
-      this.offscreenCanvas.height = this.virtualHeight * this.pixelZoom;
+      this.offscreenCanvas.width = this.width * this.pixelZoom;
+      this.offscreenCanvas.height = this.height * this.pixelZoom;
       this.offscreenCtx.putImageData(imageData, 0, 0);
-      this.fillImageData();
+
+      const newImage = this.offscreenCtx.getImageData(
+        0,
+        0,
+        this.offscreenCanvas.width,
+        this.offscreenCanvas.height
+      );
+
+      const newImageData = newImage.data;
+
+      for (let index = 0; index < newImageData.length; index += 4) {
+        if (newImageData[index + 3] === 0) {
+          newImageData[index] = 255;
+          newImageData[index + 1] = 255;
+          newImageData[index + 2] = 255;
+          newImageData[index + 3] = 255;
+        }
+      }
+
+      this.offscreenCtx.putImageData(newImage, 0, 0);
     }
 
     this.viewport.setAdjusters();
@@ -164,22 +180,22 @@ export default class VirtualCanvas {
 
   fillImageData() {
     const widthChunkSize = Math.floor(
-      this.virtualWidth / Math.ceil(this.virtualWidth / 750)
+      this.width / Math.ceil(this.width / this.width)
     ); // Size of each square chunk
     const heightChunkSize = Math.floor(
-      this.virtualHeight / Math.ceil(this.virtualHeight / 750)
+      this.height / Math.ceil(this.height / this.height)
     );
     this.fillGeneration = [];
 
-    const horizontalChunks = Math.ceil(this.virtualWidth / widthChunkSize);
-    const verticalChunks = Math.ceil(this.virtualHeight / heightChunkSize);
+    const horizontalChunks = Math.ceil(this.width / widthChunkSize);
+    const verticalChunks = Math.ceil(this.height / heightChunkSize);
 
     for (let chunkY = 0; chunkY < verticalChunks; chunkY++) {
       for (let chunkX = 0; chunkX < horizontalChunks; chunkX++) {
         const startX = chunkX * widthChunkSize;
         const startY = chunkY * heightChunkSize;
-        const endX = Math.min(startX + widthChunkSize, this.virtualWidth);
-        const endY = Math.min(startY + heightChunkSize, this.virtualHeight);
+        const endX = Math.min(startX + widthChunkSize, this.width);
+        const endY = Math.min(startY + heightChunkSize, this.height);
 
         this.fillGeneration.push(() => {
           const width = (endX - startX) * this.pixelZoom;
@@ -227,16 +243,15 @@ export default class VirtualCanvas {
   }
 
   reset() {
-    for (let y = 0; y < this.virtualHeight; y++)
-      for (let x = 0; x < this.virtualWidth; x++)
-        this.virtualCanvas[y][x] = white;
+    for (let y = 0; y < this.height; y++)
+      for (let x = 0; x < this.width; x++) this.virtualCanvas[y][x] = white;
     this.setSize(700, 500);
   }
 
   set(newVirtualCanvas) {
     if (
-      this.virtualHeight !== newVirtualCanvas.length ||
-      this.virtualWidth !== newVirtualCanvas[0].length
+      this.height !== newVirtualCanvas.length ||
+      this.width !== newVirtualCanvas[0].length
     ) {
       const imageData = this.offscreenCtx.getImageData(
         0,
@@ -244,15 +259,15 @@ export default class VirtualCanvas {
         this.offscreenCanvas.width,
         this.offscreenCanvas.height
       );
-      this.offscreenCanvas.width = this.virtualWidth * this.pixelZoom;
-      this.offscreenCanvas.height = this.virtualHeight * this.pixelZoom;
+      this.offscreenCanvas.width = this.width * this.pixelZoom;
+      this.offscreenCanvas.height = this.height * this.pixelZoom;
       this.offscreenCtx.putImageData(imageData, 0, 0);
     }
 
     const oldVirtualCanvas = this.virtualCanvas;
     this.virtualCanvas = newVirtualCanvas;
-    this.virtualWidth = this.virtualCanvas[0].length;
-    this.virtualHeight = this.virtualCanvas.length;
+    this.width = this.virtualCanvas[0].length;
+    this.height = this.virtualCanvas.length;
 
     this.fillImageData();
     return oldVirtualCanvas;
@@ -291,13 +306,9 @@ export default class VirtualCanvas {
 
   positionInCanvas(clientX, clientY) {
     const rect = this.drawingarea.getBoundingClientRect();
-    const x = Math.round(
-      (clientX - rect.left - this.offset[0]) / this.zoom - 0.5
-    );
-    const y = Math.round(
-      (clientY - rect.top - this.offset[1]) / this.zoom - 0.5
-    );
-    return [x, y];
+    const x = (clientX - rect.left - this.offset[0]) / this.zoom - 0.5;
+    const y = (clientY - rect.top - this.offset[1]) / this.zoom - 0.5;
+    return [Math.round(x), Math.round(y)];
   }
 
   positionInScreen(x, y) {
@@ -327,20 +338,16 @@ export default class VirtualCanvas {
   }
 
   getPixelColor(x, y) {
-    if (x >= 0 && y >= 0 && x < this.virtualWidth && y < this.virtualHeight) {
+    if (x >= 0 && y >= 0 && x < this.width && y < this.height) {
       const color = this.virtualCanvas[y][x];
       return [color[0], color[1], color[2]];
     } else return white;
   }
 
   checkPixelColor(x, y, color) {
-    if (x >= 0 && y >= 0 && x < this.virtualWidth && y < this.virtualHeight) {
-      const canvasColor = this.virtualCanvas[y][x];
-      return (
-        color[0] === canvasColor[0] &&
-        color[1] === canvasColor[1] &&
-        color[2] === canvasColor[2]
-      );
+    if (x >= 0 && y >= 0 && x < this.width && y < this.height) {
+      const cur = this.virtualCanvas[y][x];
+      return color[0] === cur[0] && color[1] === cur[1] && color[2] === cur[2];
     } else return false;
   }
 }

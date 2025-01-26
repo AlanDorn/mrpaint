@@ -70,15 +70,11 @@ function renderPencil(virtualCanvas, transaction) {
   return task;
 }
 
-const garbage = [];
-
 function renderFill(virtualCanvas, transaction) {
   const color = transaction.subarray(15, 18);
   const [x, y] = decodePosition(transaction.subarray(18, 22));
-
-  const stack = [[x, y]];
-  const width = virtualCanvas.virtualWidth;
-  const height = virtualCanvas.virtualHeight;
+  const width = virtualCanvas.width;
+  const height = virtualCanvas.height;
 
   if (
     x < 0 ||
@@ -90,68 +86,71 @@ function renderFill(virtualCanvas, transaction) {
     return [doNothing];
   }
 
-  const targetColor = virtualCanvas.getPixelColor(x,y);
-  virtualCanvas.setPixel(x, y, targetColor, 1);
+  const targetColor = virtualCanvas.getPixelColor(x, y);
+  if (colorsMatch(color, targetColor)) return [doNothing];
+
+  const stack = [[x, y]];
+  const neighbors = [
+    [0, 0],
+    [0, 0],
+    [0, 0],
+    [0, 0],
+  ];
 
   const nextRender = () => {
-    const startTime = performance.now();
-    while (performance.now() - startTime < 2 && stack.length > 0) {
-      for (let fast = 0; fast < 10000 && stack.length > 0; fast++) {
-        const cur = stack.pop();
+    let count = 10000; // Render batch limit
+    while (count-- > 0 && stack.length > 0) {
+      const [cx, cy] = stack.pop();
 
-        if (
-          cur[0] < 0 ||
-          cur[0] >= width ||
-          cur[1] < 0 ||
-          cur[1] >= height ||
-          !virtualCanvas.checkPixelColor(cur[0],cur[1], targetColor)
-        ) {
-          garbage.push(cur);
-          continue;
-        }
+      neighbors[0][0] = cx + 1;
+      neighbors[0][1] = cy;
+      neighbors[1][0] = cx - 1;
+      neighbors[1][1] = cy;
+      neighbors[2][0] = cx;
+      neighbors[2][1] = cy + 1;
+      neighbors[3][0] = cx;
+      neighbors[3][1] = cy - 1;
 
-        virtualCanvas.setPixel(cur[0], cur[1], color, 1);
-
-        const neighbors = [];
-
-        if (garbage.length >= 4)
-          for (let index = 0; index < 4; index++) neighbors.push(garbage.pop());
-        else for (let index = 0; index < 4; index++) neighbors.push([0, 0]);
-
-        neighbors[0][0] = cur[0] + 1;
-        neighbors[0][1] = cur[1];
-        neighbors[1][0] = cur[0] - 1;
-        neighbors[1][1] = cur[1];
-        neighbors[2][0] = cur[0];
-        neighbors[2][1] = cur[1] + 1;
-        neighbors[3][0] = cur[0];
-        neighbors[3][1] = cur[1] - 1;
-
-        if (Math.random() < 1 / 3)
-          // mixture of bfs and dfs looks cool
-          for (let i = 0; i < neighbors.length; i++) {
-            // bfs
+      if (Math.random() < 1/3)
+        // mixture of bfs and dfs looks cool
+        for (let i = 0; i < 4; i++) {
+          const [nx, ny] = neighbors[i];
+          if (
+            nx >= 0 &&
+            nx < width &&
+            ny >= 0 &&
+            ny < height &&
+            virtualCanvas.checkPixelColor(nx, ny, targetColor)
+          ) {
             const pos = Math.floor(Math.random() * stack.length);
             stack.push(stack[pos]);
-            stack[pos] = neighbors[i];
+            stack[pos] = [nx, ny];
+            virtualCanvas.setPixel(nx, ny, color, 1);
           }
-        else
-          for (let i = neighbors.length; i > 0; ) {
-            // dfs
-            const rand = Math.floor(Math.random() * i);
-            stack.push(neighbors[rand]);
-            neighbors[rand] = neighbors[--i];
+        }
+      else
+        for (let i = 3; i >= 0; i--) {
+          const rand = Math.floor(Math.random() * (i + 1));
+          const [nx, ny] = neighbors[rand];
+          if (
+            nx >= 0 &&
+            nx < width &&
+            ny >= 0 &&
+            ny < height &&
+            virtualCanvas.checkPixelColor(nx, ny, targetColor)
+          ) {
+            stack.push([nx, ny]);
+            virtualCanvas.setPixel(nx, ny, color, 1);
           }
-        garbage.push(cur);
-      }
+          neighbors[rand][0] = neighbors[i][0];
+          neighbors[rand][1] = neighbors[i][1];
+        }
     }
 
-    const stackIsNotEmpty = stack.length > 0;
-    if (stackIsNotEmpty) return nextRender;
+    return stack.length > 0 ? nextRender : null;
   };
 
-  const task = [nextRender];
-  return task;
+  return [nextRender];
 }
 
 function colorsMatch(first, second) {
@@ -199,8 +198,8 @@ function renderEraser(virtualCanvas, transaction) {
           if (
             newX >= 0 &&
             newY >= 0 &&
-            newX < virtualCanvas.virtualWidth &&
-            newY < virtualCanvas.virtualHeight
+            newX < virtualCanvas.width &&
+            newY < virtualCanvas.height
           ) {
             const existingColor = virtualCanvas.getPixelColor(newX, newY);
             if (colorsMatch(existingColor, primarycolor)) {
@@ -246,8 +245,8 @@ function renderEraser(virtualCanvas, transaction) {
           if (
             newX >= 0 &&
             newY >= 0 &&
-            newX < virtualCanvas.virtualWidth &&
-            newY < virtualCanvas.virtualHeight
+            newX < virtualCanvas.width &&
+            newY < virtualCanvas.height
           ) {
             const existingColor = virtualCanvas.getPixelColor(newX, newY);
             if (colorsMatch(existingColor, primarycolor)) {

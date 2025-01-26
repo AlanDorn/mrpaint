@@ -29,8 +29,8 @@ export default class Viewport {
 
   setAdjusters(width = null, height = null) {
     if (width == null || height == null) {
-      width = this.virtualCanvas.virtualWidth;
-      height = this.virtualCanvas.virtualHeight;
+      width = this.virtualCanvas.width;
+      height = this.virtualCanvas.height;
     }
 
     const screenSize = this.virtualCanvas.positionInScreen(width, height);
@@ -162,14 +162,14 @@ export default class Viewport {
         this.transactionManager.pushClient(
           resizeTransaction(id, [
             Math.max(1, positionInCanvas[0]),
-            this.virtualCanvas.virtualHeight,
+            this.virtualCanvas.height,
           ])
         );
         break;
       case this.heightAdjuster:
         this.transactionManager.pushClient(
           resizeTransaction(id, [
-            this.virtualCanvas.virtualWidth,
+            this.virtualCanvas.width,
             Math.max(1, positionInCanvas[1]),
           ])
         );
@@ -196,12 +196,12 @@ export default class Viewport {
       case this.widthAdjuster:
         this.setAdjusters(
           Math.max(1, positionInCanvas[0]),
-          this.virtualCanvas.virtualHeight
+          this.virtualCanvas.height
         );
         break;
       case this.heightAdjuster:
         this.setAdjusters(
-          this.virtualCanvas.virtualWidth,
+          this.virtualCanvas.width,
           Math.max(1, positionInCanvas[1])
         );
         break;

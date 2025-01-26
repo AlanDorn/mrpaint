@@ -19,7 +19,7 @@ export default class StatusBar {
   }
 
   setCanvasSize() {
-    this.canvassize.innerText = `${this.virtualCanvas.virtualWidth} x ${this.virtualCanvas.virtualHeight}`;
+    this.canvassize.innerText = `${this.virtualCanvas.width} x ${this.virtualCanvas.height}`;
   }
 
   setZoomPower() {
