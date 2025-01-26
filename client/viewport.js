@@ -161,7 +161,7 @@ export default class Viewport {
       case this.widthAdjuster:
         this.transactionManager.pushClient(
           resizeTransaction(id, [
-            Math.max(1, positionInCanvas[0]),
+            Math.min(3000, Math.max(1, positionInCanvas[0])),
             this.virtualCanvas.height,
           ])
         );
@@ -170,15 +170,15 @@ export default class Viewport {
         this.transactionManager.pushClient(
           resizeTransaction(id, [
             this.virtualCanvas.width,
-            Math.max(1, positionInCanvas[1]),
+            Math.min(3000, Math.max(1, positionInCanvas[1])),
           ])
         );
         break;
       case this.bothAdjuster:
         this.transactionManager.pushClient(
           resizeTransaction(id, [
-            Math.max(1, positionInCanvas[0]),
-            Math.max(1, positionInCanvas[1]),
+            Math.min(3000, Math.max(1, positionInCanvas[0])),
+            Math.min(3000, Math.max(1, positionInCanvas[1])),
           ])
         );
         break;
