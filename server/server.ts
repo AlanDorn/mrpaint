@@ -40,12 +40,11 @@ wss.on("connection", (ws) => {
       userId = lobby.addUser(ws);
       lobby.print();
       return;
-    }
-
+    } 
+    
     lobby.handle(userId, event);
   });
 
-  // Kick the user from the active users
   ws.on("close", () => {
     if (lobby) lobby.deleteUser(userId);
   });

@@ -31,7 +31,7 @@ export default class TransactionManager {
     this.rendered = 0;
     this.correct = 0;
     this.currentTask = [];
-    this.rerenderCauseOfUndo = true;
+    this.rerenderCauseOfUndo = false;
 
     this.newRender = false; // used to control mousemove input,
     this.transactionRenderLoop();

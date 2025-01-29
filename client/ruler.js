@@ -56,8 +56,8 @@ export default class Ruler {
       canvasHeight / idealNumberOfLeftSegments
     );
 
-    const segmentTopLength = canvasTopLength * widthRatio - 1;
-    const segmentLeftLength = canvasLeftLength * heightRatio - 1;
+    const segmentTopLength = canvasTopLength * widthRatio - 0.5;
+    const segmentLeftLength = canvasLeftLength * heightRatio - 0.5;
 
     const offsetWidth = topLeftInCanvas[0] % canvasTopLength;
     const offsetHeight = topLeftInCanvas[1] % canvasLeftLength;

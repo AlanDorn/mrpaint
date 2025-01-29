@@ -111,7 +111,7 @@ function renderFill(virtualCanvas, transaction) {
       neighbors[3][0] = cx;
       neighbors[3][1] = cy - 1;
 
-      if (Math.random() < 1/3)
+      if (stack.length % 1000 < 100)
         // mixture of bfs and dfs looks cool
         for (let i = 0; i < 4; i++) {
           const [nx, ny] = neighbors[i];

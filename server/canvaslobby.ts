@@ -11,6 +11,9 @@ export default class CanvasLobby {
   transactionIndex = 1; //To init a user the first byte has to be the userId
   transactions: Uint8Array = new Uint8Array(2 ** 27);
 
+  renderIndex = 1;
+
+
   constructor(id: string) {
     this.id = id;
   }
@@ -70,7 +73,7 @@ export default class CanvasLobby {
   }
 }
 
-function formatBytes(bytes: number, decimals = 2) {
+function formatBytes(bytes: number, decimals = 3) {
   if (bytes === 0) return "0 Bytes";
   const k = 1024,
     dm = decimals < 0 ? 0 : decimals,

@@ -17,9 +17,7 @@ export default class VirtualCanvas {
     this.offscreenCanvas = document.createElement("canvas");
     this.offscreenCanvas.width = this.width * this.pixelZoom;
     this.offscreenCanvas.height = this.height * this.pixelZoom;
-    this.offscreenCtx = this.offscreenCanvas.getContext("2d", {
-      willReadFrequently: true,
-    });
+    this.offscreenCtx = this.offscreenCanvas.getContext("2d");
     this.fillImageData();
 
     this.canvas = document.getElementById("myCanvas");
@@ -80,7 +78,12 @@ export default class VirtualCanvas {
       for (let dx = 0; dx < thickness; dx++) {
         const newX = x - halfThickness + dx;
         const newY = y - halfThickness + dy;
-        if (newX >= 0 && newY >= 0 && newX < this.width && newY < this.height)
+        if (
+          newX >= 0 &&
+          newY >= 0 &&
+          newX < this.width &&
+          newY < this.height
+        )
           this.virtualCanvas[newY][newX] = color;
       }
     }
@@ -152,26 +155,7 @@ export default class VirtualCanvas {
       this.offscreenCanvas.width = this.width * this.pixelZoom;
       this.offscreenCanvas.height = this.height * this.pixelZoom;
       this.offscreenCtx.putImageData(imageData, 0, 0);
-
-      const newImage = this.offscreenCtx.getImageData(
-        0,
-        0,
-        this.offscreenCanvas.width,
-        this.offscreenCanvas.height
-      );
-
-      const newImageData = newImage.data;
-
-      for (let index = 0; index < newImageData.length; index += 4) {
-        if (newImageData[index + 3] === 0) {
-          newImageData[index] = 255;
-          newImageData[index + 1] = 255;
-          newImageData[index + 2] = 255;
-          newImageData[index + 3] = 255;
-        }
-      }
-
-      this.offscreenCtx.putImageData(newImage, 0, 0);
+      this.fillImageData();
     }
 
     this.viewport.setAdjusters();
@@ -244,7 +228,8 @@ export default class VirtualCanvas {
 
   reset() {
     for (let y = 0; y < this.height; y++)
-      for (let x = 0; x < this.width; x++) this.virtualCanvas[y][x] = white;
+      for (let x = 0; x < this.width; x++)
+        this.virtualCanvas[y][x] = white;
     this.setSize(700, 500);
   }
 
@@ -306,9 +291,13 @@ export default class VirtualCanvas {
 
   positionInCanvas(clientX, clientY) {
     const rect = this.drawingarea.getBoundingClientRect();
-    const x = (clientX - rect.left - this.offset[0]) / this.zoom - 0.5;
-    const y = (clientY - rect.top - this.offset[1]) / this.zoom - 0.5;
-    return [Math.round(x), Math.round(y)];
+    const x = Math.round(
+      (clientX - rect.left - this.offset[0]) / this.zoom - 0.5
+    );
+    const y = Math.round(
+      (clientY - rect.top - this.offset[1]) / this.zoom - 0.5
+    );
+    return [x, y];
   }
 
   positionInScreen(x, y) {
@@ -346,8 +335,12 @@ export default class VirtualCanvas {
 
   checkPixelColor(x, y, color) {
     if (x >= 0 && y >= 0 && x < this.width && y < this.height) {
-      const cur = this.virtualCanvas[y][x];
-      return color[0] === cur[0] && color[1] === cur[1] && color[2] === cur[2];
+      const canvasColor = this.virtualCanvas[y][x];
+      return (
+        color[0] === canvasColor[0] &&
+        color[1] === canvasColor[1] &&
+        color[2] === canvasColor[2]
+      );
     } else return false;
   }
 }
