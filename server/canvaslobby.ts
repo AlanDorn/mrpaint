@@ -1,5 +1,5 @@
-import e from "express";
 import WebSocket from "ws";
+import CanvasState from "./canvasstate";
 
 export default class CanvasLobby {
   id: string;
@@ -7,25 +7,24 @@ export default class CanvasLobby {
   activeUsers: Map<number, WebSocket> = new Map();
   syncingUsers: Map<number, WebSocket> = new Map();
   syncingData: Map<number, Uint8Array[]> = new Map();
-
   transactionIndex = 1; //To init a user the first byte has to be the userId
   transactions: Uint8Array = new Uint8Array(2 ** 27);
-
-  renderIndex = 1;
-
+  canvasState: CanvasState = new CanvasState(1);
+  buildStates: Map<number, CanvasState> = new Map();
 
   constructor(id: string) {
     this.id = id;
+    this.canvasState.snapshotCount = 0;
   }
 
   addUser(ws: WebSocket) {
-    this.userIdCounter++;
-    this.userIdCounter %= 256;
+    const buildState = new CanvasState(this.transactionIndex);
+    this.userIdCounter = (this.userIdCounter + 1) % 256;
     this.syncingUsers.set(this.userIdCounter, ws);
     this.syncingData.set(this.userIdCounter, []);
-
-    this.transactions[0] = this.userIdCounter;
+    this.buildStates.set(this.userIdCounter, buildState);
     ws.send(this.transactions.subarray(0, this.transactionIndex));
+    this.canvasState.send(this.userIdCounter, ws);
     return this.userIdCounter;
   }
 
@@ -33,19 +32,12 @@ export default class CanvasLobby {
     this.activeUsers.delete(userId);
     this.syncingUsers.delete(userId);
     this.syncingData.delete(userId);
+    this.buildStates.delete(userId);
   }
 
   handle(userId: number, event: WebSocket.RawData) {
     if (this.activeUsers.has(userId)) this.send(userId, event);
-
-    const socket = this.syncingUsers.get(userId);
-    const syncingData = this.syncingData.get(userId);
-
-    if (socket && syncingData) {
-      this.activeUsers.set(userId, socket);
-      for (let i = 0; i < syncingData.length; i++) socket.send(syncingData[i]);
-      this.syncingData.delete(userId);
-    }
+    else this.sync(userId, event);
   }
 
   send(userId: number, event: WebSocket.RawData) {
@@ -59,17 +51,27 @@ export default class CanvasLobby {
     this.transactionIndex += justTransactions.length;
   }
 
+  sync(userId: number, event: WebSocket.RawData) {
+    const buildState = this.buildStates.get(userId);
+    if (!buildState) return;
+    buildState.handle(event);
+    if (!buildState.isFinished()) return;
+    this.canvasState =
+      buildState.index > this.canvasState.index ? buildState : this.canvasState;
+    this.buildStates.delete(userId);
+    const socket = this.syncingUsers.get(userId);
+    const syncingData = this.syncingData.get(userId);
+    if (!socket || !syncingData) return;
+    this.activeUsers.set(userId, socket);
+    this.syncingData.delete(userId);
+    this.syncingUsers.delete(userId);
+    syncingData.forEach((data) => socket.send(data));
+  }
+
   print() {
     console.log("==========================");
     console.log(`Lobby:    ${this.id}`);
     console.log(`Size:     ${formatBytes(this.transactionIndex)}`);
-    if (this.activeUsers.size > 0) {
-      this.activeUsers.forEach((socket, id) => {
-        console.log(`User:     ${id}`);
-      });
-    } else {
-      console.log("No active users.");
-    }
   }
 }
 

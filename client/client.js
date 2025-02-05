@@ -8,9 +8,8 @@ import Toolbar from "./toolbar.js";
 
 // In summary toolbar provides high level control code which is controlled by the input class/the user. So it could be renamed
 
-
 const virtualCanvas = new VirtualCanvas();
 const transactionManager = new TransactionManager(virtualCanvas);
 const toolbar = new Toolbar(virtualCanvas, transactionManager);
 const input = new Input(toolbar, transactionManager);
-new socket(input, transactionManager, virtualCanvas);
+socket(input, transactionManager, virtualCanvas);

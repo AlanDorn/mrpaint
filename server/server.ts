@@ -1,3 +1,4 @@
+import fs from "fs";
 import path from "path";
 import express from "express";
 import * as http from "http";
@@ -19,8 +20,48 @@ app.get("/", (req, res) => {
 });
 
 app.get("/:lobby", (req, res) => {
-  if (!lobbies.has(req.params.lobby)) res.redirect("/");
-  else res.sendFile(path.join(__dirname, "../client", "client.html"));
+  if (!lobbies.has(req.params.lobby)) {
+    return res.redirect("/");
+  }
+
+  const filePath = path.join(__dirname, "../client", "client.html");
+
+  fs.readFile(filePath, "utf8", (err, html) => {
+    if (err) {
+      console.error("Error reading HTML file:", err);
+      return res.status(500).send("Internal Server Error");
+    }
+
+    // Inject Open Graph meta tags
+    const openGraphTags = `
+      <meta property="og:title" content="Mr. Paint" />
+      <meta property="og:description" content="Draw with your friends and family" />
+      <meta property="og:image" content="https://mrpaint.onrender.com/preview/${req.params.lobby}.png" />
+      <meta property="og:url" content="https://mrpaint.onrender.com/${req.params.lobby}" />
+    `;
+
+    // Inject tags before `</head>`
+    const modifiedHtml = html.replace("</head>", `${openGraphTags}\n</head>`);
+
+    res.send(modifiedHtml);
+  });
+});
+
+app.get("/preview/:lobby", (req, res) => {
+  const lobbyCode = req.params.lobby.split(".")[0];
+  const lobby = lobbies.get(lobbyCode);
+  if (!lobby)
+    res.sendFile(
+      path.join(
+        __dirname,
+        "../client/images",
+        "db9c352d-2b8b-4e74-a4b5-26f7d7c4a2b9.webp"
+      )
+    );
+  else {
+    res.set("Content-Type", "image/png");
+    res.send(Buffer.from(lobby.canvasState.png));
+  }
 });
 
 // Create a single HTTP server
@@ -40,8 +81,8 @@ wss.on("connection", (ws) => {
       userId = lobby.addUser(ws);
       lobby.print();
       return;
-    } 
-    
+    }
+
     lobby.handle(userId, event);
   });
 

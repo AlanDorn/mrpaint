@@ -42,7 +42,6 @@ export default class Input {
     let debounceTimeout;
 
     document.addEventListener("pointermove", (event) => {
-      clearTimeout(debounceTimeout);
       this.x = Math.round(event.clientX);
       this.y = Math.round(event.clientY);
 
@@ -58,9 +57,7 @@ export default class Input {
         transactionManager.newRender = false;
       }
 
-      debounceTimeout = setTimeout(() => {
-        toolbar.mouseMove(this);
-      }, 32);
+      
     });
 
     document.addEventListener(

@@ -33,71 +33,68 @@ export default class TransactionManager {
     this.currentTask = [];
     this.rerenderCauseOfUndo = false;
 
+    this.intitializing = true;
+
     this.newRender = false; // used to control mousemove input,
-    this.transactionRenderLoop();
+    requestAnimationFrame(() => this.renderFrame());
   }
 
-  transactionRenderLoop(loopTargetms = 8) {
-    // Having loopTargetms too high blocks the mouse
-    const renderFrame = () => {
-      const startTime = performance.now();
-      this.newRender = true;
-      this.virtualCanvas.statusbar.setCompletionBar(
-        this.correct / this.transactions.length
-      );
-      this.virtualCanvas.ruler.set();
+  renderFrame() {
+    const startTime = performance.now();
+    this.newRender = true;
+    this.sendSocket();
+    this.virtualCanvas.statusbar.setCompletionBar(
+      this.correct / this.transactions.length
+    );
+    this.virtualCanvas.ruler.set();
 
-      if (this.uninsertedTransactions.length) this.pushTransactions();
+    if (!this.intitializing && this.uninsertedTransactions.length) this.pushTransactions();
 
-      if (this.correct < this.rendered) this.syncCanvas();
+    if (this.correct < this.rendered) this.syncCanvas();
 
-      if (this.rerenderCauseOfUndo || this.rendered >= this.transactions.length)
-        this.virtualCanvas.fill();
+    if (this.rerenderCauseOfUndo || this.rendered >= this.transactions.length)
+      this.virtualCanvas.fill();
 
-      this.virtualCanvas.render();
+    this.virtualCanvas.render();
 
-      while (performance.now() - startTime < loopTargetms) {
-        const processStartTime = performance.now();
-        if (this.currentTask.length === 0) {
-          if (this.rendered >= this.transactions.length) continue; //let it rip
+    while (performance.now() - startTime < 7) {
+      const processStartTime = performance.now();
+      if (this.currentTask.length === 0) {
+        if (this.rendered >= this.transactions.length) break; //let it rip
 
-          let transaction = this.transactions[this.rendered];
+        let transaction = this.transactions[this.rendered];
+        this.rendered++;
+        this.correct++;
+        while (
+          this.transactionIsUndone(transaction) &&
+          this.rendered < this.transactions.length
+        ) {
+          transaction = this.transactions[this.rendered];
           this.rendered++;
           this.correct++;
-          while (
-            this.transactionIsUndone(transaction) &&
-            this.rendered < this.transactions.length
-          ) {
-            transaction = this.transactions[this.rendered];
-            this.rendered++;
-            this.correct++;
-          }
-
-          if (this.transactionIsUndone(transaction)) continue;
-
-          this.currentTask = buildRenderTask(this.virtualCanvas, transaction);
         }
 
-        const optionalNextTask = this.currentTask.pop()(); // run the next bit of task
-        if (optionalNextTask) this.currentTask.push(optionalNextTask);
-        if (
-          this.currentTask.length === 0 &&
-          this.rendered >= this.transactions.length - 1000 &&
-          (this.msSinceLastSnapShot > 4 ||
-            toolCodeInverse[
-              this.transactions[this.rendered - 1][TOOLCODEINDEX]
-            ] == "resize")
-        ) {
-          this.takeSnapShot();
-          this.msSinceLastSnapShot = 0;
-        }
-        this.msSinceLastSnapShot += performance.now() - processStartTime;
+        if (this.transactionIsUndone(transaction)) break;
+
+        this.currentTask = buildRenderTask(this.virtualCanvas, transaction);
       }
 
-      requestAnimationFrame(renderFrame);
-    };
+      const optionalNextTask = this.currentTask.pop()(); // run the next bit of task
+      if (optionalNextTask) this.currentTask.push(optionalNextTask);
+      if (
+        this.currentTask.length === 0 &&
+        (this.msSinceLastSnapShot > 8 ||
+          toolCodeInverse[
+            this.transactions[this.rendered - 1][TOOLCODEINDEX]
+          ] == "resize")
+      ) {
+        this.takeSnapShot();
+        this.msSinceLastSnapShot = 0;
+      }
+      this.msSinceLastSnapShot += performance.now() - processStartTime;
+    }
 
-    requestAnimationFrame(renderFrame);
+    requestAnimationFrame(() => this.renderFrame());
   }
 
   transactionIsUndone(transaction) {
@@ -147,14 +144,9 @@ export default class TransactionManager {
     this.snapshots.length--;
     this.snapshotTransactions.length--;
 
-    // Create a new snapshot from an old one if available
-    let reusedSnapshot = null;
-    if (this.snapshotGraveyard.length > 0) {
-      // Pop from graveyard and reuse it
-      reusedSnapshot = this.snapshotGraveyard.pop();
-    }
-
-    this.snapshots.push(this.virtualCanvas.cloneCanvas(reusedSnapshot));
+    this.snapshots.push(
+      this.virtualCanvas.cloneCanvas(this.snapshotGraveyard.pop())
+    );
     this.snapshotTransactions.push(this.transactions[this.rendered - 1]);
 
     this.msSinceLastSnapShot = 0;
@@ -275,6 +267,7 @@ export default class TransactionManager {
   }
 
   pushClient(transaction) {
+    if(this.intitializing) return;
     this.unsentTransactions.push(transaction);
     this.uninsertedTransactions.push(transaction);
   }
@@ -288,5 +281,19 @@ export default class TransactionManager {
       else high = mid;
     }
     return low;
+  }
+
+  readState(transferStateReader) {
+    this.intitializing = false;
+    this.pushServer(transferStateReader.transactions);
+    this.pushTransactions();
+    this.snapshots = transferStateReader.snapshots;
+    this.snapshotTransactions = transferStateReader.snapshotTransactions;
+    this.correct = this.transactions.length;
+    this.syncCanvas();
+  }
+
+  sendSocket() {
+    //blank because this function is generated by socket
   }
 }

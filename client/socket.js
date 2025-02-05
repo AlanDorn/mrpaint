@@ -1,26 +1,45 @@
 import { decodePosition } from "./transaction.js";
+import { TransferStateReader, transferState } from "./transferstate.js";
 
 let userId = -1;
-let firstMessage = true;
+let initializing = true;
 
 export default function socket(input, transactionManager, virtualCanvas) {
   const url = new URL(window.location.href);
   const lobbyCode = url.pathname.split("/").pop();
-
   const socketString = url.origin.replace(/^http/, "ws");
   const ws = new WebSocket(socketString);
+  const transferStateReader = new TransferStateReader();
 
-  ws.onopen = () => ws.send(lobbyCode);
+  ws.onopen = () => {
+    ws.send(lobbyCode);
+  };
 
   ws.onmessage = (event) => {
     event.data.arrayBuffer().then((buffer) => {
-      if (firstMessage) {
-        ws.send("Mr. Paint");
-        firstMessage = false;
+      if (initializing) {
         const eventData = new Uint8Array(buffer);
-        userId = eventData[0];
-        if (eventData.length > 1)
-          transactionManager.pushServer(eventData.subarray(1));
+        transferStateReader.handle(eventData);
+        if (transferStateReader.isFinished()) {
+          transactionManager.readState(transferStateReader);
+          transactionManager.sendSocket = () => {
+            if (!initializing)
+              ws.send(
+                transactionManager.buildServerMessage(
+                  userId,
+                  ...virtualCanvas.positionInCanvas(input.x, input.y)
+                )
+              );
+            else if (
+              transactionManager.rendered >=
+                transactionManager.transactions.length &&
+              transactionManager.currentTask.length === 0
+            ) {
+              transferState(ws, transactionManager);
+              initializing = false;
+            }
+          };
+        }
         return;
       }
 
@@ -29,16 +48,6 @@ export default function socket(input, transactionManager, virtualCanvas) {
       transactionManager.pushServer(eventData.subarray(5));
     });
   };
-
-  setInterval(() => {
-    if (!firstMessage)
-      ws.send(
-        transactionManager.buildServerMessage(
-          userId,
-          ...virtualCanvas.positionInCanvas(input.x, input.y)
-        )
-      );
-  }, 8);
 }
 
 function handleCursorData(cursorData, virtualCanvas) {

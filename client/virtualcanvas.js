@@ -14,6 +14,7 @@ export default class VirtualCanvas {
     );
 
     this.drawingarea = document.getElementById("drawingarea");
+    this.rect = this.drawingarea.getBoundingClientRect();
     this.offscreenCanvas = document.createElement("canvas");
     this.offscreenCanvas.width = this.width * this.pixelZoom;
     this.offscreenCanvas.height = this.height * this.pixelZoom;
@@ -43,7 +44,7 @@ export default class VirtualCanvas {
   }
 
   fill() {
-    if (this.fillGeneration.length !== 0) this.fillGeneration.pop()();
+    while (this.fillGeneration.length > 0) this.fillGeneration.pop()();
   }
 
   setPixel(x, y, color, thickness) {
@@ -122,7 +123,7 @@ export default class VirtualCanvas {
     }
   }
 
-  setSize(width, height) {
+  setSize(width, height, forcePrint = false) {
     const heightChanged = height !== this.height;
     if (heightChanged)
       if (height > this.height)
@@ -145,17 +146,11 @@ export default class VirtualCanvas {
 
     this.width = width;
 
-    if (heightChanged || widthChanged) {
-      const imageData = this.offscreenCtx.getImageData(
-        0,
-        0,
-        this.offscreenCanvas.width,
-        this.offscreenCanvas.height
-      );
+    if (heightChanged || widthChanged || forcePrint) {
       this.offscreenCanvas.width = this.width * this.pixelZoom;
       this.offscreenCanvas.height = this.height * this.pixelZoom;
-      this.offscreenCtx.putImageData(imageData, 0, 0);
       this.fillImageData();
+      this.fill();
     }
 
     this.viewport.setAdjusters();
@@ -164,10 +159,10 @@ export default class VirtualCanvas {
 
   fillImageData() {
     const widthChunkSize = Math.floor(
-      this.width / Math.ceil(this.width / this.width)
+      this.width / Math.ceil(this.width / 512)
     ); // Size of each square chunk
     const heightChunkSize = Math.floor(
-      this.height / Math.ceil(this.height / this.height)
+      this.height / Math.ceil(this.height / 512)
     );
     this.fillGeneration = [];
 
@@ -216,21 +211,13 @@ export default class VirtualCanvas {
         });
       }
     }
-
-    // Shuffle the fillGeneration array
-    for (let i = 0; i < this.fillGeneration.length / 2; i++) {
-      [this.fillGeneration[i], this.fillGeneration[2 * i]] = [
-        this.fillGeneration[2 * i],
-        this.fillGeneration[i],
-      ];
-    }
   }
 
   reset() {
     for (let y = 0; y < this.height; y++)
       for (let x = 0; x < this.width; x++)
         this.virtualCanvas[y][x] = white;
-    this.setSize(700, 500);
+    this.setSize(700, 500, true);
   }
 
   set(newVirtualCanvas) {
@@ -238,15 +225,8 @@ export default class VirtualCanvas {
       this.height !== newVirtualCanvas.length ||
       this.width !== newVirtualCanvas[0].length
     ) {
-      const imageData = this.offscreenCtx.getImageData(
-        0,
-        0,
-        this.offscreenCanvas.width,
-        this.offscreenCanvas.height
-      );
-      this.offscreenCanvas.width = this.width * this.pixelZoom;
-      this.offscreenCanvas.height = this.height * this.pixelZoom;
-      this.offscreenCtx.putImageData(imageData, 0, 0);
+      this.offscreenCanvas.width = newVirtualCanvas[0].length * this.pixelZoom;
+      this.offscreenCanvas.height = newVirtualCanvas.length * this.pixelZoom;
     }
 
     const oldVirtualCanvas = this.virtualCanvas;
@@ -290,28 +270,25 @@ export default class VirtualCanvas {
   }
 
   positionInCanvas(clientX, clientY) {
-    const rect = this.drawingarea.getBoundingClientRect();
     const x = Math.round(
-      (clientX - rect.left - this.offset[0]) / this.zoom - 0.5
+      (clientX - this.rect.left - this.offset[0]) / this.zoom - 0.5
     );
     const y = Math.round(
-      (clientY - rect.top - this.offset[1]) / this.zoom - 0.5
+      (clientY - this.rect.top - this.offset[1]) / this.zoom - 0.5
     );
     return [x, y];
   }
 
   positionInScreen(x, y) {
-    const rect = this.drawingarea.getBoundingClientRect();
-    const clientX = (x + 0.5) * this.zoom + this.offset[0] + rect.left;
-    const clientY = (y + 0.5) * this.zoom + this.offset[1] + rect.top;
+    const clientX = (x + 0.5) * this.zoom + this.offset[0] + this.rect.left;
+    const clientY = (y + 0.5) * this.zoom + this.offset[1] + this.rect.top;
     return [clientX, clientY];
   }
 
   centerOfScreenInCanvas() {
-    const rect = this.drawingarea.getBoundingClientRect();
     return this.positionInCanvas(
-      rect.width / 2 + rect.left,
-      rect.height / 2 + rect.top
+      this.rect.width / 2 + this.rect.left,
+      this.rect.height / 2 + this.rect.top
     );
   }
 
@@ -319,9 +296,9 @@ export default class VirtualCanvas {
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
 
     this.debounceTimer = setTimeout(() => {
-      const rect = this.drawingarea.getBoundingClientRect();
-      this.canvas.width = rect.width;
-      this.canvas.height = rect.height;
+      this.rect = this.drawingarea.getBoundingClientRect();
+      this.canvas.width = this.rect.width;
+      this.canvas.height = this.rect.height;
       this.render();
     }, 50);
   }

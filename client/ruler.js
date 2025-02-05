@@ -19,7 +19,7 @@ export default class Ruler {
   }
 
   set(input) {
-    const rect = this.virtualCanvas.drawingarea.getBoundingClientRect();
+    const rect = this.virtualCanvas.rect;
 
     if (input) {
       const normalizedPosition = this.virtualCanvas.positionInScreen(
