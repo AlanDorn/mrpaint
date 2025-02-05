@@ -37,6 +37,11 @@ app.get("/:lobby", (req, res) => {
       <meta property="og:title" content="Mr. Paint" />
       <meta property="og:description" content="Draw with your friends and family" />
       <meta property="og:image" content="https://mrpaint.onrender.com/preview/${req.params.lobby}.png" />
+      <meta property="og:image:width" content="700" />
+      <meta property="og:image:height" content="500" />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:image" content="https://mrpaint.onrender.com/preview/${req.params.lobby}.png" />
+
       <meta property="og:url" content="https://mrpaint.onrender.com/${req.params.lobby}" />
     `;
 
