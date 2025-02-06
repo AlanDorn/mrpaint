@@ -14,7 +14,7 @@ To solve global changes such as flood fill, Mr. Paint utilizes a technique simil
 
 The website is currently hosted by onrender and can be accessed here: [Mr. Paint](https://mrpaint.onrender.com/)
 
-Stay tuned for more updates to come with additonal tools and features to be added soon!
+The session can be shared with others using the URL. The three words after the URL are vital for collaborating on the same canvas. Stay tuned for more updates to come with additonal tools and features to be added soon!
 
 
 # Run your own server instance
