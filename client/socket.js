@@ -36,6 +36,7 @@ export default function socket(input, transactionManager, virtualCanvas) {
               transactionManager.currentTask.length === 0
             ) {
               transferState(ws, transactionManager);
+              transactionManager.initializing = false;
               initializing = false;
             }
           };

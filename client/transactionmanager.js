@@ -33,7 +33,7 @@ export default class TransactionManager {
     this.currentTask = [];
     this.rerenderCauseOfUndo = false;
 
-    this.intitializing = true;
+    this.initializing = true;
 
     this.newRender = false; // used to control mousemove input,
     requestAnimationFrame(() => this.renderFrame());
@@ -48,13 +48,12 @@ export default class TransactionManager {
     );
     this.virtualCanvas.ruler.set();
 
-    if (!this.intitializing && this.uninsertedTransactions.length) this.pushTransactions();
+    if (!this.initializing && this.uninsertedTransactions.length)
+      this.pushTransactions();
 
     if (this.correct < this.rendered) this.syncCanvas();
-
     if (this.rerenderCauseOfUndo || this.rendered >= this.transactions.length)
       this.virtualCanvas.fill();
-
     this.virtualCanvas.render();
 
     while (performance.now() - startTime < 7) {
@@ -267,7 +266,7 @@ export default class TransactionManager {
   }
 
   pushClient(transaction) {
-    if(this.intitializing) return;
+    if (this.initializing) return;
     this.unsentTransactions.push(transaction);
     this.uninsertedTransactions.push(transaction);
   }
@@ -284,13 +283,13 @@ export default class TransactionManager {
   }
 
   readState(transferStateReader) {
-    this.intitializing = false;
     this.pushServer(transferStateReader.transactions);
     this.pushTransactions();
     this.snapshots = transferStateReader.snapshots;
     this.snapshotTransactions = transferStateReader.snapshotTransactions;
     this.correct = this.transactions.length;
     this.syncCanvas();
+    this.virtualCanvas.fill();
   }
 
   sendSocket() {
