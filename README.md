@@ -12,7 +12,11 @@ To solve global changes such as flood fill, Mr. Paint utilizes a technique simil
 
 # Run your own server instance
 To build your server you will need Node.js. 
+
 The server will be exposed on port 3000 or 'PORT' in your .env
+
 Run:
+
 npm install
+
 npm run server
