@@ -6,6 +6,6 @@ With Mr. Paint, users can make edits to the canvas and have those edits synchron
 
 # Technology
 
-Unlike most collaborative tools, Mr. Paint does not use CRDTs—at least not in a traditional way. Traditional CRDTs excel at handling localized edits, like modifying a single token or inserting a word (e.g., "hello"). However, operations like flood fill require knowledge of the entire canvas state, making them non-local. This poses a challenge when integrating CRDTs into an image editor.
+Mr. Paint does not use CRDTs—at least not in a traditional way. Traditional CRDTs excel at handling localized edits, like modifying a single token or inserting a word (e.g., "hello"). However, operations like flood fill require knowledge of the entire canvas state, making them non-local. This poses a challenge when integrating CRDTs into an image editor.
 
 To solve global changes such as flood fill, Mr. Paint utilizes a technique similar to rollback netcode. Mr. Paint periodically takes snapshots of the canvas, storing metadata about when each snapshot was created. When an older change arrives, the program rolls back to the relevant snapshot and replays all subsequent changes, ensuring consistency.
