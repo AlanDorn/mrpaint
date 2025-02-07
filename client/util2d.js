@@ -9,7 +9,6 @@ export function mirrorAcross(basePoint, pointToMirror) {
 // Catmull-Rom pixel rendering (running t backwards)
 const tolerance = 0.5;
 export function splinePixels(p0, p1, p2, p3) {
-
   const interpolate = (t, p0, p1, p2, p3) =>
     0.5 *
     (2 * p1 +
@@ -28,6 +27,8 @@ export function splinePixels(p0, p1, p2, p3) {
   let t = 1; // Start from 1
   let prevX = interpolate(t, p0[0], p1[0], p2[0], p3[0]);
   let prevY = interpolate(t, p0[1], p1[1], p2[1], p3[1]);
+  let doublePrevX = prevX - 10;
+  let doublePrevY = prevY - 10;
   pixels.push([prevX, prevY]);
   while (t > 0) {
     // Run until t > 0
@@ -43,9 +44,20 @@ export function splinePixels(p0, p1, p2, p3) {
     const x = Math.round(interpolate(t, p0[0], p1[0], p2[0], p3[0]));
     const y = Math.round(interpolate(t, p0[1], p1[1], p2[1], p3[1]));
 
-    if (prevX !== x || prevY !== y) pixels.push([x, y]);
-    prevX = x;
-    prevY = y;
+    if (prevX !== x || prevY !== y) {
+      if (Math.abs(x - doublePrevX) === 1 && Math.abs(y - doublePrevY) === 1) {
+        pixels.pop();
+        pixels.push([x, y]);
+        prevX = x;
+        prevY = y;
+      } else {
+        pixels.push([x, y]);
+        doublePrevX = prevX;
+        doublePrevY = prevY;
+        prevX = x;
+        prevY = y;
+      }
+    }
   }
   return pixels;
 }
@@ -54,10 +66,7 @@ export function centerToBrushSize(brushsize, ...points) {
   const shift = Math.floor(brushsize / 2);
   const centeredPoints = [];
   for (let index = 0; index < points.length; index++) {
-    centeredPoints.push([
-      points[index][0] - shift,
-      points[index][1] - shift,
-    ]);
+    centeredPoints.push([points[index][0] - shift, points[index][1] - shift]);
   }
   return centeredPoints;
 }

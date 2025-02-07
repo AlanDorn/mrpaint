@@ -267,6 +267,7 @@ export default class TransactionManager {
 
   pushClient(transaction) {
     if (this.initializing) return;
+
     this.unsentTransactions.push(transaction);
     this.uninsertedTransactions.push(transaction);
   }
@@ -289,7 +290,8 @@ export default class TransactionManager {
     this.snapshotTransactions = transferStateReader.snapshotTransactions;
     this.correct = this.transactions.length;
     this.syncCanvas();
-    this.virtualCanvas.fill();
+    while (this.virtualCanvas.fillGeneration.length > 0)
+      this.virtualCanvas.fill();
   }
 
   sendSocket() {

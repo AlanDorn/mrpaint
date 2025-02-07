@@ -29,6 +29,7 @@ export default class Eraser {
   }
 
   mouseDownLeft(input) {
+    this.mode = 0;
     this.currentColor = this.colorpicker.secondarycolor;
     this.handleMouseDown(input);
   }
@@ -57,18 +58,21 @@ export default class Eraser {
       this.points.unshift(mirroredPoint);
     }
 
-    if (this.points.length > 4) {
+    if (this.points.length > 3) {
       this.points.shift();
     }
 
-    if (this.points.length === 4) {
+    if (this.points.length === 3) {
       this.transactionManager.pushClient(
         eraserTransaction(
           this.operationId,
           this.currentColor,
           this.colorpicker.primarycolor,
           this.brushsize.size,
-          ...this.points,
+          this.points[0],
+          this.points[1],
+          this.points[2],
+          this.points[2],
           this.mode
         )
       );
@@ -79,7 +83,7 @@ export default class Eraser {
     this.isDrawing = false;
     
     // If it's only one point
-    if (this.points.length < 4 && this.points.length !== 0) {
+    if (this.points.length < 3 && this.points.length !== 0) {
       // If you were doing right-click, `mode` is 1
       // so let's do a single-point eraser transaction
       this.transactionManager.pushClient(

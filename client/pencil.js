@@ -55,17 +55,20 @@ export default class Pencil {
       this.points.unshift(mirroredPoint);
     }
 
-    if (this.points.length > 4) {
+    if (this.points.length > 3) {
       this.points.shift();
     }
 
-    if (this.points.length === 4) {
+    if (this.points.length === 3) {
       this.transactionManager.pushClient(
         pencilTransaction(
           this.operationId,
           this.currentColor,
           this.brushsize.size,
-          ...this.points
+          this.points[0],
+          this.points[1],
+          this.points[2],
+          this.points[2]
         )
       );
     }
@@ -73,16 +76,6 @@ export default class Pencil {
 
   handleMouseUp() {
     this.isDrawing = false;
-    if (this.points.length < 4 && this.points.length !== 0) {
-      this.transactionManager.pushClient(
-        pixelTransaction(
-          this.operationId,
-          this.currentColor,
-          this.brushsize.size,
-          this.points[0]
-        )
-      );
-    }
     this.points = [];
   }
 
@@ -92,5 +85,13 @@ export default class Pencil {
     this.points.push(startPoint);
     this.operationId = operationId();
     this.toolbar.undo.pushOperation(this.operationId);
+    this.transactionManager.pushClient(
+      pixelTransaction(
+        this.operationId,
+        this.currentColor,
+        this.brushsize.size,
+        this.points[0]
+      )
+    );
   }
 }
