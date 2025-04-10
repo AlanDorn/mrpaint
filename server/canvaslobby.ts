@@ -1,16 +1,18 @@
 import WebSocket from "ws";
 import CanvasState from "./canvasstate";
 
+class UserMap <V> extends Map <number, V> {}
+
 export default class CanvasLobby {
   id: string;
   userIdCounter = 0;
-  activeUsers: Map<number, WebSocket> = new Map();
-  syncingUsers: Map<number, WebSocket> = new Map();
-  syncingData: Map<number, Uint8Array[]> = new Map();
-  transactionIndex = 1; //To init a user the first byte has to be the userId
+  transactionIndex = 1;
   transactions: Uint8Array = new Uint8Array(2 ** 27);
+  activeUsers = new UserMap<WebSocket>();
+  syncingUsers = new UserMap<WebSocket>();
+  syncingData = new UserMap<Uint8Array[]>();
   canvasState: CanvasState = new CanvasState(1);
-  buildStates: Map<number, CanvasState> = new Map();
+  buildStates = new UserMap<CanvasState>();
 
   constructor(id: string) {
     this.id = id;

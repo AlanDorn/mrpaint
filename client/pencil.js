@@ -6,9 +6,9 @@ import {
 import { mirrorAcross } from "./util2d.js";
 
 export default class Pencil {
-  constructor(virtualCanvas, transactionManager, toolbar) {
+  constructor(virtualCanvas, transactionLog, toolbar) {
     this.virtualCanvas = virtualCanvas;
-    this.transactionManager = transactionManager;
+    this.transactionLog = transactionLog;
     this.colorpicker = toolbar.colorpicker;
     this.points = []; // Store the last four points for Catmull-Rom
     this.isDrawing = false;
@@ -60,7 +60,7 @@ export default class Pencil {
     }
 
     if (this.points.length === 3) {
-      this.transactionManager.pushClient(
+      this.transactionLog.pushClient(
         pencilTransaction(
           this.operationId,
           this.currentColor,
@@ -85,7 +85,7 @@ export default class Pencil {
     this.points.push(startPoint);
     this.operationId = operationId();
     this.toolbar.undo.pushOperation(this.operationId);
-    this.transactionManager.pushClient(
+    this.transactionLog.pushClient(
       pixelTransaction(
         this.operationId,
         this.currentColor,

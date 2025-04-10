@@ -1,11 +1,11 @@
 import { operationId, resizeTransaction } from "./transaction.js";
 
 export default class Viewport {
-  constructor(virtualCanvas, toolbar, transactionManager) {
+  constructor(virtualCanvas, toolbar, transactionLog) {
     this.virtualCanvas = virtualCanvas;
     this.virtualCanvas.viewport = this; // AGI: TransactionRenderer doesn't have access to the toolbar, only the virtualCanvas. So since we need to set the position of the adjuster after we receive a resize transaction, viewport needs to be on the virtualCanvas so that setAdjuster can be called.
     this.toolbar = toolbar;
-    this.transactionManager = transactionManager;
+    this.transactionLog = transactionLog;
 
     this.widthAdjuster = document.createElement("div");
     this.heightAdjuster = document.createElement("div");
@@ -159,7 +159,7 @@ export default class Viewport {
     this.toolbar.undo.pushOperation(id);
     switch (this.activeAdjuster) {
       case this.widthAdjuster:
-        this.transactionManager.pushClient(
+        this.transactionLog.pushClient(
           resizeTransaction(id, [
             Math.max(1, positionInCanvas[0]),
             this.virtualCanvas.height,
@@ -167,7 +167,7 @@ export default class Viewport {
         );
         break;
       case this.heightAdjuster:
-        this.transactionManager.pushClient(
+        this.transactionLog.pushClient(
           resizeTransaction(id, [
             this.virtualCanvas.width,
             Math.max(1, positionInCanvas[1]),
@@ -175,7 +175,7 @@ export default class Viewport {
         );
         break;
       case this.bothAdjuster:
-        this.transactionManager.pushClient(
+        this.transactionLog.pushClient(
           resizeTransaction(id, [
             Math.max(1, positionInCanvas[0]),
             Math.max(1, positionInCanvas[1]),

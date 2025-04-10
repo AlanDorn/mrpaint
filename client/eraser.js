@@ -1,14 +1,13 @@
 import {
   operationId,
   eraserTransaction,
-  pixelTransaction,
 } from "./transaction.js";
 import { mirrorAcross } from "./util2d.js";
 
 export default class Eraser {
-  constructor(virtualCanvas, transactionManager, toolbar) {
+  constructor(virtualCanvas, transactionLog, toolbar) {
     this.virtualCanvas = virtualCanvas;
-    this.transactionManager = transactionManager;
+    this.transactionLog = transactionLog;
     this.colorpicker = toolbar.colorpicker;
     this.brushsize = toolbar.brushsize;
     this.toolbar = toolbar;
@@ -63,7 +62,7 @@ export default class Eraser {
     }
 
     if (this.points.length === 3) {
-      this.transactionManager.pushClient(
+      this.transactionLog.pushClient(
         eraserTransaction(
           this.operationId,
           this.currentColor,
@@ -86,7 +85,7 @@ export default class Eraser {
     if (this.points.length < 3 && this.points.length !== 0) {
       // If you were doing right-click, `mode` is 1
       // so let's do a single-point eraser transaction
-      this.transactionManager.pushClient(
+      this.transactionLog.pushClient(
         eraserTransaction(
           this.operationId,
           this.currentColor,

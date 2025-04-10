@@ -1,8 +1,8 @@
 import { redoTransaction, undoTransaction } from "./transaction.js";
 
 export default class Undo {
-  constructor(transactionManager) {
-    this.transactionManager = transactionManager;
+  constructor(transactionLog) {
+    this.transactionLog = transactionLog;
     this.undoList = [];
     this.redoList = [];
 
@@ -22,14 +22,14 @@ export default class Undo {
   undo() {
     const operationId = this.undoList.pop();
     if (!operationId) return;
-    this.transactionManager.pushClient(undoTransaction(operationId));
+    this.transactionLog.pushClient(undoTransaction(operationId));
     this.redoList.push(operationId);
   }
 
   redo() {
     const operationId = this.redoList.pop();
     if (!operationId) return;
-    this.transactionManager.pushClient(redoTransaction(operationId));
+    this.transactionLog.pushClient(redoTransaction(operationId));
     this.undoList.push(operationId);
   }
 

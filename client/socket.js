@@ -4,7 +4,12 @@ import { TransferStateReader, transferState } from "./transferstate.js";
 let userId = -1;
 let initializing = true;
 
-export default function socket(input, transactionManager, virtualCanvas) {
+export default function socket(
+  input,
+  transactionManager,
+  virtualCanvas,
+  transactionLog
+) {
   const url = new URL(window.location.href);
   const lobbyCode = url.pathname.split("/").pop();
   const socketString = url.origin.replace(/^http/, "ws");
@@ -31,12 +36,11 @@ export default function socket(input, transactionManager, virtualCanvas) {
                 )
               );
             else if (
-              transactionManager.rendered >=
-                transactionManager.transactions.length &&
-              transactionManager.currentTask.length === 0
+              transactionLog.finished() &&
+              transactionManager.taskFinished()
             ) {
               transferState(ws, transactionManager);
-              transactionManager.initializing = false;
+              transactionLog.initializing = false;
               initializing = false;
             }
           };
@@ -46,7 +50,7 @@ export default function socket(input, transactionManager, virtualCanvas) {
 
       const eventData = new Uint8Array(buffer);
       handleCursorData(eventData.subarray(0, 5), virtualCanvas);
-      transactionManager.pushServer(eventData.subarray(5));
+      transactionLog.pushServer(eventData.subarray(5));
     });
   };
 }

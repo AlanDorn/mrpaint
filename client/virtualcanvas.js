@@ -79,7 +79,7 @@ export default class VirtualCanvas {
       for (let dx = 0; dx < thickness; dx++) {
         const newX = x - halfThickness + dx;
         const newY = y - halfThickness + dy;
-        if (newX >= 0 && newY >= 0 && newX < this.width && newY < this.height)
+        if (newX >= 0 && newY >= 0 && newX < this.width && newY < this.height) 
           this.virtualCanvas[newY][newX] = color;
       }
     }
