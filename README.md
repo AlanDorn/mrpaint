@@ -1,6 +1,6 @@
 # Mr. Paint  
 
-[Mr. Paint](https://mrpaint.onrender.com/) is a web-based [collaborative](https://en.wikipedia.org/wiki/Collaborative_editing) [raster image](https://en.wikipedia.org/wiki/Raster_graphics) editor, offering a UI and tooling similar to [Microsoft Paint](https://en.wikipedia.org/wiki/Microsoft_Paint).  
+[Mr. Paint](https://mrpaint.ink/) is a web-based [collaborative](https://en.wikipedia.org/wiki/Collaborative_editing) [raster image](https://en.wikipedia.org/wiki/Raster_graphics) editor, offering a UI and tooling similar to [Microsoft Paint](https://en.wikipedia.org/wiki/Microsoft_Paint).  
 
 With Mr. Paint, users can make edits to the canvas and have those edits synchronize across all users in real time.  
 
@@ -12,7 +12,7 @@ To solve global changes such as flood fill, Mr. Paint utilizes a technique simil
 
 # Usage
 
-The website is currently hosted by onrender and can be accessed here: [Mr. Paint](https://mrpaint.onrender.com/)
+The website is currently hosted by onrender and can be accessed here: [Mr. Paint](https://mrpaint.ink/)
 
 The session can be shared with others using the URL. The three words after the generic URL are vital for collaborating on the same canvas. 
 
