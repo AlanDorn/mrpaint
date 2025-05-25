@@ -19,6 +19,8 @@ export default function buildRenderTask(virtualCanvas, transaction) {
       return renderResize(virtualCanvas, transaction);
     case 6:
       return renderEraser(virtualCanvas, transaction);
+    case 7:
+      return renderStraightLine(virtualCanvas, transaction);
   }
 
   return [doNothing];
@@ -264,4 +266,8 @@ function renderEraser(virtualCanvas, transaction) {
   }
 
   return task;
+}
+
+function renderStraightLine(virtualCanvas, transaction){
+
 }

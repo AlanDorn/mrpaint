@@ -15,7 +15,7 @@ export class TransferStateReader {
     this.snapshotIndex = -1;
   }
 
-  handle(eventData) {
+  handle(eventData) { //CALM pls do not add more cases or else canvasLobby will break dood!!!!!! just increment userIdCounter if you do
     switch (eventData[0]) {
       case 0:
         this.transactions = eventData.subarray(1);
@@ -38,7 +38,7 @@ export class TransferStateReader {
           snapshotWidth,
           snapshotHeight
         );
-        break;
+        break; //no more! fix canvasLobby if you finna add more 
     }
   }
 

@@ -237,7 +237,8 @@ canvas {
 #pencil,
 #undo,
 #redo,
-#eraser {
+#eraser,
+#straightLine {
   /* display: flex; */
   align-items: center;
   justify-content: center;
@@ -262,7 +263,8 @@ canvas {
 #pencil svg,
 #undo svg,
 #redo svg,
-#eraser svg {
+#eraser svg,
+#straightLine svg {
   /* margin: auto; */
   width: 20px;
   height: 20px;
@@ -276,7 +278,8 @@ canvas {
 #pencil:hover,
 #undo:hover,
 #redo:hover,
-#eraser:hover {
+#eraser:hover,
+#straightLine:hover {
   background-color: var(--purple2);
   
 }
@@ -285,7 +288,8 @@ canvas {
 #pencil:active,
 #undo:active,
 #redo:active,
-#eraser:active {
+#eraser:active,
+#straightLine:active {
   background-color: var(--secondary);
   fill: var(--purple2);
   
@@ -296,7 +300,8 @@ canvas {
 #undo svg:active,
 #redo svg:active,
 #eraser svg:active,
-#undo svg:active {
+#undo svg:active,
+#straightLine svg:active {
   /* box-shadow: 0px 0px 1px 0.5px var(--purple); */
   /* background-color: var(--secondary); */
   fill: var(--purple);

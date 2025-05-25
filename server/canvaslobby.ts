@@ -3,7 +3,11 @@ import CanvasState from "./canvasstate";
 
 export default class CanvasLobby {
   id: string;
-  userIdCounter = 0;
+  userIdCounter = 2; //CALM THIS HAS TO START AT 2 OR ELSE!!!!!!!! IF you add to transferstate then increment this too!!!!!!!!
+
+  // nextUserId = 0;
+  // freeIds: Set<number> = new Set();
+
   activeUsers: Map<number, WebSocket> = new Map();
   syncingUsers: Map<number, WebSocket> = new Map();
   syncingData: Map<number, Uint8Array[]> = new Map();
@@ -19,10 +23,15 @@ export default class CanvasLobby {
 
   addUser(ws: WebSocket) {
     const buildState = new CanvasState(this.transactionIndex);
-    this.userIdCounter = (this.userIdCounter + 1) % 256;
+
+    this.userIdCounter = (this.userIdCounter + 1);
+
     this.syncingUsers.set(this.userIdCounter, ws);
     this.syncingData.set(this.userIdCounter, []);
     this.buildStates.set(this.userIdCounter, buildState);
+
+    ws.send(new Uint8Array([254, this.userIdCounter])); //communicate to client what their userID is
+
     ws.send(this.transactions.subarray(0, this.transactionIndex));
     this.canvasState.send(this.userIdCounter, ws);
     return this.userIdCounter;

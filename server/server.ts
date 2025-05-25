@@ -77,13 +77,14 @@ const wss = new WebSocket.Server({ server });
 
 wss.on("connection", (ws) => {
   let lobby: CanvasLobby | undefined;
-  let userId = 0;
+  let userId;
 
   ws.on("message", (event) => {
     if (!lobby) {
       lobby = lobbies.get(event.toString("utf-8"));
       if (!lobby) return;
       userId = lobby.addUser(ws);
+      // console.log(userId);
       lobby.print();
       return;
     }

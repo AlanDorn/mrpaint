@@ -1,7 +1,6 @@
 import {
   operationId,
   eraserTransaction,
-  pixelTransaction,
 } from "./transaction.js";
 import { mirrorAcross } from "./util2d.js";
 

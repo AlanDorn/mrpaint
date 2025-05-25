@@ -7,6 +7,7 @@ import Undo from "./undo.js";
 import Viewport from "./viewport.js";
 import StatusBar from "./statusbar.js";
 import Ruler from "./ruler.js";
+import StraightLine from "./straightLine.js"
 
 //TODO Gotta add straight line tool!
 //TODO add the active button coloring logic, not sure if goes here or somewhere else yet!
@@ -22,6 +23,7 @@ export default class Toolbar {
     this.viewport = new Viewport(virtualCanvas, this, transactionManager);
     this.statusbar = new StatusBar(virtualCanvas);
     this.ruler = new Ruler(virtualCanvas);
+    this.straightLine = new StraightLine(virtualCanvas, transactionManager, this);
 
     //set the default tool to pencil
     this.activeTool = this.pencil;
@@ -41,6 +43,7 @@ export default class Toolbar {
     const redoButton = document.getElementById("redo");
     const brushSizeSelector = document.getElementById("brushsize");
     const drawingarea = document.getElementById("drawingarea");
+    const straightLineButton = document.getElementById("straightLine");
 
     undoButton.addEventListener("click", () => {
       this.undo.undo();
@@ -58,6 +61,11 @@ export default class Toolbar {
     eraserButton.addEventListener("click", () => {
       this.activeTool = this.eraser;
       this.updateActiveButton(eraserButton);
+    });
+
+    straightLineButton.addEventListener("click", () => {
+      this.activeTool = this.straightLine;
+      this.updateActiveButton(straightLineButton);
     });
 
     fillToolButton.addEventListener("click", () => {

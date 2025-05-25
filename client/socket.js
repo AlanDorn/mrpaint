@@ -1,13 +1,14 @@
 import { decodePosition } from "./transaction.js";
 import { TransferStateReader, transferState } from "./transferstate.js";
 
-let userId = -1;
+let userId;
 let initializing = true;
+let newUser = true;
 
 export default function socket(input, transactionManager, virtualCanvas) {
   const url = new URL(window.location.href);
   const lobbyCode = url.pathname.split("/").pop();
-  const socketString = url.origin.replace(/^http/, "ws");
+  const socketString = url.origin.replace(/^http/, "ws"); // https an "wss"???
   const ws = new WebSocket(socketString);
   const transferStateReader = new TransferStateReader();
 
@@ -17,20 +18,31 @@ export default function socket(input, transactionManager, virtualCanvas) {
 
   ws.onmessage = (event) => {
     event.data.arrayBuffer().then((buffer) => {
+      if (newUser) {
+        const eventData = new Uint8Array(buffer);
+        if (eventData[0] === 254) {
+          userId = eventData[1];
+          console.log("userID =", userId);
+          newUser = false;
+          return;
+        }
+      }
+
       if (initializing) {
         const eventData = new Uint8Array(buffer);
         transferStateReader.handle(eventData);
         if (transferStateReader.isFinished()) {
           transactionManager.readState(transferStateReader);
           transactionManager.sendSocket = () => {
-            if (!initializing)
+            if (!initializing) {
               ws.send(
                 transactionManager.buildServerMessage(
                   userId,
                   ...virtualCanvas.positionInCanvas(input.x, input.y)
                 )
               );
-            else if (
+              // console.log("in onmessage", userId);
+            } else if (
               transactionManager.rendered >=
                 transactionManager.transactions.length &&
               transactionManager.currentTask.length === 0
