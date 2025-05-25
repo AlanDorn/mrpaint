@@ -48,9 +48,8 @@ export default function socket(
               );
               // console.log("in onmessage", userId);
             } else if (
-              transactionManager.rendered >=
-                transactionManager.transactions.length &&
-              transactionManager.currentTask.length === 0
+              transactionLog.finished() &&
+              transactionManager.taskFinished()
             ) {
               transferState(ws, transactionManager);
               transactionLog.initializing = false;

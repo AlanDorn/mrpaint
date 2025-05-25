@@ -23,7 +23,7 @@ export default class Toolbar {
     this.viewport = new Viewport(virtualCanvas, this, transactionLog);
     this.statusbar = new StatusBar(virtualCanvas);
     this.ruler = new Ruler(virtualCanvas);
-    this.straightLine = new StraightLine(virtualCanvas, transactionManager, this);
+    this.straightLine = new StraightLine(virtualCanvas, transactionLog, this);
 
     //set the default tool to pencil
     this.activeTool = this.pencil;

@@ -10,9 +10,9 @@ export default class CanvasLobby {
   // nextUserId = 0;
   // freeIds: Set<number> = new Set();
 
-  activeUsers: Map<number, WebSocket> = new Map();
-  syncingUsers: Map<number, WebSocket> = new Map();
-  syncingData: Map<number, Uint8Array[]> = new Map();
+  // activeUsers: Map<number, WebSocket> = new Map();
+  // syncingUsers: Map<number, WebSocket> = new Map();
+  // syncingData: Map<number, Uint8Array[]> = new Map();
   transactionIndex = 1; //To init a user the first byte has to be the userId
   transactions: Uint8Array = new Uint8Array(2 ** 27);
   activeUsers = new UserMap<WebSocket>();
