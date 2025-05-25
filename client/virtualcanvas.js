@@ -44,7 +44,7 @@ export default class VirtualCanvas {
   }
 
   fill() {
-    while (this.fillGeneration.length > 0) this.fillGeneration.pop()();
+    if (this.fillGeneration.length > 0) this.fillGeneration.pop()();
   }
 
   setPixel(x, y, color, thickness) {
@@ -79,12 +79,7 @@ export default class VirtualCanvas {
       for (let dx = 0; dx < thickness; dx++) {
         const newX = x - halfThickness + dx;
         const newY = y - halfThickness + dy;
-        if (
-          newX >= 0 &&
-          newY >= 0 &&
-          newX < this.width &&
-          newY < this.height
-        )
+        if (newX >= 0 && newY >= 0 && newX < this.width && newY < this.height) 
           this.virtualCanvas[newY][newX] = color;
       }
     }
@@ -150,7 +145,7 @@ export default class VirtualCanvas {
       this.offscreenCanvas.width = this.width * this.pixelZoom;
       this.offscreenCanvas.height = this.height * this.pixelZoom;
       this.fillImageData();
-      this.fill();
+      while (this.fillGeneration.length > 0) this.fill();
     }
 
     this.viewport.setAdjusters();
@@ -158,11 +153,9 @@ export default class VirtualCanvas {
   }
 
   fillImageData() {
-    const widthChunkSize = Math.floor(
-      this.width / Math.ceil(this.width / 512)
-    ); // Size of each square chunk
+    const widthChunkSize = Math.floor(this.width / Math.ceil(this.width / 256)); // Size of each square chunk
     const heightChunkSize = Math.floor(
-      this.height / Math.ceil(this.height / 512)
+      this.height / Math.ceil(this.height / 256)
     );
     this.fillGeneration = [];
 
@@ -215,8 +208,7 @@ export default class VirtualCanvas {
 
   reset() {
     for (let y = 0; y < this.height; y++)
-      for (let x = 0; x < this.width; x++)
-        this.virtualCanvas[y][x] = white;
+      for (let x = 0; x < this.width; x++) this.virtualCanvas[y][x] = white;
     this.setSize(700, 500, true);
   }
 

@@ -5,7 +5,12 @@ let userId;
 let initializing = true;
 let newUser = true;
 
-export default function socket(input, transactionManager, virtualCanvas) {
+export default function socket(
+  input,
+  transactionManager,
+  virtualCanvas,
+  transactionLog
+) {
   const url = new URL(window.location.href);
   const lobbyCode = url.pathname.split("/").pop();
   const socketString = url.origin.replace(/^http/, "ws"); // https an "wss"???
@@ -48,7 +53,7 @@ export default function socket(input, transactionManager, virtualCanvas) {
               transactionManager.currentTask.length === 0
             ) {
               transferState(ws, transactionManager);
-              transactionManager.initializing = false;
+              transactionLog.initializing = false;
               initializing = false;
             }
           };
@@ -58,7 +63,7 @@ export default function socket(input, transactionManager, virtualCanvas) {
 
       const eventData = new Uint8Array(buffer);
       handleCursorData(eventData.subarray(0, 5), virtualCanvas);
-      transactionManager.pushServer(eventData.subarray(5));
+      transactionLog.pushServer(eventData.subarray(5));
     });
   };
 }

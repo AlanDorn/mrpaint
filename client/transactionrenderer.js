@@ -254,6 +254,7 @@ function renderEraser(virtualCanvas, transaction) {
             if (colorsMatch(existingColor, primarycolor)) {
               // Overwrite single subpixel
               virtualCanvas.setPixel(newX, newY, color, 1);
+              
             }
           }
         }
@@ -261,6 +262,9 @@ function renderEraser(virtualCanvas, transaction) {
     } else {
       // Left-click => Just do one call that draws the entire brush area
       // No need to check existing color for each subpixel.
+      if (brushsize <= 2) {
+        virtualCanvas.setPixel(x, y, color, brushsize);
+      }
       virtualCanvas.setPixelOutline(x, y, color, brushsize);
     }
   }

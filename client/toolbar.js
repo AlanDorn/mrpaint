@@ -13,14 +13,14 @@ import StraightLine from "./straightLine.js"
 //TODO add the active button coloring logic, not sure if goes here or somewhere else yet!
 
 export default class Toolbar {
-  constructor(virtualCanvas, transactionManager) {
+  constructor(virtualCanvas, transactionLog) {
     this.colorpicker = new ColorPicker();
     this.brushsize = new BrushSize();
-    this.pencil = new Pencil(virtualCanvas, transactionManager, this);
-    this.eraser = new Eraser(virtualCanvas, transactionManager, this);
-    this.fillTool = new FillTool(virtualCanvas, transactionManager, this);
-    this.undo = new Undo(transactionManager);
-    this.viewport = new Viewport(virtualCanvas, this, transactionManager);
+    this.pencil = new Pencil(virtualCanvas, transactionLog, this);
+    this.eraser = new Eraser(virtualCanvas, transactionLog, this);
+    this.fillTool = new FillTool(virtualCanvas, transactionLog, this);
+    this.undo = new Undo(transactionLog);
+    this.viewport = new Viewport(virtualCanvas, this, transactionLog);
     this.statusbar = new StatusBar(virtualCanvas);
     this.ruler = new Ruler(virtualCanvas);
     this.straightLine = new StraightLine(virtualCanvas, transactionManager, this);

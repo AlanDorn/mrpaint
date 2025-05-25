@@ -56,7 +56,7 @@ export function transferState(ws, transactionManager) {
   const currentCanvas = transactionManager.virtualCanvas.virtualCanvas;
   const snapshotCount = transactionManager.snapshots.length;
 
-  if (transactionManager.transactions.length === 0) {
+  if (transactionManager.transactionLog.transactions.length === 0) {
     ws.send(new Uint8Array([0, 0]));
   } else {
     const numSnapshotsToSend = Math.min(4, snapshotCount);
@@ -89,8 +89,8 @@ export function transferState(ws, transactionManager) {
     });
 
     const currentTransaction =
-      transactionManager.transactions[
-        transactionManager.transactions.length - 1
+      transactionManager.transactionLog.transactions[
+        transactionManager.transactionLog.transactions.length - 1
       ];
 
     ws.send(

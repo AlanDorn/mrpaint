@@ -1,9 +1,9 @@
 import { fillTransaction, operationId } from "./transaction.js";
 
 export default class FillTool {
-  constructor(virtualCanvas, transactionManager, toolbar) {
+  constructor(virtualCanvas, transactionLog, toolbar) {
     this.virtualCanvas = virtualCanvas;
-    this.transactionManager = transactionManager;
+    this.transactionLog = transactionLog;
     this.colorpicker = toolbar.colorpicker;
     this.toolbar = toolbar;
   }
@@ -28,7 +28,7 @@ export default class FillTool {
     if (position[0] < 0 || position[1] < 0) return; // or handle the out-of-bounds case appropriately
     
     const currentOperationId = operationId();
-    this.transactionManager.pushClient(fillTransaction(currentOperationId, newColor, position));
+    this.transactionLog.pushClient(fillTransaction(currentOperationId, newColor, position));
     this.toolbar.undo.pushOperation(currentOperationId);
   }
 }
