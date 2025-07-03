@@ -4,6 +4,7 @@ import {
   toolLength,
   TOOLCODEINDEX,
 } from "./transaction.js";
+import { OPCODE, OPCODE_NAME } from "./shared/instructionset.js";
 
 export class TransferStateReader {
   constructor() {
@@ -12,33 +13,50 @@ export class TransferStateReader {
     this.transactions = null;
     this.snapshots = [];
     this.snapshotTransactions = [];
-    this.snapshotIndex = -1;
+    // this.snapshotIndex = -1;
   }
 
-  handle(eventData) { //CALM pls do not add more cases or else canvasLobby will break dood!!!!!! just increment userIdCounter if you do
-    switch (eventData[0]) {
-      case 0:
-        this.transactions = eventData.subarray(1);
+  handle(event) {
+    const eventData =
+      event instanceof Uint8Array ? event : new Uint8Array(event);
+
+    const opcode = eventData[0];
+    const userId = eventData[1];
+    const payload = eventData.subarray(2);
+
+    switch (opcode) {
+      case OPCODE.TS_SNAPSHOT_COUNT:
+        console.log("\n\nNBYE0\n\n\n");
+        this.userId = userId;
+        this.snapshotLength = payload[0];
+        this.transactions = payload.subarray(1);
         break;
-      case 1:
-        this.userId = eventData[1];
-        this.snapshotLength = eventData[2];
+      case OPCODE.TS_PNG:
+        console.log("\n\nNBYE1\n\n\n");
+        this.userId = userId;
+        // this.snapshotLength = payload;
         break;
-      case 2:
+      case OPCODE.TS_SNAPSHOT:
+        console.log("\n\nNBYE2\n\n\n");
         const snapshotIndex = eventData[1];
-        const snapshotWidth = decodeLargeNumber(eventData.subarray(2, 4));
-        const snapshotHeight = decodeLargeNumber(eventData.subarray(4, 6));
-        const transactionLength = toolLength[eventData[TOOLCODEINDEX + 6]];
-        this.snapshotTransactions[snapshotIndex] = eventData.subarray(
-          6,
-          transactionLength + 6
+        const width = decodeLargeNumber(eventData.subarray(2, 4));
+        const height = decodeLargeNumber(eventData.subarray(4, 6));
+
+        const transactionStart = 6;
+        const toolCode = eventData[TOOLCODEINDEX + transactionStart]; // TOOLCODEINDEX is typically 0
+        const transactionLength = toolLength[toolCode];
+
+        const transaction = eventData.subarray(
+          transactionStart,
+          transactionStart + transactionLength
         );
-        this.snapshots[snapshotIndex] = qoiDecode(
-          eventData.subarray(transactionLength + 6),
-          snapshotWidth,
-          snapshotHeight
+        const qoiData = eventData.subarray(
+          transactionStart + transactionLength
         );
-        break; //no more! fix canvasLobby if you finna add more 
+
+        this.snapshotTransactions[snapshotIndex] = transaction;
+        this.snapshots[snapshotIndex] = qoiDecode(qoiData, width, height);
+        break;
     }
   }
 
@@ -56,69 +74,74 @@ export function transferState(ws, transactionManager) {
   const currentCanvas = transactionManager.virtualCanvas.virtualCanvas;
   const snapshotCount = transactionManager.snapshots.length;
 
-  if (transactionManager.transactionLog.transactions.length === 0) {
-    ws.send(new Uint8Array([0, 0]));
-  } else {
-    const numSnapshotsToSend = Math.min(4, snapshotCount);
-    const selectedSnapshots = [];
+  const numHistoric = Math.min(4, snapshotCount);
+  const totalSnapshots = numHistoric + 1; // +1 for the live/current copy
+  const selectedSnapshots = [];
 
-    {
-      for (let i = 0; i < numSnapshotsToSend; i++) {
-        const index = Math.floor(
-          (i / Math.max(1, numSnapshotsToSend - 1)) *
-            Math.max(1, snapshotCount - 1)
-        );
-        selectedSnapshots.push(index);
-      }
-    }
-
-    ws.send(new Uint8Array([0, numSnapshotsToSend + 1]));
-
-    selectedSnapshots.forEach((index, i) => {
-      const snapshot = transactionManager.snapshots[index];
-      ws.send(
-        new Uint8Array([
-          2,
-          i,
-          ...encodeLargeNumber(snapshot[0].length),
-          ...encodeLargeNumber(snapshot.length),
-          ...transactionManager.snapshotTransactions[index],
-          ...qoiEncode(snapshot),
-        ])
-      );
-    });
-
-    const currentTransaction =
-      transactionManager.transactionLog.transactions[
-        transactionManager.transactionLog.transactions.length - 1
-      ];
-
-    ws.send(
-      new Uint8Array([
-        2,
-        numSnapshotsToSend,
-        ...encodeLargeNumber(currentCanvas[0].length),
-        ...encodeLargeNumber(currentCanvas.length),
-        ...currentTransaction,
-        ...qoiEncode(currentCanvas),
-      ])
+  for (let i = 0; i < numHistoric; i++) {
+    const index = Math.floor(
+      (i / Math.max(1, numHistoric - 1)) * Math.max(1, snapshotCount - 1)
     );
+    selectedSnapshots.push(index);
   }
 
-  pngEncode(currentCanvas).then((value) =>
-    ws.send(new Uint8Array([1, ...value]))
+  // Send transactions for syncing
+  ws.send(
+    new Uint8Array([
+      OPCODE.TS_SNAPSHOT_COUNT,
+      transactionManager.userId,
+      totalSnapshots,
+      ...transactionManager.transactionLog.transactions,
+    ])
   );
+
+  // Send each snapshot
+  selectedSnapshots.forEach((index, i) => {
+    const snapshot = transactionManager.snapshots[index];
+    const snapshotTransaction = transactionManager.snapshotTransactions[index];
+    ws.send(
+      new Uint8Array([
+        OPCODE.TS_SNAPSHOT,
+        i,
+        ...encodeLargeNumber(snapshot[0].length),
+        ...encodeLargeNumber(snapshot.length),
+        ...snapshotTransaction,
+        ...qoiEncode(snapshot),
+      ])
+    );
+  });
+
+  // Send current snapshot (canvas at this moment)
+  const latestTransaction =
+    transactionManager.transactionLog.transactions.at(-1) || new Uint8Array();
+
+  ws.send(
+    new Uint8Array([
+      OPCODE.TS_SNAPSHOT,
+      totalSnapshots - 1,
+      ...encodeLargeNumber(currentCanvas[0].length),
+      ...encodeLargeNumber(currentCanvas.length),
+      ...latestTransaction,
+      ...qoiEncode(currentCanvas),
+    ])
+  );
+
+  return pngEncode(currentCanvas).then((value) => {
+    ws.send(
+      new Uint8Array([OPCODE.TS_PNG, transactionManager.userId, ...value])
+    );
+  });
 }
 
 //
 //                           ,,
-//  `7MMF'  `7MMF'         `7MM
+//   7MMF'   7MMF'          7MM
 //    MM      MM             MM
-//    MM      MM   .gP"Ya    MM  `7MMpdMAo.  .gP"Ya  `7Mb,od8
-//    MMmmmmmmMM  ,M'   Yb   MM    MM   `Wb ,M'   Yb   MM' "'
+//    MM      MM   .gP"Ya    MM  7MMpdMAo.  .gP"Ya  7Mb,od8
+//    MMmmmmmmMM  ,M'   Yb   MM    MM   Wb ,M'   Yb   MM' "'
 //    MM      MM  8M""""""   MM    MM    M8 8M""""""   MM
 //    MM      MM  YM.    ,   MM    MM   ,AP YM.    ,   MM
-//  .JMML.  .JMML. `Mbmmd' .JMML.  MMbmmd'   `Mbmmd' .JMML.
+//  .JMML.  .JMML. Mbmmd' . JMML.  MMbmmd'   Mbmmd'  .JMML.
 //                                 MM
 //                               .JMML.
 

@@ -254,7 +254,6 @@ function renderEraser(virtualCanvas, transaction) {
             if (colorsMatch(existingColor, primarycolor)) {
               // Overwrite single subpixel
               virtualCanvas.setPixel(newX, newY, color, 1);
-              
             }
           }
         }
@@ -272,6 +271,51 @@ function renderEraser(virtualCanvas, transaction) {
   return task;
 }
 
-function renderStraightLine(virtualCanvas, transaction){
+function renderStraightLine(virtualCanvas, transaction) {
+  const color = transaction.subarray(15, 18); // Extract color from transaction
+  const brushsize = decodeLargeNumber(transaction.subarray(18, 20)); // Extract brush size
+  const startPoint = decodePosition(transaction.subarray(20, 24)); // Extract starting point
+  const endPoint = decodePosition(transaction.subarray(24, 28)); // Extract ending point
 
+  // Calculate points along the line using Bresenham's line algorithm
+  const points = bresenhamLine(
+    startPoint[0],
+    startPoint[1],
+    endPoint[0],
+    endPoint[1]
+  );
+
+  // Create a task array to store pixel setting tasks
+  const task = [];
+
+  points.forEach(([x, y]) => {
+    task.push(() => virtualCanvas.setPixel(x, y, color, brushsize)); // Set each pixel on the canvas
+  });
+
+  return task;
+}
+
+// Bresenham's line algorithm to compute points on the line
+function bresenhamLine(x1, y1, x2, y2) {
+  const points = [];
+  const dx = Math.abs(x2 - x1);
+  const dy = Math.abs(y2 - y1);
+  const sx = x1 < x2 ? 1 : -1;
+  const sy = y1 < y2 ? 1 : -1;
+  let err = dx - dy;
+
+  while (true) {
+    points.push([x1, y1]); // Add point to the line
+    if (x1 === x2 && y1 === y2) break;
+    const e2 = err * 2;
+    if (e2 > -dy) {
+      err -= dy;
+      x1 += sx;
+    }
+    if (e2 < dx) {
+      err += dx;
+      y1 += sy;
+    }
+  }
+  return points;
 }

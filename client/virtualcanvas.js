@@ -25,21 +25,48 @@ export default class VirtualCanvas {
     this.ctx = this.canvas.getContext("2d");
     this.setCanvasSize();
     window.addEventListener("resize", () => this.setCanvasSize());
+
+    this.previewCanvas = document.createElement("canvas");
+    this.previewCanvas.width = this.offscreenCanvas.width;
+    this.previewCanvas.height = this.offscreenCanvas.height;
+    this.previewCtx = this.previewCanvas.getContext("2d");
+
+    this.onCanvasMove = new Set();
   }
 
   render() {
+    
+    this.ctx.imageSmoothingEnabled = false;       //THIS IS NEEDED FOR CWISPY pixels
+    this.ctx.mozImageSmoothingEnabled = false;    //THIS IS NEEDED FOR CWISPY pixels
+    this.ctx.webkitImageSmoothingEnabled = false; //THIS IS NEEDED FOR CWISPY pixels
+    this.ctx.msImageSmoothingEnabled = false;     //THIS IS NEEDED FOR CWISPY pixels
+
     this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 
+    // committed bitmap
     this.ctx.drawImage(
-      this.offscreenCanvas, // Source
+      this.offscreenCanvas,
       0,
       0,
       this.width * this.pixelZoom,
-      this.height * this.pixelZoom, // Source rectangle
+      this.height * this.pixelZoom,
       this.offset[0],
       this.offset[1],
       Math.ceil(this.width * this.zoom),
-      Math.ceil(this.height * this.zoom) // Destination rectangle
+      Math.ceil(this.height * this.zoom)
+    );
+
+    //preview canvas
+    this.ctx.drawImage(
+      this.previewCanvas,
+      0,
+      0,
+      this.previewCanvas.width,
+      this.previewCanvas.height,
+      this.offset[0],
+      this.offset[1],
+      Math.ceil(this.width * this.zoom),
+      Math.ceil(this.height * this.zoom)
     );
   }
 
@@ -79,7 +106,7 @@ export default class VirtualCanvas {
       for (let dx = 0; dx < thickness; dx++) {
         const newX = x - halfThickness + dx;
         const newY = y - halfThickness + dy;
-        if (newX >= 0 && newY >= 0 && newX < this.width && newY < this.height) 
+        if (newX >= 0 && newY >= 0 && newX < this.width && newY < this.height)
           this.virtualCanvas[newY][newX] = color;
       }
     }
@@ -144,9 +171,16 @@ export default class VirtualCanvas {
     if (heightChanged || widthChanged || forcePrint) {
       this.offscreenCanvas.width = this.width * this.pixelZoom;
       this.offscreenCanvas.height = this.height * this.pixelZoom;
+      this.resizePreviewCanvas(this.previewCanvas, this.offscreenCanvas);
+
       this.fillImageData();
       while (this.fillGeneration.length > 0) this.fill();
     }
+
+    this.onCanvasMove.forEach((cb) => {
+      //when SL (straight Line) is in preview mode, and canvas is adjusted, keeps SL preview shown on instead of disappearing
+      if (typeof cb === "function") cb();
+    });
 
     this.viewport.setAdjusters();
     this.statusbar.setCanvasSize();
@@ -219,6 +253,8 @@ export default class VirtualCanvas {
     ) {
       this.offscreenCanvas.width = newVirtualCanvas[0].length * this.pixelZoom;
       this.offscreenCanvas.height = newVirtualCanvas.length * this.pixelZoom;
+
+      this.resizePreviewCanvas(this.previewCanvas, this.offscreenCanvas);
     }
 
     const oldVirtualCanvas = this.virtualCanvas;
@@ -311,5 +347,41 @@ export default class VirtualCanvas {
         color[2] === canvasColor[2]
       );
     } else return false;
+  }
+
+  // TODO: promote to class + other layers
+  clearPreview() {
+    this.previewCtx.clearRect(
+      0,
+      0,
+      this.previewCanvas.width,
+      this.previewCanvas.height
+    );
+  }
+
+  setPreviewPixel(x, y, color, thickness) {
+    if (thickness === 1) {
+      this.previewCtx.fillStyle = `rgba(${color[0]},${color[1]},${color[2]},1)`;
+      this.previewCtx.fillRect(
+        x * this.pixelZoom,
+        y * this.pixelZoom,
+        this.pixelZoom,
+        this.pixelZoom
+      );
+      return;
+    }
+    const half = Math.floor(thickness / 2);
+    this.previewCtx.fillStyle = `rgba(${color[0]},${color[1]},${color[2]},1)`;
+    this.previewCtx.fillRect(
+      (x - half) * this.pixelZoom,
+      (y - half) * this.pixelZoom,
+      this.pixelZoom * thickness,
+      this.pixelZoom * thickness
+    );
+  }
+
+  resizePreviewCanvas(previewCanvas, offscreenCanvas) {
+    previewCanvas.width = offscreenCanvas.width;
+    previewCanvas.height = offscreenCanvas.height;
   }
 }

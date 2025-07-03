@@ -2,6 +2,7 @@
   color-scheme: light dark;
 
   --toolheight: 6rem;
+  --itemheight: calc(var(--toolheight) - 0.9rem);
   --statusheight: 1.25rem;
   --rulerheight: 1.25rem;
   --purple2: light-dark(#e5c4ff, #650191);
@@ -9,7 +10,7 @@
   --font: "Hack"; /* Hack, "Courier New", Courier, monospace */
   --fontsize: 14px;
 
-  --top: .2rem;
+  --top: 0.2rem;
 
   --background: light-dark(#d1d1d1, #454545);
   --secondary: light-dark(#6d6d6d, #ababab);
@@ -46,7 +47,25 @@ body {
   height: 10px;
   background-color: var(--secondary);
   position: absolute;
+  border: 1px black solid;
 }
+/* .cursor {
+  width: 10px;               
+  height: 10px;
+  position: absolute;
+  border: 1px solid #000;    
+}
+.cursor-label {
+  position: absolute;
+  top: -16px;               
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: #fff;
+  text-shadow: 0 0 2px #000; 
+  white-space: nowrap;
+  pointer-events: none;     
+} */
 
 /* Nothing */
 /* #ribbon {
@@ -65,23 +84,47 @@ body {
 
 /* main top UI  */
 #toolbar {
-  width: 100svw;
+  /* width: 100svw; */
   height: var(--toolheight);
   overflow: visible;
   display: flex;
-  margin-left: -.4rem;
+  justify-content: space-between;
+  /* align-items: center; */
+  margin-top: -0.3rem;
+  /* margin-left: .1rem; */
+}
+
+#toolbar-left {
+  /* width: 100svw; */
+  height: var(--toolheight);
+  overflow: visible;
+  display: flex;
+  /* margin-left: -0.4rem; */
+  align-items: center;
+  flex-wrap: wrap;
+  margin-left: 0.05rem;
+  gap: 0.1rem;
+}
+
+#toolbar-right {
+  /* width: 100svw; */
+  height: var(--toolheight);
+  overflow: visible;
+  display: flex;
+  /* justify-content: space-between; */
+  /* margin-left: -0.4rem; */
+  margin-right: 0.3rem;
+  align-items: center;
 }
 
 #toolbar button.active {
   background-color: var(--secondary);
   /* box-shadow: 0px 0px 1px 1px var(--purple); */
-
 }
 
 #toolbar button svg.active {
   fill: var(--background);
 }
-
 
 /* in the name: drawing area */
 #drawingarea {
@@ -94,47 +137,104 @@ body {
   grid-row: 2 / 3;
 }
 
-/* For the color pickers === primary/secondary */
-input[type="color"] {
-  width: 5.85rem;
-  height: 5.85rem;
-  margin-top: -1px;
-  margin-left: -0.2rem;
-  border: transparent;
-  background-color: transparent;
-}
-
 canvas {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }
 
-.custom-dropdown-brushsize-box {
-  position: relative;
-  display: inline-block;
-  width: 175px;
-  /* margin-right: 17.5px; */
-  margin-right: 8.5px;
-  overflow: visible;
+/* For the color pickers === primary/secondary/userColor */
+input[type="color"] {
+  width: 6rem;
+  height: 6rem;
+  border: 1px transparent;
+  margin-top: 1px;
+  margin-right: -0.25rem;
+
   background-color: transparent;
+}
+
+/* #primaryPicker,
+#secondaryPicker,
+#userColor {
+
+} */
+
+#customInputUsernameBox {
+  /* background-color: var(--background); */
+  /* height: var(--itemheight); */
+  height: var(--itemheight);
+  background-color: transparent;
+
   color: var(--secondary);
-  
+  /* border: var(--secondary) 2px solid; */
+  border: transparent 2px solid;
+  /* border: red 1px solid; */
+  /* padding-left: 0.5rem; */
+  text-align: left;
+}
+
+.custom-dropdown-username-box {
+  font-size: var(--fontsize);
+  font-family: var(--font);
+  /* padding: 2px 4px; */
+  width: 11rem;
+  height: var(--itemheight);
+  margin-left: 0.3rem;
+  /* margin-right: 2rem; */
+  /* margin-right: .3rem; */
+  text-align: left;
+  border: 1px transparent solid;
+}
+
+.custom-dropdown-username-box input {
+  width: 100%;
+  /* margin-top: 0.1rem; */
+
+  border: var(--secondary) 2px solid;
+  font-size: var(--fontsize);
+  font-family: var(--font);
+  outline: none;
+  transition: none;
+  appearance: none;
+  text-align: center; /* Center-align text for consistent positioning */
+  background-image: none;
+  background-repeat: no-repeat;
 }
 
 #customInputBrushsizeBox {
   /* background-color: var(--background); */
+  /* height: var(--itemheight); */
+  height: var(--itemheight);
   background-color: transparent;
+
   color: var(--secondary);
   /* border: var(--secondary) 2px solid; */
   border: transparent 2px solid;
+  /* border: red 1px solid; */
+  padding-left: 0.5rem;
+  text-align: left;
+}
+
+.custom-dropdown-brushsize-box {
+  position: relative;
+  display: inline-block;
+  /* height: var(--itemheight); */
+  /* width: 175px; */
+  width: 12.5rem;
+
+  /* margin-right: 17.5px; */
+  /* margin-right: 8.5px; */
+  overflow: visible;
+  background-color: transparent;
+  color: var(--secondary);
 }
 
 /* Input field with dynamic brush size preview */
 /* Input field with brush size preview on the right */
 .custom-dropdown-brushsize-box input {
   width: 100%;
-  margin-top: 3px;
-  height: calc(var(--toolheight) - 14px);
+  margin-top: 0.1rem;
+
   border: var(--secondary) 2px solid;
   font-size: var(--fontsize);
   font-family: var(--font);
@@ -164,14 +264,18 @@ canvas {
   display: none; /* Hidden by default */
   position: absolute;
   /* top: 100%;  */
-  left: .7rem;
-  width: 158px;
+  width: 100%;
+
+  /* width: 158px; */
   /* border-top: 1px solid var(--secondary);
   border-left: 1px solid var(--secondary);
   border-right: 1px solid var(--secondary);
   border-bottom: 1px solid var(--secondary); */
+  /* left: 0.7rem; */
+  /* padding-right: 12px; */
+
   background-color: var(--background);
-  padding-right: 12px;
+
   margin: 0;
   list-style: none;
   z-index: 1; /* LUL */
@@ -213,7 +317,7 @@ canvas {
 .size-line {
   background-color: var(--secondary); /* Line color */
   display: inline-block;
-  margin-left: 3px;
+  /* margin-left: 3px; */
   width: 131px; /* Consistent width for all line previews */
 }
 
@@ -225,10 +329,10 @@ canvas {
   align-items: center;
   justify-content: center;
   /* margin: auto 1rem; */
-  
-  margin-left: 0.25rem;
-  padding-top: var(--top);
-  /* margin-right: -.2rem; /* super debateable option right here no kizzy no cappy */ 
+
+  /* margin-left: 0.25rem;
+  padding-top: var(--top); */
+  /* margin-right: -.2rem; super debateable option right here no kizzy no cappy */
   z-index: 1;
   overflow: visible;
 }
@@ -247,17 +351,15 @@ canvas {
 
   width: 1.7rem;
   height: 1.7rem;
-  padding: 1px;
+  /* padding: 1px;
   margin-top: 0.2rem;
   margin-right: 0.25em;
-  margin-left: 0.25em;
+  margin-left: 0.25em; */
 
-  background-color: transparent;
   /* border: var(--secondary) 2px solid; */
+  background-color: transparent;
   border: transparent 2px solid;
-  
 }
-
 
 #fillTool svg,
 #pencil svg,
@@ -271,7 +373,6 @@ canvas {
   /* color: red;
   fill: red; */
   fill: var(--secondary);
-  
 }
 
 #fillTool:hover,
@@ -281,7 +382,6 @@ canvas {
 #eraser:hover,
 #straightLine:hover {
   background-color: var(--purple2);
-  
 }
 
 #fillTool:active,
@@ -292,7 +392,6 @@ canvas {
 #straightLine:active {
   background-color: var(--secondary);
   fill: var(--purple2);
-  
 }
 
 #fillTool svg:active,
@@ -307,13 +406,81 @@ canvas {
   fill: var(--purple);
 }
 
+#paletteToggle {
+  /* display: flex; */
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+
+  width: 6rem;
+  height: 6rem;
+  /* padding: 1px;
+  margin-top: 0.2rem;
+  margin-right: 0.25em;
+  margin-left: 0.25em; */
+
+  /* border: var(--secondary) 2px solid; */
+  background-color: transparent;
+  border: transparent 2px solid;
+}
+
+#paletteToggle svg {
+  /* margin: auto; */
+  width: 6rem;
+  height: 6rem;
+  /* color: red;
+  fill: red; */
+  fill: var(--secondary);
+}
+
+#paletteToggle:hover {
+  background-color: var(--purple2);
+}
+
+#paletteToggle:active {
+  background-color: var(--secondary);
+  fill: var(--purple2);
+}
+
+#paletteToggle svg:active {
+  fill: var(--purple);
+}
+
+.colorpalette-full {
+  display: block;
+}
+
+.colorpalette-condensed {
+  display: none;
+  position: relative;
+}
+
+.colorpalette-condensed .dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border: 1px solid gray;
+  z-index: 10;
+}
+
+.colorpalette-condensed.active .dropdown {
+  display: block;
+}
+
 #colorpalette {
   display: grid;
   grid-template-columns: repeat(10, 25px);
   grid-template-rows: repeat(3, 25px);
   /* gap:1px; */
-  padding-top: 2.5px;
-  margin-left: -.07rem;
+  /* padding-top: 2.5px; */
+  /* margin-top: -.1rem; */
+
+  margin-left: -0.07rem;
+  margin-left: 0.15rem;
+
   position: relative;
   overflow: visible;
 }
@@ -343,8 +510,6 @@ canvas {
   border: var(--secondary) solid 2px;
   cursor: pointer;
 }
-
-
 
 #mainbody {
   margin: 0;
@@ -401,7 +566,7 @@ canvas {
   grid-row: 2 / 3;
   background-color: transparent;
   width: var(--rulerheight);
-  display:flex; 
+  display: flex;
   flex-direction: column;
   padding: 0;
   height: 100%;
@@ -451,7 +616,6 @@ canvas {
   border-bottom: var(--secondary) 1px solid;
 }
 
-
 .leftSegment {
   border-bottom: var(--secondary) 1px solid;
   display: flex;
@@ -464,7 +628,7 @@ canvas {
   font-size: 0.75rem;
   font-weight: 500;
   color: var(--secondary);
-  writing-mode:sideways-lr;
+  writing-mode: sideways-lr;
   text-align: right;
 }
 
@@ -483,4 +647,13 @@ canvas {
 
 .leftSubtick:last-child {
   border-bottom: var(--secondary) 0px solid;
+}
+
+@media (max-width: 900px) {
+  #colorpalette.colorpalette-full {
+    display: none; /* !important */
+  }
+  .colorpalette-condensed {
+    display: block;
+  }
 }

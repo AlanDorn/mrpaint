@@ -7,13 +7,13 @@ import Undo from "./undo.js";
 import Viewport from "./viewport.js";
 import StatusBar from "./statusbar.js";
 import Ruler from "./ruler.js";
-import StraightLine from "./straightLine.js"
+import StraightLine from "./straightLine.js";
 
 //TODO Gotta add straight line tool!
 //TODO add the active button coloring logic, not sure if goes here or somewhere else yet!
 
 export default class Toolbar {
-  constructor(virtualCanvas, transactionLog) {
+  constructor(transactionLog, virtualCanvas) {
     this.colorpicker = new ColorPicker();
     this.brushsize = new BrushSize();
     this.pencil = new Pencil(virtualCanvas, transactionLog, this);

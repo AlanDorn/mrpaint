@@ -5,10 +5,11 @@ export const toolCodes = {
   undo: new Uint8Array([3]),
   redo: new Uint8Array([4]),
   resize: new Uint8Array([5]),
-  eraser: new Uint8Array([6])
+  eraser: new Uint8Array([6]),
+  straightLine: new Uint8Array([7]),
 };
-export const toolCodeInverse = ["pixel", "pencil", "fill", "undo", "redo", "resize", "eraser"];
-export const toolLength = [24, 36, 22, 15, 15, 19, 40];
+export const toolCodeInverse = ["pixel", "pencil", "fill", "undo", "redo", "resize", "eraser", "straightLine"];
+export const toolLength = [24, 36, 22, 15, 15, 19, 40, 28];
 export const TOOLCODEINDEX = 14;
 
 export function pixelTransaction(operationId, color, brushsize, position) {
@@ -102,6 +103,25 @@ export function eraserTransaction(
     encodePosition(p2), //4 bytes
     encodePosition(p3), //4 bytes
     new Uint8Array([mode])  //1 bytes
+  );
+}
+
+export function straightLineTransaction(
+  operationId,
+  color,
+  brushsize,
+  startPoint,
+  endPoint,
+  mode
+){
+  return buildTransaction(
+    touuid(),                       //8 bytes
+    operationId,                    //6 bytes
+    toolCodes["straightLine"],      //1 bytes
+    encodeColor(color),             //3 bytes
+    encodeLargeNumber(brushsize),   //2 bytes
+    encodePosition(startPoint),     //4 bytes
+    encodePosition(endPoint),       //4 bytes
   );
 }
 

@@ -94,6 +94,8 @@ export default class TransactionLog {
   }
 
   handleGeneric(transaction, correct) {
+    if (transaction.length < 14) return correct;
+
     const sortedPosition = this.transactionIndex(transaction);
     this.transactions.splice(sortedPosition, 0, transaction);
     if (sortedPosition < correct) {

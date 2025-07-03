@@ -23,7 +23,9 @@ export default class Input {
           this.y = Math.round(event.clientY);
           toolbar.mouseDownLeft(this);
         }
-        if (event.pointerType === "mouse" && event.button === 2) {
+        if (
+          (event.button === 2 && event.pointerType === "mouse") 
+        ) {
           this.mouseDown = true;
           this.x = Math.round(event.clientX);
           this.y = Math.round(event.clientY);
@@ -51,13 +53,10 @@ export default class Input {
 
       // 2. because of mouse move works you can get it so that you mouse stops but the pencil line isn't under the cursor. It waits until the mouse either moves again or lift to complete.
 
-
-      if(transactionManager.newRender) {
+      if (transactionManager.newRender) {
         toolbar.mouseMove(this);
         transactionManager.newRender = false;
       }
-
-      
     });
 
     document.addEventListener(
@@ -75,4 +74,3 @@ export default class Input {
     );
   }
 }
-

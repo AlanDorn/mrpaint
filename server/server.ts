@@ -84,7 +84,7 @@ wss.on("connection", (ws) => {
       lobby = lobbies.get(event.toString("utf-8"));
       if (!lobby) return;
       userId = lobby.addUser(ws);
-      // console.log(userId);
+      console.log(`@server \n userid: ${userId}`);
       lobby.print();
       return;
     }

@@ -5,6 +5,7 @@ import {
   toolCodeInverse,
 } from "./transaction.js";
 import buildRenderTask from "./transactionrenderer.js";
+import { OPCODE, OPCODE_NAME } from "./shared/instructionset.js";
 
 const exp = 1.5;
 
@@ -143,14 +144,20 @@ export default class TransactionManager {
     );
   }
 
-  buildServerMessage(userId, mouseX, mouseY) {
-    const temp = this.transactionLog.unsentTransactions;
-    this.transactionLog.unsentTransactions = [];
-    return buildTransaction(
-      new Uint8Array([userId]),
-      encodePosition([mouseX, mouseY]),
-      ...temp
-    );
+  buildServerMessage(opcode, userId, mouseX, mouseY) {
+    const parts = [new Uint8Array([opcode, userId])];
+
+    // Cursor packets carry a position
+    if (opcode === OPCODE.CURSOR_POSITION_UPDATE) {
+      parts.push(encodePosition([mouseX, mouseY]));
+    }
+
+    // Transaction packets carry the queued transactions
+    if (opcode === OPCODE.TRANSACTION_UPDATE) {
+      parts.push(...this.transactionLog.unsentTransactions.splice(0));
+    }
+
+    return buildTransaction(...parts);
   }
 
   readState(transferStateReader) {

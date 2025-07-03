@@ -2,6 +2,7 @@ export default class ColorPicker {
   constructor() {
     this.primarycolor = [0, 0, 0];
     this.secondarycolor = [255, 255, 255];
+    this.userColor = [109, 109, 109];
     this.palette = [
       [0, 0, 0], //black
       [127, 127, 127], //gray/grey
@@ -37,23 +38,40 @@ export default class ColorPicker {
 
     this.initPickers();
     this.initPalette();
-  }
-  // const primaryPicker = document.getElementById("primaryPicker");
-  // const secondaryPicker = document.getElementById("secondaryPicker");
 
-  // // Update on color change
-  // primaryPicker.addEventListener(
-  //   "input",
-  //   () => (this.primarycolor = hexToRgb(primaryPicker.value))
-  // );
-  // secondaryPicker.addEventListener(
-  //   "input",
-  //   () => (this.secondarycolor = hexToRgb(secondaryPicker.value))
-  // );
+    const condensed = document.getElementById("colorpalette-condensed");
+    const dropdown = document.getElementById("paletteDropdown");
+    const toggle = document.getElementById("paletteToggle");
+
+    // render the dropdown version of the palette
+    this.renderPalette(dropdown);
+
+    // toggle open/close
+    toggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      condensed.classList.toggle("active");
+    });
+
+    // keep it open if clicking inside
+    dropdown.addEventListener("click", (e) => e.stopPropagation());
+
+    // close when clicking anywhere else
+    document.addEventListener("click", (e) => {
+      if (!condensed.contains(e.target) && e.target !== toggle) {
+        condensed.classList.remove("active");
+      }
+    });
+  }
+
+  getUserColor() {
+    return this.userColor;
+  }
 
   initPickers() {
     const primaryPicker = document.getElementById("primaryPicker"); //MAYHEM I think the getElementById should be moved to toolbar class? because it exists in the toolbar?
     const secondaryPicker = document.getElementById("secondaryPicker");
+
+    const userColor = document.getElementById("userColor");
 
     // On change, parse to RGB
     primaryPicker.addEventListener("input", () => {
@@ -61,6 +79,10 @@ export default class ColorPicker {
     });
     secondaryPicker.addEventListener("input", () => {
       this.secondarycolor = hexToRgb(secondaryPicker.value);
+    });
+    userColor.addEventListener("input", () => {
+      this.userColor = hexToRgb(userColor.value);
+      if (window.sendColorUpdate) window.sendColorUpdate(this.userColor);
     });
   }
 
@@ -86,6 +108,13 @@ export default class ColorPicker {
           this.primarycolor = rgb;
           const primaryPicker = document.getElementById("primaryPicker"); // update your color input
           primaryPicker.value = rgbToHex(rgb);
+        } else if (event.button === 1) {
+          //middle mouse click
+
+          this.userColor = rgb;
+          const userColor = document.getElementById("userColor");
+          userColor.value = rgbToHex(rgb);
+          if (window.sendColorUpdate) window.sendColorUpdate(this.userColor);
         } else if (event.button === 2) {
           //right mouse click
 

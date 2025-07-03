@@ -25,6 +25,7 @@ export default class Viewport {
     this.lastActiveTool = null;
 
     this.setAdjusters();
+    this.notifyCanvasMove();
   }
 
   setAdjusters(width = null, height = null) {
@@ -74,34 +75,42 @@ export default class Viewport {
       y: event.clientY,
     });
     this.setAdjusters();
+    this.notifyCanvasMove();
+    this.toolbar.activeTool?.updateHandlePositions?.();
   }
 
   scrollDown(event) {
     this.virtualCanvas.offset[1] -= 16 * this.virtualCanvas.zoom;
     this.setAdjusters();
+    this.notifyCanvasMove();
     this.toolbar.statusbar.setMousePosition({
       x: event.clientX,
       y: event.clientY,
     });
+    this.toolbar.activeTool?.updateHandlePositions?.();
   }
 
   scrollLeft(event) {
     this.virtualCanvas.offset[0] =
       this.virtualCanvas.offset[0] + 16 * this.virtualCanvas.zoom;
     this.setAdjusters();
+    this.notifyCanvasMove();
     this.toolbar.statusbar.setMousePosition({
       x: event.clientX,
       y: event.clientY,
     });
+    this.toolbar.activeTool?.updateHandlePositions?.();
   }
 
   scrollRight(event) {
     this.virtualCanvas.offset[0] -= 16 * this.virtualCanvas.zoom;
     this.setAdjusters();
+    this.notifyCanvasMove();
     this.toolbar.statusbar.setMousePosition({
       x: event.clientX,
       y: event.clientY,
     });
+    this.toolbar.activeTool?.updateHandlePositions?.();
   }
 
   zoomIn(event) {
@@ -124,6 +133,8 @@ export default class Viewport {
     this.virtualCanvas.offset[0] = this.virtualCanvas.offset[0] + delta[0];
     this.virtualCanvas.offset[1] = this.virtualCanvas.offset[1] + delta[1];
     this.setAdjusters();
+    this.notifyCanvasMove();
+    this.toolbar.activeTool?.updateHandlePositions?.();
     this.toolbar.statusbar.setZoomPower(this.virtualCanvas.zoom);
   }
 
@@ -147,6 +158,8 @@ export default class Viewport {
     this.virtualCanvas.offset[0] = this.virtualCanvas.offset[0] + delta[0];
     this.virtualCanvas.offset[1] = this.virtualCanvas.offset[1] + delta[1];
     this.setAdjusters();
+    this.notifyCanvasMove();
+    this.toolbar.activeTool?.updateHandlePositions?.();
     this.toolbar.statusbar.setZoomPower(this.virtualCanvas.zoom);
   }
 
@@ -198,18 +211,21 @@ export default class Viewport {
           Math.max(1, positionInCanvas[0]),
           this.virtualCanvas.height
         );
+        this.notifyCanvasMove();
         break;
       case this.heightAdjuster:
         this.setAdjusters(
           this.virtualCanvas.width,
           Math.max(1, positionInCanvas[1])
         );
+        this.notifyCanvasMove();
         break;
       case this.bothAdjuster:
         this.setAdjusters(
           Math.max(1, positionInCanvas[0]),
           Math.max(1, positionInCanvas[1])
         );
+        this.notifyCanvasMove();
         break;
       case this.middleMouseAdjuster:
         const startInCanvas = this.virtualCanvas.positionInCanvas(
@@ -231,8 +247,17 @@ export default class Viewport {
         this.virtualCanvas.offset[1] = this.virtualCanvas.offset[1] + delta[1];
         this.startPosition = [input.x, input.y];
         this.setAdjusters();
+        this.notifyCanvasMove();
+        this.toolbar.activeTool?.updateHandlePositions?.();
         break;
     }
+  }
+
+  notifyCanvasMove() {
+    // call everybody that asked to be kept in sync
+    this.virtualCanvas?.onCanvasMove?.forEach((cb) => {
+      if (typeof cb === "function") cb();
+    });
   }
 
   // Blank functions are here because this class pretends to be a tool from the toolbar.
