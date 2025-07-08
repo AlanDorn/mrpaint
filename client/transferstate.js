@@ -65,11 +65,9 @@ export class TransferStateReader {
     this.transactionManager.snapshots = this.snapshots;
     this.transactionManager.snapshotTransactions = this.snapshotTransactions;
 
-    if (this.transactionManager.snapshotTransactions.length > 1) {
+    if (this.snapshotTransactions.length > 0) {
       const lastTransaction =
-        this.transactionManager.snapshotTransactions[
-          this.transactionManager.snapshotTransactions.length - 2
-        ];
+        this.snapshotTransactions[this.snapshotTransactions.length - 1];
       const correct = this.transactionLog.transactionIndex(lastTransaction);
       this.transactionManager.syncCanvas(correct + 1);
     }
