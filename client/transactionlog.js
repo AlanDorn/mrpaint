@@ -14,7 +14,6 @@ export default class TransactionLog {
     this.lastUndoRedo = new Map();
     this.initialTransaction = new Map();
     this.rendered = 0;
-    this.initializing = true;
     this.rerenderCauseOfUndo = false;
   }
 
@@ -74,7 +73,6 @@ export default class TransactionLog {
   }
 
   pushClient(transaction) {
-    if (this.initializing) return;
     this.unsentTransactions.push(transaction);
     this.uninsertedTransactions.push(transaction);
   }

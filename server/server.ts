@@ -55,18 +55,16 @@ app.get("/:lobby", (req, res) => {
 app.get("/preview/:lobby", (req, res) => {
   const lobbyCode = req.params.lobby.split(".")[0];
   const lobby = lobbies.get(lobbyCode);
-  if (!lobby)
-    res.sendFile(
+  if (!lobby || lobby.canvasState.png.length < 3)
+    return res.sendFile(
       path.join(
         __dirname,
         "../client/images",
         "db9c352d-2b8b-4e74-a4b5-26f7d7c4a2b9.webp"
       )
     );
-  else {
-    res.set("Content-Type", "image/png");
-    res.send(Buffer.from(lobby.canvasState.png));
-  }
+  res.set("Content-Type", "image/png");
+  res.send(Buffer.from(lobby.canvasState.png));
 });
 
 // Create a single HTTP server
@@ -75,27 +73,11 @@ const server = http.createServer(app);
 // Attach WebSocket server to the same HTTP server
 const wss = new WebSocket.Server({ server });
 
-wss.on("connection", (ws) => {
-  let lobby: CanvasLobby | undefined;
-  let userId;
-
-  ws.on("message", (event) => {
-    if (!lobby) {
-      lobby = lobbies.get(event.toString("utf-8"));
-      if (!lobby) return;
-      userId = lobby.addUser(ws);
-      console.log(`@server \n userid: ${userId}`);
-      lobby.print();
-      return;
-    }
-
-    lobby.handle(userId, event);
-  });
-
-  ws.on("close", () => {
-    if (lobby) lobby.deleteUser(userId);
-  });
-});
+wss.on("connection", (ws: WebSocket) =>
+  ws.once("message", (event) =>
+    lobbies.get(event.toString("utf-8"))?.addUser(ws)
+  )
+);
 
 // Start listening on a single port
 const PORT = process.env.PORT || 3000; // Render provides the port in the `PORT` env variable

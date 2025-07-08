@@ -17,7 +17,7 @@ const transactionManager = new TransactionManager(transactionLog, virtualCanvas)
 // const userManager = new UserManager();
 // const previewManager = new PreviewManager(virtualCanvas);
 const toolbar = new Toolbar(transactionLog, virtualCanvas); // Toolbar(transactionManager)
-const input = new Input(toolbar, transactionManager); //Input(toolbar)
+const input = new Input(toolbar); //Input(toolbar)
 socket(input, transactionManager, virtualCanvas, transactionLog);
 
 //so since transactionManager has transactionLog & virtualCanvas, can't toolbar then just have Transactionmanager sent in?

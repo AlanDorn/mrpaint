@@ -4,46 +4,33 @@ import {
   toolLength,
   TOOLCODEINDEX,
 } from "./transaction.js";
-import { OPCODE, OPCODE_NAME } from "./shared/instructionset.js";
+import { OP_TYPE, OP_SYNC } from "./shared/instructionset.js";
 
 export class TransferStateReader {
-  constructor() {
-    this.userId = -1;
+  constructor(transactionLog, virtualCanvas, transactionManager) {
     this.snapshotLength = -1;
     this.transactions = null;
     this.snapshots = [];
     this.snapshotTransactions = [];
-    // this.snapshotIndex = -1;
+    this.transactionLog = transactionLog;
+    this.virtualCanvas = virtualCanvas;
+    this.transactionManager = transactionManager;
   }
 
-  handle(event) {
-    const eventData =
-      event instanceof Uint8Array ? event : new Uint8Array(event);
+  handle(eventData) {
+    const syncType = eventData[1];
 
-    const opcode = eventData[0];
-    const userId = eventData[1];
-    const payload = eventData.subarray(2);
-
-    switch (opcode) {
-      case OPCODE.TS_SNAPSHOT_COUNT:
-        console.log("\n\nNBYE0\n\n\n");
-        this.userId = userId;
-        this.snapshotLength = payload[0];
-        this.transactions = payload.subarray(1);
+    switch (syncType) {
+      case OP_SYNC.SNAPSHOT_COUNT:
+        this.snapshotLength = eventData[2];
         break;
-      case OPCODE.TS_PNG:
-        console.log("\n\nNBYE1\n\n\n");
-        this.userId = userId;
-        // this.snapshotLength = payload;
-        break;
-      case OPCODE.TS_SNAPSHOT:
-        console.log("\n\nNBYE2\n\n\n");
-        const snapshotIndex = eventData[1];
-        const width = decodeLargeNumber(eventData.subarray(2, 4));
-        const height = decodeLargeNumber(eventData.subarray(4, 6));
+      case OP_SYNC.SNAPSHOTS:
+        const snapshotIndex = eventData[2];
+        const width = decodeLargeNumber(eventData.subarray(3, 5));
+        const height = decodeLargeNumber(eventData.subarray(5, 7));
 
-        const transactionStart = 6;
-        const toolCode = eventData[TOOLCODEINDEX + transactionStart]; // TOOLCODEINDEX is typically 0
+        const transactionStart = 7;
+        const toolCode = eventData[TOOLCODEINDEX + transactionStart];
         const transactionLength = toolLength[toolCode];
 
         const transaction = eventData.subarray(
@@ -57,22 +44,50 @@ export class TransferStateReader {
         this.snapshotTransactions[snapshotIndex] = transaction;
         this.snapshots[snapshotIndex] = qoiDecode(qoiData, width, height);
         break;
+      case OP_SYNC.TRANSACTIONS:
+        this.transactions = eventData.subarray(2);
+        break;
     }
+    if (this.isFinished()) this.process();
   }
 
   isFinished() {
-    if (this.userId === -1 || this.snapshotLength === -1 || !this.transactions)
-      return false;
+    if (this.snapshotLength === -1 || !this.transactions) return false;
     for (let index = 0; index < this.snapshotLength; index++)
       if (!this.snapshots[index] || !this.snapshotTransactions[index])
         return false;
     return true;
+  }
+
+  process() {
+    this.transactionLog.pushServer(this.transactions);
+    this.transactionLog.pushTransactions();
+    this.transactionManager.snapshots = this.snapshots;
+    this.transactionManager.snapshotTransactions = this.snapshotTransactions;
+
+    if (this.transactionManager.snapshotTransactions.length > 1) {
+      const lastTransaction =
+        this.transactionManager.snapshotTransactions[
+          this.transactionManager.snapshotTransactions.length - 2
+        ];
+      const correct = this.transactionLog.transactionIndex(lastTransaction);
+      this.transactionManager.syncCanvas(correct + 1);
+    }
+
+    while (this.virtualCanvas.fillGeneration.length > 0)
+      this.virtualCanvas.fill();
   }
 }
 
 export function transferState(ws, transactionManager) {
   const currentCanvas = transactionManager.virtualCanvas.virtualCanvas;
   const snapshotCount = transactionManager.snapshots.length;
+
+  if (!transactionManager.transactionLog.transactions.length) {
+    ws.send(new Uint8Array([OP_TYPE.SYNC, OP_SYNC.SNAPSHOT_COUNT, 0]));
+    ws.send(new Uint8Array([OP_TYPE.SYNC, OP_SYNC.PNG, 0, 0]));
+    return;
+  }
 
   const numHistoric = Math.min(4, snapshotCount);
   const totalSnapshots = numHistoric + 1; // +1 for the live/current copy
@@ -87,22 +102,19 @@ export function transferState(ws, transactionManager) {
 
   // Send transactions for syncing
   ws.send(
-    new Uint8Array([
-      OPCODE.TS_SNAPSHOT_COUNT,
-      transactionManager.userId,
-      totalSnapshots,
-      ...transactionManager.transactionLog.transactions,
-    ])
+    new Uint8Array([OP_TYPE.SYNC, OP_SYNC.SNAPSHOT_COUNT, totalSnapshots])
   );
 
+  let snapshotIndex = 0;
   // Send each snapshot
-  selectedSnapshots.forEach((index, i) => {
+  selectedSnapshots.forEach((index) => {
     const snapshot = transactionManager.snapshots[index];
     const snapshotTransaction = transactionManager.snapshotTransactions[index];
     ws.send(
       new Uint8Array([
-        OPCODE.TS_SNAPSHOT,
-        i,
+        OP_TYPE.SYNC,
+        OP_SYNC.SNAPSHOTS,
+        snapshotIndex++,
         ...encodeLargeNumber(snapshot[0].length),
         ...encodeLargeNumber(snapshot.length),
         ...snapshotTransaction,
@@ -112,13 +124,15 @@ export function transferState(ws, transactionManager) {
   });
 
   // Send current snapshot (canvas at this moment)
+  const latestTransactionIndex =
+    transactionManager.transactionLog.transactions.length - 1;
   const latestTransaction =
-    transactionManager.transactionLog.transactions.at(-1) || new Uint8Array();
-
+    transactionManager.transactionLog.transactions[latestTransactionIndex];
   ws.send(
     new Uint8Array([
-      OPCODE.TS_SNAPSHOT,
-      totalSnapshots - 1,
+      OP_TYPE.SYNC,
+      OP_SYNC.SNAPSHOTS,
+      snapshotIndex,
       ...encodeLargeNumber(currentCanvas[0].length),
       ...encodeLargeNumber(currentCanvas.length),
       ...latestTransaction,
@@ -126,10 +140,8 @@ export function transferState(ws, transactionManager) {
     ])
   );
 
-  return pngEncode(currentCanvas).then((value) => {
-    ws.send(
-      new Uint8Array([OPCODE.TS_PNG, transactionManager.userId, ...value])
-    );
+  pngEncode(currentCanvas).then((value) => {
+    ws.send(new Uint8Array([OP_TYPE.SYNC, OP_SYNC.PNG, ...value]));
   });
 }
 
