@@ -5,7 +5,6 @@ export default class CanvasLobby {
   id: string;
   users: WebSocket[] = [];
   transactionIndex = 2;
-  //1KB to start -> 1MB after 10 doubles
   transactions: Uint8Array = new Uint8Array(2 ** 10);
   canvasState: CanvasState = new CanvasState(2);
   buildStates = new Map<WebSocket, CanvasState>();
@@ -23,6 +22,7 @@ export default class CanvasLobby {
     this.buildStates.set(ws, new CanvasState(this.transactionIndex));
     ws.on("message", (event: WebSocket.RawData) => this.onMessage(ws, event));
     ws.on("close", () => this.onClose(ws));
+    this.print();
   }
 
   onClose(ws: WebSocket) {
@@ -51,11 +51,8 @@ export default class CanvasLobby {
     if (!buildState) return;
     buildState.handle(eventData);
     if (!buildState.isFinished()) return;
-    if (buildState.index > this.canvasState.index) {
+    if (buildState.index > this.canvasState.index)
       this.canvasState = buildState;
-      console.log("new canvas state", this.canvasState.index, this.transactionIndex);
-    }
-      
   }
 
   update(ws: WebSocket, eventData: Uint8Array) {
@@ -74,7 +71,7 @@ export default class CanvasLobby {
   }
 
   expand() {
-    const expanded = new Uint8Array(this.transactions.length * 2);
+    const expanded = new Uint8Array(Math.floor(this.transactions.length * 1.5));
     expanded.set(this.transactions);
     this.transactions = expanded;
   }
@@ -83,10 +80,11 @@ export default class CanvasLobby {
     console.log("==========================");
     console.log(`Lobby:    ${this.id}`);
     console.log(
-      `Size:     ${formatBytes(this.transactionIndex)} / ${formatBytes(
+      `Bytes:     ${formatBytes(this.transactionIndex)} / ${formatBytes(
         this.transactions.length
       )}`
     );
+    console.log(`Users:     ${this.users.length} `);
   }
 }
 

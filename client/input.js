@@ -39,9 +39,11 @@ export default class Input {
     });
 
     let updateMouse = true;
-    setInterval(() => {
-      updateMouse = true
-    }, 60 / 1000);
+    const update = () => {
+      updateMouse = true;
+      requestAnimationFrame(update);
+    }
+    update()
 
     document.addEventListener("pointermove", (event) => {
       this.x = Math.round(event.clientX);

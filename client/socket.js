@@ -1,4 +1,4 @@
-import { TransferStateReader, transferState } from "./transferstate.js";
+import { TransferStateReader } from "./transferstate.js";
 import { OP_TYPE } from "./shared/instructionset.js";
 import { buildTransaction } from "./transaction.js";
 import PresenceManager from "./presencemanager.js";
@@ -14,6 +14,7 @@ export default function socket(
   const socketString = url.origin.replace(/^http/, "ws"); // https an "wss"???
   const ws = new WebSocket(socketString);
   const transferStateReader = new TransferStateReader(
+    ws,
     transactionLog,
     virtualCanvas,
     transactionManager
@@ -31,24 +32,6 @@ export default function socket(
     switch (opType) {
       case OP_TYPE.SYNC:
         transferStateReader.handle(eventData);
-        if (transferStateReader.isFinished()) {
-          setInterval(() => {
-            if (
-              transactionManager.initializing &&
-              transferStateReader.isFinished() &&
-              transactionLog.finished() &&
-              transactionManager.taskFinished()
-            ) {
-              transactionManager.initializing = false;
-              transferState(ws, transactionManager);
-              transactionLog.pushTransactions();
-            }
-
-            if (!transactionLog.unsentTransactions.length) return;
-            const transactions = transactionLog.unsentTransactions.splice(0);
-            ws.send(buildTransaction([OP_TYPE.UPDATE], ...transactions));
-          }, 1000/60);
-        }
         return;
       case OP_TYPE.UPDATE:
         transactionLog.pushServer(eventData.subarray(1));
@@ -59,4 +42,13 @@ export default function socket(
         return;
     }
   };
+
+  const update = () => {
+    if (transactionLog.unsentTransactions.length) {
+      const transactions = transactionLog.unsentTransactions.splice(0);
+      ws.send(buildTransaction([OP_TYPE.UPDATE], ...transactions));
+    }
+    requestAnimationFrame(update);
+  };
+  update();
 }

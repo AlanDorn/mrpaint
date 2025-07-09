@@ -7,11 +7,12 @@ import {
 import { OP_TYPE, OP_SYNC } from "./shared/instructionset.js";
 
 export class TransferStateReader {
-  constructor(transactionLog, virtualCanvas, transactionManager) {
+  constructor(ws, transactionLog, virtualCanvas, transactionManager) {
     this.snapshotLength = -1;
     this.transactions = null;
     this.snapshots = [];
     this.snapshotTransactions = [];
+    this.ws = ws;
     this.transactionLog = transactionLog;
     this.virtualCanvas = virtualCanvas;
     this.transactionManager = transactionManager;
@@ -74,10 +75,23 @@ export class TransferStateReader {
 
     while (this.virtualCanvas.fillGeneration.length > 0)
       this.virtualCanvas.fill();
+
+    const endInitialization = setInterval(() => {
+      if (
+        this.transactionManager.initializing &&
+        this.transactionLog.finished() &&
+        this.transactionManager.taskFinished()
+      ) {
+        this.transactionManager.initializing = false;
+        transferState(this.ws, this.transactionManager);
+        this.transactionLog.pushTransactions();
+        clearInterval(endInitialization);
+      }
+    }, 1000 / 10);
   }
 }
 
-export function transferState(ws, transactionManager) {
+function transferState(ws, transactionManager) {
   const currentCanvas = transactionManager.virtualCanvas.virtualCanvas;
   const snapshotCount = transactionManager.snapshots.length;
 
