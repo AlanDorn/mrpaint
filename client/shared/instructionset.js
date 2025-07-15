@@ -41,5 +41,14 @@ export const OP_SYNC = {
 };
 
 export const OP_PRESENCE = {
-  MOUSE_POSITION: 0,
+  USER_JOIN: 0,
+  ID_CONFLICT: 1,
+  USER_INFO: 2,
+  REQUEST_ROSTER: 3,
+  PING: 4,  
+  USER_LEFT: 5, 
+  USER_COLOR_UPDATE: 6, 
+  USERNAME_UPDATE: 7,
+  MOUSE_POSITION: 8,
+  
 };

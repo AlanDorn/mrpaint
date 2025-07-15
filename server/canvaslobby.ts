@@ -28,6 +28,7 @@ export default class CanvasLobby {
   onClose(ws: WebSocket) {
     this.users = this.users.filter((user) => user !== ws);
     this.buildStates.delete(ws);
+    // console.log(`User: ${this.users}`);
   }
 
   onMessage(ws: WebSocket, event: WebSocket.RawData) {

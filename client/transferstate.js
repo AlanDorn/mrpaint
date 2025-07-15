@@ -25,6 +25,7 @@ export class TransferStateReader {
       case OP_SYNC.SNAPSHOT_COUNT:
         this.snapshotLength = eventData[2];
         break;
+        
       case OP_SYNC.SNAPSHOTS:
         const snapshotIndex = eventData[2];
         const width = decodeLargeNumber(eventData.subarray(3, 5));
@@ -45,6 +46,7 @@ export class TransferStateReader {
         this.snapshotTransactions[snapshotIndex] = transaction;
         this.snapshots[snapshotIndex] = qoiDecode(qoiData, width, height);
         break;
+
       case OP_SYNC.TRANSACTIONS:
         this.transactions = eventData.subarray(2);
         break;
