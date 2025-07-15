@@ -8,9 +8,22 @@ export const toolCodes = {
   eraser: new Uint8Array([6]),
   straightLine: new Uint8Array([7]),
 };
-export const toolCodeInverse = ["pixel", "pencil", "fill", "undo", "redo", "resize", "eraser", "straightLine"];
-export const toolLength = [24, 36, 22, 15, 15, 19, 40, 28];
-export const TOOLCODEINDEX = 14;
+export const toolCodeInverse = [
+  "pixel",
+  "pencil",
+  "fill",
+  "undo",
+  "redo",
+  "resize",
+  "eraser",
+  "straightLine",
+];
+export const TOUUIDLENGTH = 8;
+export const OPIDLENGTH = 8;
+export const TOOLCODEINDEX = TOUUIDLENGTH + OPIDLENGTH;
+export const toolLength = [10, 22, 8, 1, 1, 5, 26, 14].map(
+  (l) => l + TOOLCODEINDEX
+);
 
 export function pixelTransaction(operationId, color, brushsize, position) {
   return buildTransaction(
@@ -113,18 +126,17 @@ export function straightLineTransaction(
   startPoint,
   endPoint,
   mode
-){
+) {
   return buildTransaction(
-    touuid(),                       //8 bytes
-    operationId,                    //6 bytes
-    toolCodes["straightLine"],      //1 bytes
-    encodeColor(color),             //3 bytes
-    encodeLargeNumber(brushsize),   //2 bytes
-    encodePosition(startPoint),     //4 bytes
-    encodePosition(endPoint),       //4 bytes
+    touuid(), //8 bytes
+    operationId, //6 bytes
+    toolCodes["straightLine"], //1 bytes
+    encodeColor(color), //3 bytes
+    encodeLargeNumber(brushsize), //2 bytes
+    encodePosition(startPoint), //4 bytes
+    encodePosition(endPoint) //4 bytes
   );
 }
-
 
 //
 //                           ,,
@@ -138,102 +150,100 @@ export function straightLineTransaction(
 //                                 MM
 //                               .JMML.
 
-export function buildTransaction(...components) {
-  let transactionLength = 0;
-  for (let index = 0; index < components.length; index++)
-    transactionLength += components[index].length;
+export const buildTransaction = (...components) => {
+  const total = components.reduce((sum, c) => sum + c.length, 0);
+  const tx = new Uint8Array(total);
+  let off = 0;
+  for (const c of components) {
+    tx.set(c, off);
+    off += c.length;
+  }
+  return tx;
+};
 
-  const transaction = new Uint8Array(transactionLength);
-  for (
-    let index = 0, bufferOffset = 0;
-    index < components.length;
-    bufferOffset += components[index++].length
-  )
-    transaction.set(components[index], bufferOffset);
+export const operationId = () => {
+  const buf = new Uint8Array(OPIDLENGTH);
+  crypto.getRandomValues(buf);
+  return buf;
+};
 
-  return transaction;
-}
+export const readOperationId = (tx) => tx.subarray(TOUUIDLENGTH, TOOLCODEINDEX);
 
-export function operationId() {
-  let b = new Uint8Array(6);
-  for (let i = 0; i < 6; b[i++] = (Math.random() * 256) | 0);
-  return b;
-}
-
-export function readOperationId(transaction) {
-  return transaction.subarray(8, 14);
-}
-
-export function readOperationIdAsNumber(transaction) {
-  let operationId = 0n;
-  for (let index = 8; index < 14; index++)
-    operationId = (operationId << 8n) | BigInt(transaction[index]);
-  return operationId;
-}
+export const readOperationIdAsNumber = (tx) => {
+  let id = 0n;
+  for (let i = TOUUIDLENGTH; i < TOOLCODEINDEX; i++) {
+    id = (id << 8n) | BigInt(tx[i]);
+  }
+  return id;
+};
 
 export function compareOperationId(first, second) {
-  for (let index = 8; index < 14; index++)
+  for (let index = TOUUIDLENGTH; index < TOOLCODEINDEX; index++)
     if (first[index] !== second[index]) return first[index] - second[index];
   return 0;
 }
 
 export function touuid() {
-  let b = new Uint8Array(8),
-    t = Date.now();
-
-  b[5] = ((t & 15) * 16 + Math.random() * 16) | 0;
-  t = (t / 16) | 0;
-
-  for (let i = 4; i >= 0; b[i--] = t & 255, t = (t / 256) | 0);
-  for (let i = 6; i < 8; b[i++] = (Math.random() * 256) | 0);
-  return b;
+  let ms = BigInt(Date.now());
+  const out = new Uint8Array(8);
+  for (let i = 7; i >= 0; i--) {
+    out[i] = Number(ms & 0xffn);
+    ms >>= 8n;
+  }
+  return out;
 }
 
-// positive if first is bigger, negative if second, 0 if equal
-export function compareTouuid(first, second) {
-  for (let index = 0; index < 14; index++)
-    if (first[index] !== second[index]) return first[index] - second[index];
+const WORD = 4; // bytes per “word”
+export function compareTouuid(a, b) {
+  const len = TOOLCODEINDEX;
+  // create DataViews once per call
+  const da = new DataView(a.buffer, a.byteOffset, len);
+  const db = new DataView(b.buffer, b.byteOffset, len);
+
+  // compare full 32‑bit words
+  let offset = 0;
+  const nWords = Math.floor(len / WORD);
+  for (let i = 0; i < nWords; i++, offset += WORD) {
+    // false = big‑endian
+    const wa = da.getUint32(offset, false);
+    const wb = db.getUint32(offset, false);
+    if (wa < wb) return -1;
+    if (wa > wb) return +1;
+  }
+
+  // compare any remaining tail bytes
+  for (; offset < len; offset++) {
+    const xa = a[offset],
+      xb = b[offset];
+    if (xa < xb) return -1;
+    if (xa > xb) return +1;
+  }
+
   return 0;
 }
 
-export function encodeColor(color) {
-  return new Uint8Array(color);
-}
+// Color arrays ↔ Uint8Array
+export const encodeColor = (arr) => Uint8Array.from(arr);
+export const decodeColor = (bytes) => Array.from(bytes);
 
-export function decodeColor(colorBytes) {
-  return Array.from(colorBytes);
-}
+// 0–255 ↔ single byte
+export const encodeSmallNumber = (n) => Uint8Array.of(n & 0xff);
+export const decodeSmallNumber = (b) => b[0];
 
-export function encodeSmallNumber(number) {
-  return new Uint8Array([Math.floor(number)]);
-}
+// 0–65535 ↔ two bytes big‑endian
+export const encodeLargeNumber = (n) =>
+  Uint8Array.of((n >> 8) & 0xff, n & 0xff);
 
-export function decodeSmallNumber(bytes) {
-  return bytes[0];
-}
+export const decodeLargeNumber = (b) => (b[0] << 8) | b[1];
 
-export function encodeLargeNumber(number) {
-  return new Uint8Array([Math.floor(number / 256), Math.floor(number % 256)]);
-}
+// Two 16‑bit signed ints ↔ 4‑byte buffer little‑endian
+export const encodePosition = ([x, y]) =>
+  Uint8Array.of(x & 0xff, (x >> 8) & 0xff, y & 0xff, (y >> 8) & 0xff);
 
-export function decodeLargeNumber(byteArray) {
-  return byteArray[0] * 256 + byteArray[1];
-}
-
-export function encodePosition(position) {
-  const array = new Uint8Array(4);
-  array[0] = position[0] & 0xff; // Lower 8 bits
-  array[1] = (position[0] >> 8) & 0xff; // Upper 8 bits
-  array[2] = position[1] & 0xff; // Lower 8 bits
-  array[3] = (position[1] >> 8) & 0xff; // Upper 8 bits
-  return array;
-}
-
-// Function to decode a Uint8Array back into two Int16 values
-export function decodePosition(position) {
-  const int1 = (position[1] << 8) | position[0];
-  const signedInt1 = int1 > 0x7fff ? int1 - 0x10000 : int1;
-  const int2 = (position[3] << 8) | position[2];
-  const signedInt2 = int2 > 0x7fff ? int2 - 0x10000 : int2;
-  return [signedInt1, signedInt2];
-}
+export const decodePosition = (b) => {
+  const u1 = (b[1] << 8) | b[0];
+  const u2 = (b[3] << 8) | b[2];
+  const x = u1 & 0x8000 ? u1 - 0x10000 : u1;
+  const y = u2 & 0x8000 ? u2 - 0x10000 : u2;
+  return [x, y];
+};

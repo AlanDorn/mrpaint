@@ -6,6 +6,9 @@ export default class StatusBar {
     this.canvassize = document.getElementById("canvassize");
     this.zoompower = document.getElementById("zoompower");
     this.completionbar = document.getElementById("completionbar");
+    this.networkUp = document.getElementById("networkUp");
+    this.networkDown = document.getElementById("networkDown");
+
     this.setCanvasSize();
     this.setZoomPower();
   }
@@ -39,4 +42,23 @@ export default class StatusBar {
     }
     this.completionbar.style.width = percent * 100 + "%";
   }
+
+  setNetworkUsage(up, down) {
+    const upFmt = formatBytes(up);
+    const downFmt = formatBytes(down);
+    this.networkUp.innerText = `↑: ${upFmt}`;
+    this.networkDown.innerText = `↓: ${downFmt}`;
+  }
+}
+
+function formatBytes(bytes, decimals = 1) {
+  if (bytes === 0) return "0.0 Bs";
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = [" Bs", "KBs", "MBs", "GBs", "TBs"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+  // toFixed(dm) will always emit dm decimals (including trailing zeros)
+  const value = (bytes / Math.pow(k, i)).toFixed(dm);
+  return value + sizes[i];
 }

@@ -26,26 +26,34 @@ export default function buildRenderTask(virtualCanvas, transaction) {
   return [doNothing];
 }
 
+const newInc =
+  (index = 0) =>
+  (inc = 0) => {
+    index += inc;
+    return index;
+  };
+
 function renderPixel(virtualCanvas, transaction) {
-  const color = transaction.subarray(15, 18);
-  const brushsize = decodeLargeNumber(transaction.subarray(18, 20));
-  const pixel = decodePosition(transaction.subarray(20, 24));
+  let inc = newInc(TOOLCODEINDEX + 1);
+  const color = transaction.subarray(inc(), inc(3));
+  const brushsize = decodeLargeNumber(transaction.subarray(inc(), inc(2)));
+  const pixel = decodePosition(transaction.subarray(inc(), inc(4)));
 
   const task = [
     () => virtualCanvas.setPixel(pixel[0], pixel[1], color, brushsize),
   ];
-
   return task;
 }
 
 function renderPencil(virtualCanvas, transaction) {
-  const color = transaction.subarray(15, 18);
-  const brushsize = decodeLargeNumber(transaction.subarray(18, 20));
+  let inc = newInc(TOOLCODEINDEX + 1);
+  const color = transaction.subarray(inc(), inc(3));
+  const brushsize = decodeLargeNumber(transaction.subarray(inc(), inc(2)));
   const pixels = splinePixels(
-    decodePosition(transaction.subarray(20, 24)),
-    decodePosition(transaction.subarray(24, 28)),
-    decodePosition(transaction.subarray(28, 32)),
-    decodePosition(transaction.subarray(32, 36))
+    decodePosition(transaction.subarray(inc(), inc(4))),
+    decodePosition(transaction.subarray(inc(), inc(4))),
+    decodePosition(transaction.subarray(inc(), inc(4))),
+    decodePosition(transaction.subarray(inc(), inc(4)))
   );
 
   //CALM: benchmark this so you can figure out what is a good number for this.
@@ -73,8 +81,9 @@ function renderPencil(virtualCanvas, transaction) {
 }
 
 function renderFill(virtualCanvas, transaction) {
-  const color = transaction.subarray(15, 18);
-  const [x, y] = decodePosition(transaction.subarray(18, 22));
+  let inc = newInc(TOOLCODEINDEX + 1);
+  const color = transaction.subarray(inc(), inc(3));
+  const [x, y] = decodePosition(transaction.subarray(inc(), inc(4)));
   const width = virtualCanvas.width;
   const height = virtualCanvas.height;
 
@@ -162,7 +171,10 @@ function colorsMatch(first, second) {
 }
 
 function renderResize(virtualCanvas, transaction) {
-  const [newWidth, newHeight] = decodePosition(transaction.subarray(15, 19));
+  let inc = newInc(TOOLCODEINDEX + 1);
+  const [newWidth, newHeight] = decodePosition(
+    transaction.subarray(inc(), inc(4))
+  );
 
   return [
     () => {
@@ -172,16 +184,17 @@ function renderResize(virtualCanvas, transaction) {
 }
 
 function renderEraser(virtualCanvas, transaction) {
-  const color = transaction.subarray(15, 18);
-  const primarycolor = transaction.subarray(18, 21); // to make things more complicated i spliced and changed vals for rest when i coulda put primarycolor at the back
-  const brushsize = decodeLargeNumber(transaction.subarray(21, 23));
+  let inc = newInc(TOOLCODEINDEX + 1);
+  const color = transaction.subarray(inc(), inc(3));
+  const primarycolor = transaction.subarray(inc(), inc(3)); // to make things more complicated i spliced and changed vals for rest when i coulda put primarycolor at the back
+  const brushsize = decodeLargeNumber(transaction.subarray(inc(), inc(2)));
   const pixels = splinePixels(
-    decodePosition(transaction.subarray(23, 27)),
-    decodePosition(transaction.subarray(27, 31)),
-    decodePosition(transaction.subarray(31, 35)),
-    decodePosition(transaction.subarray(35, 39))
+    decodePosition(transaction.subarray(inc(), inc(4))),
+    decodePosition(transaction.subarray(inc(), inc(4))),
+    decodePosition(transaction.subarray(inc(), inc(4))),
+    decodePosition(transaction.subarray(inc(), inc(4)))
   );
-  const mode = transaction[39];
+  const mode = transaction[inc()];
 
   //CALM: benchmark this so you can figure out what is a good number for this.
   const chunkSize = Math.ceil(100000); // Number of pixels to process per chunk
@@ -272,10 +285,11 @@ function renderEraser(virtualCanvas, transaction) {
 }
 
 function renderStraightLine(virtualCanvas, transaction) {
-  const color = transaction.subarray(15, 18); // Extract color from transaction
-  const brushsize = decodeLargeNumber(transaction.subarray(18, 20)); // Extract brush size
-  const startPoint = decodePosition(transaction.subarray(20, 24)); // Extract starting point
-  const endPoint = decodePosition(transaction.subarray(24, 28)); // Extract ending point
+  let inc = newInc(TOOLCODEINDEX + 1);
+  const color = transaction.subarray(inc(), inc(3)); // Extract color from transaction
+  const brushsize = decodeLargeNumber(transaction.subarray(inc(), inc(2))); // Extract brush size
+  const startPoint = decodePosition(transaction.subarray(inc(), inc(4))); // Extract starting point
+  const endPoint = decodePosition(transaction.subarray(inc(), inc(4))); // Extract ending point
 
   // Calculate points along the line using Bresenham's line algorithm
   const points = bresenhamLine(
