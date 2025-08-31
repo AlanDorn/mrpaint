@@ -25,10 +25,15 @@ export default class VirtualCanvas {
     this.setCanvasSize();
     window.addEventListener("resize", () => this.setCanvasSize());
 
-    this.previewCanvas = document.createElement("canvas");
-    this.previewCanvas.width = this.offscreenCanvas.width;
-    this.previewCanvas.height = this.offscreenCanvas.height;
-    this.previewCtx = this.previewCanvas.getContext("2d");
+    this.otherPreviewCanvas = document.createElement("canvas");
+    this.otherPreviewCanvas.width = this.offscreenCanvas.width;
+    this.otherPreviewCanvas.height = this.offscreenCanvas.height;
+    this.otherPreviewCtx = this.otherPreviewCanvas.getContext("2d");
+
+    this.selfPreviewCanvas = document.createElement("canvas");
+    this.selfPreviewCanvas.width = this.offscreenCanvas.width;
+    this.selfPreviewCanvas.height = this.offscreenCanvas.height;
+    this.selfPreviewCtx = this.selfPreviewCanvas.getContext("2d");
 
     this.onCanvasMove = new Set();
   }
@@ -55,13 +60,26 @@ export default class VirtualCanvas {
       Math.ceil(this.height * this.zoom)
     );
 
+    //This controls the order which the user sees, otherPreviewCanvas makes other previews behind yours, if otherPreviewCanvas is after selfPreviewCanvas then other users preview lines are infront.
+    this.ctx.drawImage(
+      this.otherPreviewCanvas,
+      0,
+      0,
+      this.otherPreviewCanvas.width,
+      this.otherPreviewCanvas.height,
+      this.offset[0],
+      this.offset[1],
+      Math.ceil(this.width * this.zoom),
+      Math.ceil(this.height * this.zoom)
+    );
+
     //preview canvas
     this.ctx.drawImage(
-      this.previewCanvas,
+      this.selfPreviewCanvas,
       0,
       0,
-      this.previewCanvas.width,
-      this.previewCanvas.height,
+      this.selfPreviewCanvas.width,
+      this.selfPreviewCanvas.height,
       this.offset[0],
       this.offset[1],
       Math.ceil(this.width * this.zoom),
@@ -74,13 +92,7 @@ export default class VirtualCanvas {
   }
 
   setPixel(x, y, color, thickness) {
-    if (
-      thickness === 1 &&
-      x >= 0 &&
-      y >= 0 &&
-      x < this.width &&
-      y < this.height
-    ) {
+    if (thickness === 1 && x >= 0 && y >= 0 && x < this.width && y < this.height) {
       this.offscreenCtx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, 1)`;
       this.offscreenCtx.fillRect(x, y, thickness, thickness);
       this.virtualCanvas[y][x] = color;
@@ -124,10 +136,7 @@ export default class VirtualCanvas {
         const newX = x - halfThickness + dx;
         const newY = y - halfThickness + dy;
         if (
-          (dx === 0 ||
-            dy === 0 ||
-            dx === thickness - 1 ||
-            dy === thickness - 1) &&
+          (dx === 0 || dy === 0 || dx === thickness - 1 || dy === thickness - 1) &&
           newX >= 0 &&
           newY >= 0 &&
           newX < this.width &&
@@ -152,9 +161,7 @@ export default class VirtualCanvas {
     if (widthChanged)
       if (width > this.width)
         for (let index = 0; index < this.height; index++)
-          this.virtualCanvas[index].push(
-            ...Array(width - this.width).fill(white)
-          );
+          this.virtualCanvas[index].push(...Array(width - this.width).fill(white));
       else
         for (let index = 0; index < this.height; index++)
           this.virtualCanvas[index].length = width;
@@ -164,7 +171,11 @@ export default class VirtualCanvas {
     if (heightChanged || widthChanged || forcePrint) {
       this.offscreenCanvas.width = this.width;
       this.offscreenCanvas.height = this.height;
-      this.resizePreviewCanvas(this.previewCanvas, this.offscreenCanvas);
+      this.resizePreviewCanvas(
+        this.offscreenCanvas,
+        this.selfPreviewCanvas,
+        this.otherPreviewCanvas
+      );
 
       this.fillImageData();
       while (this.fillGeneration.length > 0) this.fill();
@@ -181,9 +192,7 @@ export default class VirtualCanvas {
 
   fillImageData() {
     const widthChunkSize = Math.floor(this.width / Math.ceil(this.width / 256)); // Size of each square chunk
-    const heightChunkSize = Math.floor(
-      this.height / Math.ceil(this.height / 256)
-    );
+    const heightChunkSize = Math.floor(this.height / Math.ceil(this.height / 256));
     this.fillGeneration = [];
 
     const horizontalChunks = Math.ceil(this.width / widthChunkSize);
@@ -238,7 +247,11 @@ export default class VirtualCanvas {
       this.offscreenCanvas.width = newVirtualCanvas[0].length;
       this.offscreenCanvas.height = newVirtualCanvas.length;
 
-      this.resizePreviewCanvas(this.previewCanvas, this.offscreenCanvas);
+      this.resizePreviewCanvas(
+        this.offscreenCanvas,
+        this.selfPreviewCanvas,
+        this.otherPreviewCanvas
+      );
     }
 
     const oldVirtualCanvas = this.virtualCanvas;
@@ -334,28 +347,43 @@ export default class VirtualCanvas {
   }
 
   // TODO: promote to class + other layers
-  clearPreview() {
-    this.previewCtx.clearRect(
+  clearPreview(previewCanvas) {
+    previewCanvas.clearRect(
       0,
       0,
-      this.previewCanvas.width,
-      this.previewCanvas.height
+      previewCanvas.canvas.width,
+      previewCanvas.canvas.height
     );
   }
 
   setPreviewPixel(x, y, color, thickness) {
     if (thickness === 1) {
-      this.previewCtx.fillStyle = `rgba(${color[0]},${color[1]},${color[2]},1)`;
-      this.previewCtx.fillRect(x, y, thickness, thickness);
+      this.selfPreviewCtx.fillStyle = `rgba(${color[0]},${color[1]},${color[2]},1)`;
+      this.selfPreviewCtx.fillRect(x, y, thickness, thickness);
       return;
     }
     const half = Math.floor(thickness / 2);
-    this.previewCtx.fillStyle = `rgba(${color[0]},${color[1]},${color[2]},1)`;
-    this.previewCtx.fillRect(x - half, y - half, thickness, thickness);
+    this.selfPreviewCtx.fillStyle = `rgba(${color[0]},${color[1]},${color[2]},1)`;
+    this.selfPreviewCtx.fillRect(x - half, y - half, thickness, thickness);
   }
 
-  resizePreviewCanvas(previewCanvas, offscreenCanvas) {
-    previewCanvas.width = offscreenCanvas.width;
-    previewCanvas.height = offscreenCanvas.height;
+  resizePreviewCanvas(source, selfPreviewCanvas, otherPreviewCanvas) {
+    selfPreviewCanvas.width = source.width;
+    selfPreviewCanvas.height = source.height;
+
+    otherPreviewCanvas.width = source.width;
+    otherPreviewCanvas.height = source.height;
+  }
+
+  isScreenPointInside(clientX, clientY) {
+    const x = clientX - this.rect.left;
+    const y = clientY - this.rect.top;
+
+    const left = this.offset[0];
+    const top = this.offset[1];
+    const right = left + Math.ceil(this.width * this.zoom);
+    const bottom = top + Math.ceil(this.height * this.zoom);
+
+    return x >= left && y >= top && x < right && y < bottom;
   }
 }

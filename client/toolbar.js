@@ -1,93 +1,102 @@
 import BrushSize from "./brushsize.js";
 import ColorPicker from "./colorpicker.js";
+
 import Pencil from "./pencil.js";
 import Eraser from "./eraser.js";
 import FillTool from "./filltool.js";
+import StraightLine from "./straightLine.js";
+
+import CursorManager from "./cursorManager.js";
 import Undo from "./undo.js";
 import Viewport from "./viewport.js";
 import StatusBar from "./statusbar.js";
 import Ruler from "./ruler.js";
-import StraightLine from "./straightLine.js";
-
-//TODO Gotta add straight line tool!
-//TODO add the active button coloring logic, not sure if goes here or somewhere else yet!
 
 export default class Toolbar {
-  constructor(transactionLog, virtualCanvas) {
+  constructor(transactionLog, previewManager, virtualCanvas) {
+    this.previewManager = previewManager;
+    this.virtualCanvas = virtualCanvas;
+
     this.colorpicker = new ColorPicker();
     this.brushsize = new BrushSize();
     this.pencil = new Pencil(virtualCanvas, transactionLog, this);
     this.eraser = new Eraser(virtualCanvas, transactionLog, this);
     this.fillTool = new FillTool(virtualCanvas, transactionLog, this);
+    this.viewport = new Viewport(virtualCanvas, transactionLog, this);
+    this.straightLine = new StraightLine(virtualCanvas, transactionLog, previewManager, this);
+
+    this.cursor = new CursorManager(virtualCanvas, this);
     this.undo = new Undo(transactionLog);
-    this.viewport = new Viewport(virtualCanvas, this, transactionLog);
     this.statusbar = new StatusBar(virtualCanvas);
     this.ruler = new Ruler(virtualCanvas);
-    this.straightLine = new StraightLine(virtualCanvas, transactionLog, this);
+    
+
+    this.activeSelector = null;
+    this.setupToolSwitcher();
 
     //set the default tool to pencil
     this.activeTool = this.pencil;
-    this.activeSelector = null;
-
-    this.setupToolSwitcher();
-
-    const pencilButton = document.getElementById("pencil");
-    this.updateActiveButton(pencilButton);
+    this.updateActiveButton(this.pencilButton);
+    this.cursor.setCanvasCursor(this.pencilButton, {x:3, y:20}); //3,20 idfk
   }
 
   setupToolSwitcher() {
-    const pencilButton = document.getElementById("pencil");
-    const eraserButton = document.getElementById("eraser");
-    const fillToolButton = document.getElementById("fillTool");
-    const undoButton = document.getElementById("undo");
-    const redoButton = document.getElementById("redo");
-    const brushSizeSelector = document.getElementById("brushsize");
-    const drawingarea = document.getElementById("drawingarea");
-    const straightLineButton = document.getElementById("straightLine");
-
-    undoButton.addEventListener("click", () => {
+    this.pencilButton = document.getElementById("pencil");
+    this.eraserButton = document.getElementById("eraser");
+    this.fillToolButton = document.getElementById("fillTool");
+    this.undoButton = document.getElementById("undo");
+    this.redoButton = document.getElementById("redo");
+    this.brushSizeSelector = document.getElementById("brushsize");
+    this.drawingarea = document.getElementById("drawingarea");
+    this.straightLineButton = document.getElementById("straightLine");
+    
+    this.undoButton.addEventListener("click", () => {
       this.undo.undo();
     });
 
-    redoButton.addEventListener("click", () => {
+    this.redoButton.addEventListener("click", () => {
       this.undo.redo();
     });
 
-    pencilButton.addEventListener("click", () => {
+    this.pencilButton.addEventListener("click", () => {
       this.activeTool = this.pencil;
-      this.updateActiveButton(pencilButton);
+      this.updateActiveButton(this.pencilButton);
+      this.cursor.setCanvasCursor(this.pencilButton, {x:3, y:20}); //2px by 22px (x & y)
     });
 
-    eraserButton.addEventListener("click", () => {
+    this.eraserButton.addEventListener("click", () => {
       this.activeTool = this.eraser;
-      this.updateActiveButton(eraserButton);
+      this.updateActiveButton(this.eraserButton);
+      this.cursor.setCanvasCursor(this.eraserButton, {x:0, y:0});
     });
 
-    straightLineButton.addEventListener("click", () => {
+    this.straightLineButton.addEventListener("click", () => {
       this.activeTool = this.straightLine;
-      this.updateActiveButton(straightLineButton);
+      this.updateActiveButton(this.straightLineButton);
+      this.cursor.setCanvasCursor(this.straightLineButton, {x:0, y:0});
     });
 
-    fillToolButton.addEventListener("click", () => {
+    this.fillToolButton.addEventListener("click", () => {
       this.activeTool = this.fillTool;
-      this.updateActiveButton(fillToolButton);
+      this.updateActiveButton(this.fillToolButton);
+      this.cursor.setCanvasCursor(this.fillToolButton, {x:2, y:21});
     });
 
-    brushSizeSelector.addEventListener("click", () => {
+    this.brushSizeSelector.addEventListener("click", () => {
       this.activeSelector = this.brushsize;
       this.activeReason = "click";
     });
 
-    brushSizeSelector.addEventListener("mouseenter", () => {
+    this.brushSizeSelector.addEventListener("mouseenter", () => {
       this.activeSelector = this.brushsize;
       this.activeReason = "mouseenter";
     });
 
-    brushSizeSelector.addEventListener("mouseleave", () => {
+    this.brushSizeSelector.addEventListener("mouseleave", () => {
       if (this.activeReason === "mouseenter") this.activeSelector = null;
     });
 
-    drawingarea.addEventListener("click", () => {
+    this.drawingarea.addEventListener("click", () => {
       this.activeSelector = null;
     });
 

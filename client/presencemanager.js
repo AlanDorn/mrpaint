@@ -1,20 +1,22 @@
 import { OP_TYPE, OP_PRESENCE } from "./shared/instructionset.js";
 import { encodePosition } from "./transaction.js";
 import UserManager from "./usermanager.js";
-// import PreviewManager from "./previewmanager.js";
 
 export default class PresenceManager {
-  constructor(ws, input, virtualCanvas) {
+  constructor(ws, input, previewManager, virtualCanvas) {
     this.ws = ws;
+    this.input = input;
+    this.previewManager = previewManager;
     this.virtualCanvas = virtualCanvas;
-    this.userId = Math.floor(Math.random() * 256);
 
-    this.userManager = new UserManager(virtualCanvas, this.userId);
-    // this.previewManager = new PreviewManager(input, virtualCanvas);
+    this.userManager = new UserManager(input, virtualCanvas);
+    
+    this.previewManager.attachUserManager(this.userManager);
+
+    this.userId = this.userManager.userId;
 
     setInterval(() => {
       if (!ws.open) return;
-      // console.log(encodePosition(input.x, input.y));
       ws.send(
         new Uint8Array([
           OP_TYPE.PRESENCE,
@@ -32,7 +34,7 @@ export default class PresenceManager {
           OP_TYPE.PRESENCE,
           OP_PRESENCE.USER_COLOR_UPDATE,
           this.userId,
-          ...this.userManager.color
+          ...this.userManager.color,
         ])
       );
     }, 1000 / 4);
@@ -44,10 +46,25 @@ export default class PresenceManager {
           OP_TYPE.PRESENCE,
           OP_PRESENCE.USERNAME_UPDATE,
           this.userId,
-          ...(new TextEncoder().encode(this.userManager.username))
+          ...new TextEncoder().encode(this.userManager.username),
         ])
       );
     }, 1000 / 4);
+
+    setInterval(() => {
+      if (!ws.open) return;
+      const previewData = this.previewManager.getPreviewData();
+      if (previewData) {
+        ws.send(
+          new Uint8Array([
+            OP_TYPE.PRESENCE,
+            OP_PRESENCE.PREVIEW_UPDATE,
+            this.userId,
+            ...previewData,
+          ])
+        );
+      }
+    }, 1000 / 60);
   }
 
   handle(eventData) {
@@ -56,21 +73,25 @@ export default class PresenceManager {
     const payload = eventData.subarray(2);
 
     this.userManager.trackUser(senderId);
-    if (senderId === this.userId) this.userId = Math.floor(Math.random() * 256);
+    if (senderId === this.userId) {
+      //should this logic be moved in userManager?
+      this.userId = Math.floor(Math.random() * 256);
+      this.userManager.updateUserId(this.userId);
+      console.log(`New UserID = ${this.userId}`);
+    }
 
     switch (subType) {
       case OP_PRESENCE.MOUSE_POSITION:
         this.userManager.updateCursor(senderId, payload);
         break;
-
       case OP_PRESENCE.USERNAME_UPDATE:
         this.userManager.updateName(senderId, payload);
         break;
       case OP_PRESENCE.USER_COLOR_UPDATE:
         this.userManager.updateColor(senderId, payload);
         break;
-      case OP_PRESENCE.PREVIEW_LINE:
-        // this.previewManager.handlePreviewLine(senderId, payload);
+      case OP_PRESENCE.PREVIEW_UPDATE:
+        this.previewManager.handlePreviewLine(senderId, payload);
         break;
       case OP_PRESENCE.TOOL_UPDATE:
         // this.previewManager.handleToolUpdate(senderId, payload);

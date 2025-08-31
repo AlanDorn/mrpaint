@@ -3,11 +3,13 @@ import { OP_TYPE } from "./shared/instructionset.js";
 import { buildTransaction } from "./transaction.js";
 import PresenceManager from "./presencemanager.js";
 
+
 export default function socket(
   input,
   transactionManager,
-  virtualCanvas,
-  transactionLog
+  transactionLog,
+  previewManager,
+  virtualCanvas
 ) {
   const url = new URL(window.location.href);
   const lobbyCode = url.pathname.split("/").pop();
@@ -19,7 +21,7 @@ export default function socket(
     virtualCanvas,
     transactionManager
   );
-  const presenceManager = new PresenceManager(ws, input, virtualCanvas);
+  const presenceManager = new PresenceManager(ws, input, previewManager, virtualCanvas);
 
   let up = 0;
   let down = 0;

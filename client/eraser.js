@@ -8,9 +8,11 @@ export default class Eraser {
   constructor(virtualCanvas, transactionLog, toolbar) {
     this.virtualCanvas = virtualCanvas;
     this.transactionLog = transactionLog;
+    this.toolbar = toolbar;
+
     this.colorpicker = toolbar.colorpicker;
     this.brushsize = toolbar.brushsize;
-    this.toolbar = toolbar;
+    
     this.points = []; // Store the last four points for Catmull-Rom
     this.isDrawing = false;
     this.currentColor = [0, 0, 0];

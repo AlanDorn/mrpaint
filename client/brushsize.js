@@ -6,7 +6,7 @@ export default class BrushSize {
     const dropdown = document.querySelector(".custom-dropdown-brushsize-box");
     const input = document.getElementById("customInputBrushsizeBox");
     const dropdownList = document.getElementById("dropdownOptions");
-    const previewLength = 140; // Fixed length for all previews
+    const previewLength = 110; // Fixed length for all previews
 
     //TODO change cursor to brushsize
 
@@ -17,18 +17,18 @@ export default class BrushSize {
         input.placeholder = "Enter brush size..."; // Show placeholder
       } else {
         input.placeholder = ""; // Remove placeholder when there's input
-        input.style.backgroundImage = "linear-gradient(to right, var(--secondary) 0%, var(--secondary) 100%)";
+        input.style.backgroundImage =
+          "linear-gradient(to right, var(--secondary) 0%, var(--secondary) 100%)";
         input.style.backgroundSize = `${previewLength}px ${size}px`; // Fixed length, dynamic height
         input.style.backgroundPosition = `35px`; // Align to the right
       }
     };
-    
 
     // Helper to sanitize input
     const sanitizeInput = (value) => {
       let parsedValue = parseInt(value, 10);
-      if(isNaN(parsedValue) || parsedValue <= 0) return null;
-      if(parsedValue > this.maxSize) parsedValue = this.maxSize;
+      if (isNaN(parsedValue) || parsedValue <= 0) return null;
+      if (parsedValue > this.maxSize) parsedValue = this.maxSize;
       return parsedValue;
     };
 
@@ -36,13 +36,13 @@ export default class BrushSize {
       let currentValue = sanitizeInput(input.value) || 1;
       let newValue = currentValue + event;
 
-      if(newValue < 1) newValue = 1;
-      if(newValue > this.maxSize) newValue = this.maxSize;
+      if (newValue < 1) newValue = 1;
+      if (newValue > this.maxSize) newValue = this.maxSize;
 
       input.value = `${newValue}`;
       this.setBrushSize(newValue);
       updateInputPreview(newValue);
-    }
+    };
 
     // Toggle dropdown visibility
     const toggleDropdown = () => {
@@ -85,17 +85,17 @@ export default class BrushSize {
     };
 
     const handleArrowKeys = (event) => {
-      if(event.key === "ArrowUp"){
+      if (event.key === "ArrowUp") {
         event.preventDefault();
         adjustBrushSize(1);
-      } else if(event.key === "ArrowDown"){
+      } else if (event.key === "ArrowDown") {
         event.preventDefault();
         adjustBrushSize(-1);
       }
     };
 
-    this.handleWheel = (event) => { 
-      const delta = event.deltaY < 0 ? 1: -1;
+    this.handleWheel = (event) => {
+      const delta = event.deltaY < 0 ? 1 : -1;
       adjustBrushSize(delta);
     };
 
@@ -106,7 +106,7 @@ export default class BrushSize {
     // Event listeners
     input.addEventListener("click", toggleDropdown);
     input.addEventListener("focus", selectOnFocus); // highlight text on focus!!!
-    input.addEventListener("keydown", handleArrowKeys); //arrow keys 
+    input.addEventListener("keydown", handleArrowKeys); //arrow keys
     document.addEventListener("click", closeDropdown);
     dropdownList.addEventListener("click", handleSelection);
     input.addEventListener("input", handleInput);
@@ -115,9 +115,16 @@ export default class BrushSize {
     updateInputPreview(null);
   }
 
-
-
   setBrushSize(newSize) {
     this.size = newSize;
+    this.communicateBrushSize(this.size, "brushSizeChange");
+  }
+
+  communicateBrushSize(size, message) {
+    window.dispatchEvent(
+      new CustomEvent(`${message}`, {
+        detail: { size: size },
+      })
+    );
   }
 }

@@ -21,9 +21,7 @@ export const toolCodeInverse = [
 export const TOUUIDLENGTH = 8;
 export const OPIDLENGTH = 8;
 export const TOOLCODEINDEX = TOUUIDLENGTH + OPIDLENGTH;
-export const toolLength = [10, 22, 8, 1, 1, 5, 26, 14].map(
-  (l) => l + TOOLCODEINDEX
-);
+export const toolLength = [10, 22, 8, 1, 1, 5, 26, 14].map((l) => l + TOOLCODEINDEX);
 
 export function pixelTransaction(operationId, color, brushsize, position) {
   return buildTransaction(
@@ -36,15 +34,7 @@ export function pixelTransaction(operationId, color, brushsize, position) {
   );
 }
 
-export function pencilTransaction(
-  operationId,
-  color,
-  brushsize,
-  p0,
-  p1,
-  p2,
-  p3
-) {
+export function pencilTransaction(operationId, color, brushsize, p0, p1, p2, p3) {
   return buildTransaction(
     touuid(), //8 bytes
     operationId, //6 bytes
@@ -115,7 +105,7 @@ export function eraserTransaction(
     encodePosition(p1), //4 bytes
     encodePosition(p2), //4 bytes
     encodePosition(p3), //4 bytes
-    new Uint8Array([mode])  //1 bytes
+    new Uint8Array([mode]) //1 bytes
   );
 }
 
@@ -231,8 +221,7 @@ export const encodeSmallNumber = (n) => Uint8Array.of(n & 0xff);
 export const decodeSmallNumber = (b) => b[0];
 
 // 0–65535 ↔ two bytes big‑endian
-export const encodeLargeNumber = (n) =>
-  Uint8Array.of((n >> 8) & 0xff, n & 0xff);
+export const encodeLargeNumber = (n) => Uint8Array.of((n >> 8) & 0xff, n & 0xff);
 
 export const decodeLargeNumber = (b) => (b[0] << 8) | b[1];
 
@@ -247,3 +236,21 @@ export const decodePosition = (b) => {
   const y = u2 & 0x8000 ? u2 - 0x10000 : u2;
   return [x, y];
 };
+
+export function encodePreviewLine({ start, end, color, size }) {
+  return new Uint8Array([
+    ...encodePosition(start), // 0‑3
+    ...encodePosition(end), // 4‑7
+    ...encodeLargeNumber(size), // 8
+    ...color, // 9‑11   (r,g,b)
+  ]);
+}
+
+export function decodePreviewLine(bytes) {
+  const start = decodePosition(bytes.subarray(0, 4)); // 4‑byte slice
+  const end = decodePosition(bytes.subarray(4, 8));
+  const size = decodeLargeNumber(bytes.subarray(8,10));
+  const color = [bytes[10], bytes[11], bytes[12]];
+
+  return { start, end, color, size };
+}

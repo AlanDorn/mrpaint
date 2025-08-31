@@ -1,5 +1,6 @@
 export default class Input {
   constructor(toolbar) {
+    this.toolbar = toolbar; //8/2/2025
     this.x = 0;
     this.y = 0;
     this.mouseDown = false;
