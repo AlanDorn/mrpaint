@@ -1,12 +1,11 @@
+import { ws, input, virtualCanvas } from "./client.js";
 import { OP_TYPE, OP_PRESENCE } from "./shared/instructionset.js";
 import { encodePosition } from "./transaction.js";
 import UserManager from "./usermanager.js";
 // import PreviewManager from "./previewmanager.js";
 
 export default class PresenceManager {
-  constructor(ws, input, virtualCanvas) {
-    this.ws = ws;
-    this.virtualCanvas = virtualCanvas;
+  constructor() {
     this.userId = Math.floor(Math.random() * 256);
 
     this.userManager = new UserManager(virtualCanvas, this.userId);
@@ -32,7 +31,7 @@ export default class PresenceManager {
           OP_TYPE.PRESENCE,
           OP_PRESENCE.USER_COLOR_UPDATE,
           this.userId,
-          ...this.userManager.color
+          ...this.userManager.color,
         ])
       );
     }, 1000 / 4);
@@ -44,10 +43,13 @@ export default class PresenceManager {
           OP_TYPE.PRESENCE,
           OP_PRESENCE.USERNAME_UPDATE,
           this.userId,
-          ...(new TextEncoder().encode(this.userManager.username))
+          ...new TextEncoder().encode(this.userManager.username),
         ])
       );
     }, 1000 / 4);
+
+    ws.socketSelector[OP_TYPE.PRESENCE] = (eventData) =>
+      this.handle(eventData.subarray(1));
   }
 
   handle(eventData) {

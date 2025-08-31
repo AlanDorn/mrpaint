@@ -13,76 +13,38 @@ const app = express();
 app.use(express.static(path.join(__dirname, "../client")));
 
 app.get("/", (req, res) => {
-  const newLobby = new CanvasLobby(keyGen());
-  const lobbyId = newLobby.id;
-  lobbies.set(lobbyId, newLobby);
-  res.redirect(`/${lobbyId}`);
+  let lobbyName = keyGen();
+  while (lobbies.has(lobbyName.toLowerCase())) lobbyName = keyGen();
+  lobbies.set(lobbyName.toLowerCase(), new CanvasLobby(lobbyName));
+  res.redirect(`./join-canvas/${lobbyName}`);
 });
 
-app.get("/:lobby", (req, res) => {
-  if (!lobbies.has(req.params.lobby)) {
-    return res.redirect("/");
-  }
-
-  const filePath = path.join(__dirname, "../client", "client.html");
-
-  fs.readFile(filePath, "utf8", (err, html) => {
-    if (err) {
-      console.error("Error reading HTML file:", err);
-      return res.status(500).send("Internal Server Error");
-    }
-
-    // Inject Open Graph meta tags
-    const openGraphTags = `
-      <meta property="og:title" content="Mr. Paint" />
-      <meta property="og:description" content="Draw with your friends and family" />
-      <meta property="og:image" content="https://mrpaint.onrender.com/preview/${req.params.lobby}.png" />
-      <meta property="og:image:width" content="700" />
-      <meta property="og:image:height" content="500" />
-      <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:image" content="https://mrpaint.onrender.com/preview/${req.params.lobby}.png" />
-
-      <meta property="og:url" content="https://mrpaint.onrender.com/${req.params.lobby}" />
-    `;
-
-    // Inject tags before `</head>`
-    const modifiedHtml = html.replace("</head>", `${openGraphTags}\n</head>`);
-
-    res.send(modifiedHtml);
-  });
+const clientPath = path.join(__dirname, "../client", "client.html");
+const clientHTML = fs.readFileSync(clientPath, "utf8");
+app.get("/join-canvas/:lobby", (req, res) => {
+  const lobbyName = req.params.lobby.toLowerCase();
+  if (!lobbies.has(lobbyName)) return res.redirect("/");
+  res.send(clientHTML.replaceAll("{{lobby}}", lobbyName));
 });
 
 app.get("/preview/:lobby", (req, res) => {
-  const lobbyCode = req.params.lobby.split(".")[0];
-  const lobby = lobbies.get(lobbyCode);
-  if (!lobby || lobby.canvasState.png.length < 3)
+  const lobbyName = req.params.lobby.split(".")[0].toLowerCase();
+  const lobby = lobbies.get(lobbyName);
+  if (!lobby || lobby.state.png.length < 3)
     return res.sendFile(
-      path.join(
-        __dirname,
-        "../client/images",
-        "db9c352d-2b8b-4e74-a4b5-26f7d7c4a2b9.webp"
-      )
+      path.join(__dirname, "../client/images", "default_mrpaint.webp")
     );
   res.set("Content-Type", "image/png");
-  res.send(Buffer.from(lobby.canvasState.png));
+  res.send(Buffer.from(lobby.state.png));
 });
 
-// Create a single HTTP server
 const server = http.createServer(app);
-
-// Attach WebSocket server to the same HTTP server
 const wss = new WebSocket.Server({ server });
-
+const PORT = process.env.PORT || 3000;
 wss.on("connection", (ws: WebSocket) =>
   ws.once("message", (event) =>
-    lobbies.get(event.toString("utf-8"))?.addUser(ws)
+    lobbies.get(event.toString("utf-8").toLowerCase())?.addUser(ws)
   )
 );
-
-// Start listening on a single port
-const PORT = process.env.PORT || 3000; // Render provides the port in the `PORT` env variable
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 mrpaint();

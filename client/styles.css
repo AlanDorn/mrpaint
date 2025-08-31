@@ -5,16 +5,14 @@
   --itemheight: calc(var(--toolheight) - 0.9rem);
   --statusheight: 1.25rem;
   --rulerheight: 1.25rem;
-  --purple2: light-dark(#e5c4ff, #650191);
-  --purple: #b78fd8;
+  --purple2: light-dark(#ad87ed, #7443b6);
+  --purple: #ad87ed;
   --font: "Hack"; /* Hack, "Courier New", Courier, monospace */
   --fontsize: 14px;
-
   --top: 0.2rem;
-
-  --background: light-dark(#d1d1d1, #454545);
-  --secondary: light-dark(#6d6d6d, #ababab);
-  --background-gradient: light-dark(#ababab, rgb(87, 87, 87));
+  --background: light-dark(#cececd, #454545);
+  --secondary: light-dark(#808080, #ababab);
+  --background-gradient: light-dark(#aeaeae, #575757);
 }
 
 @font-face {
@@ -28,13 +26,17 @@
   overflow: hidden;
   font-size: var(--fontsize);
   font-family: var(--font);
+  -webkit-user-select: none; /* Safari/Chrome */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* IE10+ */
+  user-select: none;
 }
 
 /* TODO Need to change some things to allow consistent viewing across different screen sizes like phone, 
 regular size monitor, wide/ultra wide */
 body {
-  height: 100svh;
-  width: 100svw;
+  height: 100dvh;
+  width: 100dvw;
   background: linear-gradient(
     135deg,
     var(--background) 0%,
@@ -48,6 +50,10 @@ body {
   background-color: var(--secondary);
   position: absolute;
   border: 1px black solid;
+  top: 0;
+  left: 0;
+  will-change: transform;
+  transition: transform 32ms linear; /* adjust duration as needed */
 }
 /* .cursor {
   width: 10px;               
@@ -128,9 +134,9 @@ body {
 
 /* in the name: drawing area */
 #drawingarea {
-  width: 100svw;
+  width: 100dvw;
   height: calc(
-    100svh - var(--toolheight) - var(--rulerheight) - var(--statusheight)
+    100dvh - var(--toolheight) - var(--rulerheight) - var(--statusheight)
   );
   touch-action: none; /* for screen users */
   grid-column: 2 / 3;
@@ -504,8 +510,8 @@ input[type="color"] {
 
 .adjuster {
   background-color: var(--background);
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   position: absolute;
   border: var(--secondary) solid 2px;
   cursor: pointer;
@@ -514,7 +520,7 @@ input[type="color"] {
 #mainbody {
   margin: 0;
   display: grid;
-  height: calc(100svh - var(--toolheight) - var(--statusheight));
+  height: calc(100dvh - var(--toolheight) - var(--statusheight));
   grid-template-columns: auto 1fr;
   grid-template-rows: auto 1fr;
 }
@@ -522,23 +528,25 @@ input[type="color"] {
 #statusbar {
   height: var(--statusheight);
   padding: 0;
+  margin: 0;
   background-color: transparent;
   width: 100svw;
   display: flex;
+  justify-content: center;
 }
 
 .statusbarValue {
+  display: flex;
   height: 100%;
-  width: 12rem;
+  width: 100%;
   font-size: 1rem;
   padding-right: 0.125rem;
   padding-left: 0.125rem;
   color: var(--secondary);
-  font-weight: 500;
+  border-right: 2px solid var(--secondary);
 }
 
 #completionbarContainer {
-  border: var(--secondary) 1px solid;
   padding: 0;
   padding-bottom: 0.125rem;
 }
@@ -548,6 +556,7 @@ input[type="color"] {
   width: 0%;
   background-color: var(--secondary);
   transition: width 0.2s ease-out; /* Adjust duration and easing as needed */
+  color: var(--background);
 }
 
 #top-ruler {
@@ -574,6 +583,7 @@ input[type="color"] {
 }
 
 .topSegment {
+  box-sizing: border-box;
   border-right: var(--secondary) 1px solid;
   flex-shrink: 0;
 }
@@ -591,6 +601,7 @@ input[type="color"] {
   width: 100%;
   display: flex;
   padding: 0;
+  box-sizing: border-box;
 }
 
 .topSubtick {
@@ -617,6 +628,7 @@ input[type="color"] {
 }
 
 .leftSegment {
+  box-sizing: border-box;
   border-bottom: var(--secondary) 1px solid;
   display: flex;
   flex-shrink: 0;
@@ -636,6 +648,7 @@ input[type="color"] {
   height: 100%;
   width: 25%;
   padding: 0;
+  box-sizing: border-box;
 }
 
 .leftSubtick {

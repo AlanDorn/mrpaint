@@ -27,7 +27,7 @@ export default class UserManager {
     clearTimeout(user.timeout);
     user.timeout = setTimeout(() => {
       this.removeUser(userId);
-    }, 5000);
+    }, 1000);
   }
 
   setupUsernameInput() {
@@ -72,11 +72,11 @@ export default class UserManager {
    * Called by PresenceManager → `OP_PRESENCE.CURSOR_UPDATE`
    */
   updateCursor(userId, payload) {
-    let user = this.users.get(userId);
+    const user = this.users.get(userId);
     const [x, y] = decodePosition(payload);
     const [screenX, screenY] = this.virtualCanvas.positionInScreen(x, y);
-    user.cursor.style.left = `${screenX}px`;
-    user.cursor.style.top = `${screenY}px`;
+    // use translate for GPU-accelerated positioning
+    user.cursor.style.transform = `translate(${screenX}px, ${screenY}px)`;
   }
 
   /**

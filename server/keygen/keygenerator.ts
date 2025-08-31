@@ -15,6 +15,9 @@ async function readLinesFromFile(filePath: string): Promise<string[]> {
     throw error;
   }
 }
+let keyIndex = 0;
+const prime = 3469;
+let startPoint: number;
 
 (async () => {
   adjectives.push(
@@ -32,14 +35,10 @@ async function readLinesFromFile(filePath: string): Promise<string[]> {
   initialized = true;
 })();
 
-let keyIndex = 0;
-const prime = 3469;
-let startPoint: number;
+
 
 export default function keyGen() {
-  while (!initialized) {
-    
-  }
+  while (!initialized) {}
   // Compute the randomIndex
   const randomIndex = (prime * keyIndex + startPoint) % combinations;
 

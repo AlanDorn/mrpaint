@@ -1,13 +1,14 @@
 import { fillTransaction, operationId } from "./transaction.js";
-
+import { virtualCanvas, transactionLog, toolbar } from "./client.js";
 export default class FillTool {
-  constructor(virtualCanvas, transactionLog, toolbar) {
-    this.virtualCanvas = virtualCanvas;
-    this.transactionLog = transactionLog;
-    this.colorpicker = toolbar.colorpicker;
-    this.toolbar = toolbar;
-  }
+  constructor() {
+    const fillToolButton = document.getElementById("fillTool");
 
+    fillToolButton.addEventListener("click", () => {
+      toolbar.activeTool = this;
+      toolbar.updateActiveButton(fillToolButton);
+    });
+  }
   mouseMove() {}
 
   mouseUpLeft() {}
@@ -15,20 +16,22 @@ export default class FillTool {
   mouseUpRight() {}
 
   mouseDownLeft(input) {
-    const position = this.virtualCanvas.positionInCanvas(input.x, input.y);
-    this.fill(position, this.colorpicker.primarycolor);
+    const position = virtualCanvas.positionInCanvas(input.x, input.y);
+    this.fill(position, toolbar.colorpicker.primarycolor);
   }
 
   mouseDownRight(input) {
-    const position = this.virtualCanvas.positionInCanvas(input.x, input.y);
-    this.fill(position, this.colorpicker.secondarycolor);
+    const position = virtualCanvas.positionInCanvas(input.x, input.y);
+    this.fill(position, toolbar.colorpicker.secondarycolor);
   }
 
   fill(position, newColor) {
     if (position[0] < 0 || position[1] < 0) return; // or handle the out-of-bounds case appropriately
-    
+
     const currentOperationId = operationId();
-    this.transactionLog.pushClient(fillTransaction(currentOperationId, newColor, position));
-    this.toolbar.undo.pushOperation(currentOperationId);
+    transactionLog.pushClient(
+      fillTransaction(currentOperationId, newColor, position)
+    );
+    toolbar.undo.pushOperation(currentOperationId);
   }
 }

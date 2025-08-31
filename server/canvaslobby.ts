@@ -1,91 +1,69 @@
 import WebSocket from "ws";
 import CanvasState from "./canvasstate";
-import { OP_TYPE, OP_SYNC } from "../client/shared/instructionset.js";
+import { OP_TYPE } from "../client/shared/instructionset.js";
 export default class CanvasLobby {
   id: string;
   users: WebSocket[] = [];
-  transactionIndex = 2;
-  transactions: Uint8Array = new Uint8Array(2 ** 10);
-  canvasState: CanvasState = new CanvasState(2);
+  state: CanvasState = new CanvasState(0, 0);
   buildStates = new Map<WebSocket, CanvasState>();
 
   constructor(id: string) {
     this.id = id;
-    this.canvasState.snapshotCount = 0;
-    this.transactions[0] = OP_TYPE.SYNC;
-    this.transactions[1] = OP_SYNC.TRANSACTIONS;
   }
 
-  addUser(ws: WebSocket) {
+  addUser = (ws: WebSocket) => {
     this.users.push(ws);
-    this.canvasState.send(ws, this);
-    this.buildStates.set(ws, new CanvasState(this.transactionIndex));
-    ws.on("message", (event: WebSocket.RawData) => this.onMessage(ws, event));
-    ws.on("close", () => this.onClose(ws));
+    this.state.send(ws);
+    const newState = new CanvasState(this.state.transactionIndex);
+    this.buildStates.set(ws, newState);
+    ws.on("message", this.onMessage(ws));
+    ws.on("close", this.onClose(ws));
     this.print();
-  }
+  };
 
-  onClose(ws: WebSocket) {
-    this.users = this.users.filter((user) => user !== ws);
-    this.buildStates.delete(ws);
-    // console.log(`User: ${this.users}`);
-  }
-
-  onMessage(ws: WebSocket, event: WebSocket.RawData) {
-    const eventData =
-      event instanceof Uint8Array
-        ? event
-        : new Uint8Array(event as ArrayBuffer);
-    const opType = eventData[0];
-    switch (opType) {
-      case OP_TYPE.SYNC:
-        return this.sync(ws, eventData);
-      case OP_TYPE.UPDATE:
-        return this.update(ws, eventData);
-      case OP_TYPE.PRESENCE:
-        return this.distribute(ws, eventData);
+  onMessage = (ws: WebSocket) => (event: Uint8Array) => {
+    switch (event[0]) {
+      case OP_TYPE.SYNC: return this.sync(ws, event);
+      case OP_TYPE.UPDATE: return this.update(ws, event);
+      case OP_TYPE.PRESENCE: return this.distribute(ws, event);
     }
-  }
+  };
 
   sync(ws: WebSocket, eventData: Uint8Array) {
     const buildState = this.buildStates.get(ws);
     if (!buildState) return;
     buildState.handle(eventData);
     if (!buildState.isFinished()) return;
-    if (buildState.index > this.canvasState.index)
-      this.canvasState = buildState;
+    this.state.acceptState(buildState);
+    this.buildStates.delete(ws);
   }
 
   update(ws: WebSocket, eventData: Uint8Array) {
-    const transactions = eventData.subarray(1);
-    const neededLength = this.transactionIndex + transactions.length;
-    if (neededLength >= this.transactions.length) this.expand();
-    this.transactions.set(transactions, this.transactionIndex);
-    this.transactionIndex += transactions.length;
+    this.state.update(eventData);
     this.distribute(ws, eventData);
   }
 
-  distribute(ws: WebSocket, eventData: Uint8Array) {
-    this.users
-      .filter((user) => user !== ws)
-      .forEach((user) => user.send(eventData));
-  }
+  distribute = (ws: WebSocket, eventData: Uint8Array) =>
+    this.users.forEach((user) => user !== ws && user.send(eventData));
 
-  expand() {
-    const expanded = new Uint8Array(Math.floor(this.transactions.length * 1.5));
-    expanded.set(this.transactions);
-    this.transactions = expanded;
-  }
+  onClose = (ws: WebSocket) => () => {
+    this.users = this.users.filter((user) => user !== ws);
+    this.buildStates.delete(ws);
+  };
 
   print() {
     console.log("==========================");
     console.log(`Lobby:    ${this.id}`);
-    console.log(
-      `Bytes:     ${formatBytes(this.transactionIndex)} / ${formatBytes(
-        this.transactions.length
-      )}`
-    );
-    console.log(`Users:     ${this.users.length} `);
+    console.log(`Users:    ${this.users.length} `);
+    this.state.print();
+    console.log(`Total:    ${formatBytes(this.bytes())} `);
+  }
+  bytes() {
+    let total = 0;
+    // CanvasState memory
+    total += this.state.bytes();
+    for (const state of this.buildStates.values()) total += state.bytes();
+    return total;
   }
 }
 

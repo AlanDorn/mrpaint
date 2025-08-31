@@ -1,7 +1,7 @@
+import { virtualCanvas } from "./client.js";
+
 export default class Ruler {
-  constructor(virtualCanvas) {
-    this.virtualCanvas = virtualCanvas;
-    this.virtualCanvas.ruler = this;
+  constructor() {
     this.top = document.getElementById("top-ruler");
     this.left = document.getElementById("left-ruler");
     this.topIndicator = document.getElementById("topIndicator");
@@ -10,7 +10,7 @@ export default class Ruler {
     this.topSegments = [];
     this.leftSegments = [];
 
-    for (let index = 0; index < 20; index++) {
+    for (let index = 0; index < 100; index++) {
       this.addTopSegment();
       this.addLeftSegment();
     }
@@ -19,11 +19,11 @@ export default class Ruler {
   }
 
   set(input) {
-    const rect = this.virtualCanvas.rect;
+    const rect = virtualCanvas.rect;
 
     if (input) {
-      const normalizedPosition = this.virtualCanvas.positionInScreen(
-        ...this.virtualCanvas.positionInCanvas(input.x, input.y)
+      const normalizedPosition = virtualCanvas.positionInScreen(
+        ...virtualCanvas.positionInCanvas(input.x, input.y)
       );
       this.topIndicator.style.width =
         Math.max(0, normalizedPosition[0] - rect.left) + "px";
@@ -31,14 +31,8 @@ export default class Ruler {
         Math.max(0, normalizedPosition[1] - rect.top) + "px";
     }
 
-    const topLeftInCanvas = this.virtualCanvas.positionInCanvas(
-      rect.left,
-      rect.top
-    );
-    const bottomRightInCanvas = this.virtualCanvas.positionInCanvas(
-      rect.left + rect.width,
-      rect.top + rect.height
-    );
+    const [topLeftInCanvas, bottomRightInCanvas] =
+      virtualCanvas.getBoundsInCanvas();
 
     const idealNumberOfTopSegments = rect.width / 100;
     const idealNumberOfLeftSegments = rect.height / 100;
@@ -56,21 +50,25 @@ export default class Ruler {
       canvasHeight / idealNumberOfLeftSegments
     );
 
-    const segmentTopLength = canvasTopLength * widthRatio - 0.5;
-    const segmentLeftLength = canvasLeftLength * heightRatio - 0.5;
+    const segmentTopLength = canvasTopLength * widthRatio;
+    const segmentLeftLength = canvasLeftLength * heightRatio;
 
-    const offsetWidth = topLeftInCanvas[0] % canvasTopLength;
-    const offsetHeight = topLeftInCanvas[1] % canvasLeftLength;
+    // More accurate offset calculation
+    const offsetWidth =
+      canvasTopLength * Math.floor(topLeftInCanvas[0] / canvasTopLength);
+    const offsetHeight =
+      canvasLeftLength * Math.floor(topLeftInCanvas[1] / canvasLeftLength);
 
-    let startWidth = topLeftInCanvas[0] - canvasTopLength - offsetWidth;
-    let startHeight = topLeftInCanvas[1] - canvasLeftLength - offsetHeight;
+    let startWidth = offsetWidth - canvasTopLength;
+    let startHeight = offsetHeight - canvasLeftLength;
 
-    const margins = this.virtualCanvas.positionInScreen(startWidth - 0.5, startHeight - 0.5);
+    const margins = virtualCanvas.positionInScreen(
+      startWidth - 0.5,
+      startHeight - 0.5
+    );
 
-    this.topSegments[0].style.marginLeft =
-      (margins[0] - rect.left) + "px";
-    this.leftSegments[0].style.marginTop =
-      (margins[1] - rect.top) + "px";
+    this.topSegments[0].style.marginLeft = margins[0] - rect.left + "px";
+    this.leftSegments[0].style.marginTop = margins[1] - rect.top + "px";
 
     for (let index = 0; index < this.topSegments.length; index++) {
       this.topSegments[index].style.width = segmentTopLength + "px";
@@ -133,5 +131,7 @@ export default class Ruler {
 
 function roundMagnitude(num) {
   const magnitude = Math.pow(10, Math.floor(Math.log10(num)));
-  return Math.max(10, Math.round(num / magnitude) * magnitude);
+  const scale = num / magnitude;
+  const leadDigit = scale < 1.5 ? 1 : scale < 3.5 ? 2 : scale < 7.5 ? 5 : 10;
+  return Math.max(10, leadDigit * magnitude);
 }

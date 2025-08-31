@@ -5,17 +5,10 @@
    cross-tool collision bugs.
 */
 
+import { toolbar, transactionLog, virtualCanvas } from "./client.js";
 import { operationId, straightLineTransaction } from "./transaction.js";
-
 export default class StraightLine {
-  constructor(vc, transactionLog, toolbar) {
-    this.vc = vc; // VirtualCanvas instance
-    this.log = transactionLog;
-    this.tb = toolbar;
-
-    this.colorpicker = toolbar.colorpicker;
-    this.brushsize = toolbar.brushsize;
-
+  constructor(toolbar) {
     /* state flags */
     this.isDrawing = false; // user dragging first line
     this.isEditable = false; // handles visible
@@ -27,8 +20,8 @@ export default class StraightLine {
 
     /* style caches for live polling */
     this.colorSource = "primary";
-    this.curColor = [...this.colorpicker.primarycolor];
-    this.lastBrushSize = this.brushsize.size;
+    this.curColor = [...toolbar.colorpicker.primarycolor];
+    this.lastBrushSize = toolbar.brushsize.size;
 
     /* handle DOM */
     this.handles = null; // {start,end}
@@ -37,9 +30,9 @@ export default class StraightLine {
     /* listen to possible toolbar events to refresh preview */
     const add = (src, evts, cb) =>
       evts.forEach((e) => src?.addEventListener?.(e, cb));
-    add(this.brushsize, ["change", "input"], () => this.refreshPreview());
-    add(this.colorpicker, ["change", "input"], () => {
-      this.curColor = [...this.colorpicker[this.colorSource + "color"]];
+    add(toolbar.brushsize, ["change", "input"], () => this.refreshPreview());
+    add(toolbar.colorpicker, ["change", "input"], () => {
+      this.curColor = [...toolbar.colorpicker[this.colorSource + "color"]];
       this.refreshPreview();
     });
 
@@ -52,6 +45,13 @@ export default class StraightLine {
       if (e.key === "Delete" && this.isEditable) this.cancelEdit();
     };
     document.addEventListener("keydown", this._onKeyDown);
+
+    const straightLineButton = document.getElementById("straightLine");
+
+    straightLineButton.addEventListener("click", () => {
+      toolbar.activeTool = this;
+      toolbar.updateActiveButton(straightLineButton);
+    });
   }
 
   /* ————————————————— mouse wiring ————————————————— */
@@ -73,9 +73,9 @@ export default class StraightLine {
 
     this.isDrawing = true;
     this.colorSource = paletteKey;
-    this.curColor = [...this.colorpicker[paletteKey + "color"]];
-    this.lastBrushSize = this.brushsize.size;
-    this.start = this.vc.positionInCanvas(input.x, input.y);
+    this.curColor = [...toolbar.colorpicker[paletteKey + "color"]];
+    this.lastBrushSize = toolbar.brushsize.size;
+    this.start = virtualCanvas.positionInCanvas(input.x, input.y);
     this.end = [...this.start];
     this.opId = operationId();
   }
@@ -95,8 +95,8 @@ export default class StraightLine {
   pollStyleChanges() {
     if (!this.colorSource) return;
 
-    const sizeNow = this.brushsize.size;
-    const colNow = this.colorpicker[this.colorSource + "color"];
+    const sizeNow = toolbar.brushsize.size;
+    const colNow = toolbar.colorpicker[this.colorSource + "color"];
     if (
       sizeNow !== this.lastBrushSize ||
       !this.colorsEqual(colNow, this.curColor)
@@ -113,8 +113,8 @@ export default class StraightLine {
   }
 
   liveDrag(input) {
-    this.vc.clearPreview();
-    this.end = this.vc.positionInCanvas(input.x, input.y);
+    virtualCanvas.clearPreview();
+    this.end = virtualCanvas.positionInCanvas(input.x, input.y);
     this.drawLine(true); // preview = true
   }
 
@@ -123,7 +123,7 @@ export default class StraightLine {
     this.isDrawing = false;
     this.isEditable = true;
     this.spawnHandles();
-    this.vc.onCanvasMove.add(this.onCanvasMove);
+    virtualCanvas.onCanvasMove.add(this.onCanvasMove);
   }
 
   /* ————————————————— phase 2: handle adjustment ——————————————— */
@@ -143,7 +143,7 @@ export default class StraightLine {
         ev.stopPropagation();
         this.draggingHandle = d;
       };
-      this.vc.drawingarea.appendChild(d);
+      virtualCanvas.drawingarea.appendChild(d);
       return d;
     };
     this.handles = { start: mk(this.start), end: mk(this.end) };
@@ -153,7 +153,7 @@ export default class StraightLine {
   }
 
   adjustHandle(input) {
-    const p = this.vc.positionInCanvas(input.x, input.y);
+    const p = virtualCanvas.positionInCanvas(input.x, input.y);
     if (this.draggingHandle === this.handles.start) this.start = p;
     else this.end = p;
 
@@ -168,7 +168,7 @@ export default class StraightLine {
   }
 
   placeHandle(div, [x, y]) {
-    const [sx, sy] = this.vc.positionInScreen(x, y);
+    const [sx, sy] = virtualCanvas.positionInScreen(x, y);
     div.style.left = `${sx - 5}px`;
     div.style.top = `${sy - 5}px`;
   }
@@ -180,23 +180,23 @@ export default class StraightLine {
 
     this.handles.start.remove();
     this.handles.end.remove();
-    this.vc.onCanvasMove.delete(this.onCanvasMove);
+    virtualCanvas.onCanvasMove.delete(this.onCanvasMove);
     this.handles = null;
 
-    this.vc.clearPreview();
+    virtualCanvas.clearPreview();
     this.drawLine(false);
 
-    this.log.pushClient(
+    transactionLog.pushClient(
       straightLineTransaction(
         this.opId,
         this.curColor,
-        this.brushsize.size,
+        toolbar.brushsize.size,
         this.start,
         this.end
       )
     );
 
-    this.tb.undo.pushOperation(this.opId);
+    toolbar.undo.pushOperation(this.opId);
     this.reset();
   }
 
@@ -212,17 +212,17 @@ export default class StraightLine {
       opId: this.opId,
     };
 
-    this.tb.undo.pushDraft(this, draft);
+    toolbar.undo.pushDraft(this, draft);
     this.discardDraft();
   }
 
   discardDraft() {
     // called by Undo.undo()
     if (!this.isEditable) return;
-    this.vc.clearPreview();
+    virtualCanvas.clearPreview();
     this.handles?.start.remove();
     this.handles?.end.remove();
-    this.vc.onCanvasMove.delete(this.onCanvasMove);
+    virtualCanvas.onCanvasMove.delete(this.onCanvasMove);
     this.handles = null;
     this.reset(); // keeps opId so we can redo
   }
@@ -237,7 +237,7 @@ export default class StraightLine {
 
     this.isEditable = true;
     this.spawnHandles();
-    this.vc.onCanvasMove.add(this.onCanvasMove);
+    virtualCanvas.onCanvasMove.add(this.onCanvasMove);
     this.refreshPreview();
   }
 
@@ -251,12 +251,12 @@ export default class StraightLine {
       this.end[0],
       this.end[1]
     );
-    const size = this.brushsize.size;
+    const size = toolbar.brushsize.size;
     const offset = Math.floor(size / 2);
 
     const setPix = preview
-      ? this.vc.setPreviewPixel.bind(this.vc)
-      : this.vc.setPixel.bind(this.vc);
+      ? virtualCanvas.setPreviewPixel.bind(virtualCanvas)
+      : virtualCanvas.setPixel.bind(virtualCanvas);
 
     pts.forEach(([cx, cy]) => {
       for (let dy = 0; dy < size; dy++)
@@ -295,7 +295,7 @@ export default class StraightLine {
 
   refreshPreview() {
     if (!this.isDrawing && !this.isEditable) return;
-    this.vc.clearPreview();
+    virtualCanvas.clearPreview();
     this.drawLine(true);
   }
 
@@ -304,7 +304,7 @@ export default class StraightLine {
     this.isEditable = false;
     this.start = this.end = null;
     this.opId = null;
-    this.vc.onCanvasMove.delete(this.onCanvasMove);
-    this.vc.clearPreview();
+    virtualCanvas.onCanvasMove.delete(this.onCanvasMove);
+    virtualCanvas.clearPreview();
   }
 }

@@ -1,8 +1,7 @@
+import { transactionLog } from "./client.js";
 import { redoTransaction, undoTransaction } from "./transaction.js";
-
 export default class Undo {
-  constructor(transactionLog) {
-    this.transactionLog = transactionLog;
+  constructor() {
     this.undoList = [];
     this.redoList = [];
 
@@ -17,43 +16,45 @@ export default class Undo {
         this.redo();
       }
     });
+
+    document.getElementById("undo").addEventListener("click", this.undo);
+    document.getElementById("redo").addEventListener("click", this.redo);
   }
 
-  undo() {
+  undo = () => {
     const operationId = this.undoList.pop();
     if (!operationId) return;
 
-    if(operationId.draft) {
+    if (operationId.draft) {
       operationId.tool.discardDraft();
       this.redoList.push(operationId);
       return;
     }
 
-    this.transactionLog.pushClient(undoTransaction(operationId.id));
+    transactionLog.pushClient(undoTransaction(operationId.id));
     this.redoList.push(operationId);
-  }
+  };
 
-  redo() {
+  redo = () => {
     const operationId = this.redoList.pop();
     if (!operationId) return;
 
-    if(operationId.draft) {
+    if (operationId.draft) {
       operationId.tool.restoreDraft(operationId.draft);
       this.undoList.push(operationId);
       return;
     }
 
-    this.transactionLog.pushClient(redoTransaction(operationId.id));
+    transactionLog.pushClient(redoTransaction(operationId.id));
     this.undoList.push(operationId);
-  }
+  };
 
   pushOperation(operationId) {
-    // this.undoList.push(operationId);
     this.undoList.push({ id: operationId });
     this.redoList.length = 0;
   }
 
-  pushDraft(tool, draft){
+  pushDraft(tool, draft) {
     this.undoList.push({ draft, tool });
     this.redoList.length = 0;
   }

@@ -2,89 +2,247 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Mr. Paint — a collaborative, industrial‑grade MS‑Paint‑style editor for realtime creation." />
+    <title>Mr. Paint — Collaborative Raster Editor</title>
 
-    <meta
-      name="description"
-      content="A collaborative MS Paint-inspired drawing app where creativity meets real-time collaboration."
-    />
-    <title>Collaborative MS Paint Clone</title>
     <style>
-      html,
+      /* --------------------
+         Industrial / Mechanical Theme
+         -------------------- */
+      :root {
+        --bg-0: #0f1113;         /* base */
+        --bg-1: #14171a;         /* panels */
+        --bg-2: #1b1f24;         /* raised */
+        --grid: rgba(255,255,255,0.04);
+        --txt-0: #e6e7e8;        /* high */
+        --txt-1: #b7bdc5;        /* mid */
+        --txt-2: #7e8791;        /* low */
+        --accent: #8fd3ff;       /* steel blue */
+        --accent-2: #9ee37d;     /* pcb green */
+        --warn: #ffb86b;         /* amber */
+        --shadow: rgba(0, 0, 0, 0.5);
+        --radius: 14px;
+        --pad: clamp(16px, 3vw, 28px);
+        --maxw: 1100px;
+      }
+
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
       body {
         margin: 0;
-        padding: 0;
-        font-family: Arial, sans-serif;
-        background: #d1d1d1;
-        color: #6d6d6d;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        color: var(--txt-1);
+        background:
+          radial-gradient(1200px 600px at 10% -10%, rgba(143,211,255,0.10), transparent 60%),
+          radial-gradient(800px 400px at 110% 10%, rgba(158,227,125,0.08), transparent 55%),
+          linear-gradient(var(--bg-0), var(--bg-0));
+        overflow-x: hidden;
       }
+
+      /* Subtle diamond plate / grid overlay */
+      body::before {
+        content: "";
+        position: fixed; inset: 0; pointer-events: none;
+        background-image:
+          linear-gradient(0.25turn, var(--grid) 1px, transparent 1px),
+          linear-gradient(0.75turn, var(--grid) 1px, transparent 1px);
+        background-size: 22px 22px, 22px 22px;
+        mask-image: radial-gradient(1200px 700px at 50% 0%, rgba(0,0,0,0.7), rgba(0,0,0,0.05) 60%, transparent 85%);
+        z-index: 0;
+      }
+
+      .container { width: min(100%, var(--maxw)); margin: 0 auto; padding: 0 var(--pad); position: relative; z-index: 1; }
+
       header {
-        background: #d1d1d1;
-        color: #6d6d6d;
-        max-width: 500px;
-        margin: 2rem auto;
-        padding: 1rem;
-        margin-top: 0;
-        padding-top: 0;
+        position: sticky; top: 0; z-index: 5;
+        background: color-mix(in oklab, var(--bg-0) 85%, transparent);
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        backdrop-filter: blur(6px) saturate(120%);
       }
-      main {
-        max-width: 500px;
-        margin: 2rem auto;
-        padding: 1rem;
+      .nav { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+      .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--txt-0); }
+      .brand .wordmark { letter-spacing: 0.08em; font-weight: 700; font-size: 14px; color: var(--txt-0); }
+      .brand small { color: var(--txt-2); font-weight: 600; letter-spacing: 0.18em; }
+
+      /* Mechanical button (chamfer) */
+      .btn {
+        --btn-bg: var(--bg-2);
+        --btn-brd: rgba(255,255,255,0.08);
+        display: inline-grid; place-items: center;
+        padding: 12px 18px; border-radius: 12px;
+        color: var(--txt-0); text-decoration: none; font-weight: 700; letter-spacing: 0.04em;
+        border: 1px solid var(--btn-brd);
+        background: linear-gradient(180deg, rgba(255,255,255,0.04), transparent), var(--btn-bg);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 18px -12px var(--shadow);
+        position: relative; transition: transform .12s ease, box-shadow .12s ease, border-color .2s ease;
+        clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px);
       }
-      main h1 {
-        font-size: 4rem;
-        font-weight: 300;
+      .btn:hover { transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 12px 22px -12px var(--shadow); }
+      .btn:active { transform: translateY(0); }
+      .btn.primary { --btn-bg: linear-gradient(180deg, rgba(143,211,255,0.12), rgba(143,211,255,0.08) 30%, rgba(143,211,255,0.05)); border-color: rgba(143,211,255,0.35); }
+      .btn.ghost { color: var(--txt-1); }
+
+      /* Hero */
+      .hero { padding: clamp(36px, 8vw, 92px) 0; }
+      .hero-wrap { display: grid; gap: 28px; grid-template-columns: 1.1fr 0.9fr; align-items: center; }
+      @media (max-width: 900px) { .hero-wrap { grid-template-columns: 1fr; } }
+
+      h1 { margin: 0 0 10px; color: var(--txt-0); font-size: clamp(36px, 7vw, 72px); line-height: 1.02; letter-spacing: -0.02em; }
+      .lede { font-size: clamp(16px, 2.1vw, 20px); color: var(--txt-1); max-width: 60ch; }
+
+      .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-top: 18px; }
+      .meta { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 6px; font-size: 12px; color: var(--txt-2); }
+      .meta .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--accent); display: inline-block; margin-right: 8px; }
+
+      /* Feature card */
+      .panel { background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02)), var(--bg-1); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius); padding: var(--pad); box-shadow: 0 10px 26px -18px var(--shadow); position: relative; }
+      .panel::after { content: ""; position: absolute; inset: 8px; border-radius: 10px; border: 1px dashed rgba(143,211,255,0.25); pointer-events: none; }
+
+      .spec-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 10px; }
+      .spec { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; }
+      .spec svg { opacity: 0.9; }
+      .spec h4 { margin: 0; color: var(--txt-0); font-size: 14px; letter-spacing: 0.04em; }
+      .spec p { margin: 3px 0 0; font-size: 13px; color: var(--txt-2); }
+      @media (max-width: 800px) { .spec-list { grid-template-columns: 1fr; } }
+
+      /* Status bar */
+      .statusbar {
+        margin-top: 28px; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; overflow: hidden; background: var(--bg-1);
+        display: grid; grid-template-columns: 1fr auto; align-items: center; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       }
-      main p {
-        line-height: 1.6;
+      .statusbar .readout { padding: 10px 14px; font-size: 12px; color: var(--txt-2); }
+      .statusbar .progress { height: 4px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); box-shadow: 0 0 12px rgba(143,211,255,0.35);
+        width: 38%; /* demo */ }
+      .statusbar .cap { padding: 10px 14px; border-left: 1px solid rgba(255,255,255,0.08); color: var(--txt-2); font-size: 12px; }
+
+      footer { margin: 72px 0 40px; color: var(--txt-2); font-size: 13px; }
+      footer a { color: var(--accent); text-decoration: none; }
+      footer a:hover { text-decoration: underline; }
+
+      /* Tiny screw accents */
+      .screws { position: absolute; inset: 0; pointer-events: none; }
+      .screw { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #c7d4df 0%, #8293a3 35%, #4a5561 70%);
+               box-shadow: inset 0 1px 2px rgba(255,255,255,0.35), 0 1px 2px rgba(0,0,0,0.6);
       }
-      .cta {
-        text-align: center;
-        margin-top: 2rem;
-      }
-      .cta a {
-        display: inline-block;
-        padding: 0.8rem 1.5rem;
-        font-size: 1rem;
-        color: white;
-        background: #6d6d6d;
-        text-decoration: none;
-        transition: background 0.3s;
-      }
-      .cta a:hover {
-        background: #3e3e3e;
-      }
-      footer {
-        text-align: center;
-        padding: 1rem;
-        margin-top: 2rem;
-        font-size: 0.9rem;
-        color: #777;
-      }
-      footer a {
-        color: #6200ea;
-        text-decoration: none;
-      }
-      footer a:hover {
-        text-decoration: underline;
+      .screw::after { content: ""; position: absolute; left: 2px; right: 2px; top: 50%; height: 1px; background: rgba(0,0,0,0.7); transform: translateY(-50%); }
+      .screw.tl { top: 12px; left: 12px; }
+      .screw.tr { top: 12px; right: 12px; }
+      .screw.bl { bottom: 12px; left: 12px; }
+      .screw.br { bottom: 12px; right: 12px; }
+
+      @media (prefers-color-scheme: light) {
+        :root { --bg-0:#d6d9dd; --bg-1:#e3e6e9; --bg-2:#eef1f5; --txt-0:#1b1f24; --txt-1:#2a3137; --txt-2:#505a64; --grid: rgba(0,0,0,0.06); }
+        header { background: color-mix(in oklab, var(--bg-0) 96%, white 4%); }
+        .panel { border-color: rgba(0,0,0,0.08); }
       }
     </style>
   </head>
+
   <body>
     <header>
-      <h4>Mr. Paint</h4>
-    </header>
-    <main>
-      <h1>Paint Together</h1>
-      <p>
-        We've developed a collaborative image editor which uses the well
-        understood controls of Microsoft's Paint.
-      </p>
-
-      <div class="cta">
-        <a href="https://mrpaint.onrender.com/">Let's paint</a>
+      <div class="container nav">
+        <a class="brand" href="#">
+          <!-- Minimal mechanical wordmark with a screw dot -->
+          <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true" focusable="false">
+            <defs>
+              <linearGradient id="g" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0" stop-color="#9fb3c6"/>
+                <stop offset="1" stop-color="#5f6d79"/>
+              </linearGradient>
+            </defs>
+            <rect x="3" y="3" width="22" height="22" rx="4" fill="url(#g)"/>
+            <path d="M7 10h14M7 14h14M7 18h14" stroke="#1b1f24" stroke-width="1.4" opacity=".35"/>
+            <circle cx="22" cy="6" r="2.2" fill="#c7d4df"/>
+            <path d="M20.4 6h3.2" stroke="#1b1f24" stroke-width="1" opacity="0.7"/>
+          </svg>
+          <span class="wordmark">MR. PAINT</span>
+          <small>REALTIME RASTER</small>
+        </a>
+        <nav class="actions">
+          <a class="btn ghost" href="#features">Specs</a>
+          <a class="btn primary" href="https://mrpaint.onrender.com/">Launch Editor</a>
+        </nav>
       </div>
+    </header>
+
+    <main class="container hero">
+      <div class="hero-wrap">
+        <section>
+          <h1>Collaborate like a workshop.<br/>Draw like it's MS Paint.</h1>
+          <p class="lede">
+            Mr. Paint is a lean, industrial‑grade, MS‑Paint‑style editor built for realtime collaboration. Familiar tools; precision performance; zero fuss.
+          </p>
+          <div class="hero-cta">
+            <a class="btn primary" href="https://mrpaint.onrender.com/">Start Painting</a>
+            <a class="btn ghost" href="#features">View Specs</a>
+          </div>
+          <div class="meta">
+            <span><span class="dot"></span>Multi‑user sync (Yjs)</span>
+            <span><span class="dot" style="background: var(--accent-2)"></span>Chunked canvas engine</span>
+            <span><span class="dot" style="background: var(--warn)"></span>Latency‑tolerant ops</span>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="features">
+          <div class="screws" aria-hidden="true">
+            <i class="screw tl"></i><i class="screw tr"></i><i class="screw bl"></i><i class="screw br"></i>
+          </div>
+          <h3 id="features" style="margin:0 0 10px; color: var(--txt-0); letter-spacing: .08em; text-transform: uppercase; font-size: 13px;">Core Specs</h3>
+          <div class="spec-list">
+            <div class="spec">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 7h16M6 4h12M7 20h10M5 10h14M6 13h12M7 16h10" stroke="currentColor" stroke-width="1.5"/>
+              </svg>
+              <div>
+                <h4>Simple Tools, Serious Engine</h4>
+                <p>Pencil, eraser, fill, straight‑line — powered by a chunked raster core with snapshotting.</p>
+              </div>
+            </div>
+            <div class="spec">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 12h16M12 4v16" stroke="currentColor" stroke-width="1.5"/>
+                <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"/>
+              </svg>
+              <div>
+                <h4>Realtime Collaboration</h4>
+                <p>CRDT‑backed ops (Yjs) keep peers in lockstep — even under jitter and loss.</p>
+              </div>
+            </div>
+            <div class="spec">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="6" width="16" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M8 10h8M8 13h5" stroke="currentColor" stroke-width="1.5"/>
+              </svg>
+              <div>
+                <h4>Low‑Latency UI</h4>
+                <p>Decoupled input / render / networking loops for buttery strokes at 60&nbsp;FPS.</p>
+              </div>
+            </div>
+            <div class="spec">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 18l12-12M8 6h8v8" stroke="currentColor" stroke-width="1.5"/>
+              </svg>
+              <div>
+                <h4>Minimal Footprint</h4>
+                <p>Binary protocol for ops; efficient PNG handoff; tight memory budgets.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="statusbar" role="status" aria-live="polite">
+            <div class="readout">THROUGHPUT 14.7&nbsp;MB/s • SNAP RATIO 10:1 • TILES 256×256</div>
+            <div class="cap">SYNC</div>
+            <div class="progress" aria-hidden="true"></div>
+          </div>
+        </section>
+      </div>
+
+      <footer class="container">
+        Built for teams who like their tools like they like their machines: solid, predictable, and slightly over‑engineered.  
+        <br/>
+        <a href="https://mrpaint.onrender.com/">Open the editor</a> • <a href="#">Docs (soon)</a>
+      </footer>
     </main>
   </body>
 </html>

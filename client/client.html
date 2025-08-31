@@ -4,11 +4,35 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mr. Paint: Draw together</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link
+      rel="stylesheet"
+      href="//cdn.jsdelivr.net/npm/hack-font@3.3.0/build/web/hack.css"
+    />
+    <link rel="stylesheet" href="../styles.css" />
     <link
       rel="icon"
       type="image/x-icon"
-      href="./images/db9c352d-2b8b-4e74-a4b5-26f7d7c4a2b9.webp"
+      href="../images/default_mrpaint.webp"
+    />
+    <meta property="og:title" content="Mr. Paint" />
+    <meta
+      property="og:description"
+      content="Draw together instantly — just share a link."
+    />
+    <meta
+      property="og:image"
+      content="https://mrpaint.ink/preview/{{lobby}}.png"
+    />
+    <meta property="og:image:width" content="700" />
+    <meta property="og:image:height" content="500" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:image"
+      content="https://mrpaint.ink/preview/{{lobby}}.png"
+    />
+    <meta
+      property="og:url"
+      content="https://mrpaint.ink/join-canvas/{{lobby}}"
     />
   </head>
   <body>
@@ -97,7 +121,6 @@
             placeholder="Enter brush size..."
             id="customInputBrushsizeBox"
           />
-
           <ul id="dropdownOptions" class="actual-dropdown-list-brushsize-box">
             <li class="dropdown-item" data-value="1">
               <span class="size-label">1</span>
@@ -168,6 +191,6 @@
       <div id="networkUp" class="statusbarValue"></div>
       <div id="networkDown" class="statusbarValue"></div>
     </div>
-    <script type="module" src="client.js"></script>
+    <script type="module" src="../client.js"></script>
   </body>
 </html>

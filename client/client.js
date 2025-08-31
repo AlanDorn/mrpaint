@@ -1,23 +1,25 @@
-import TransactionLog from "./transactionlog.js";
-import VirtualCanvas from "./virtualcanvas.js";
-import TransactionManager from "./transactionmanager.js";
-import Input from "./input.js";
-import socket from "./socket.js";
-import Toolbar from "./toolbar.js";
+import TransactionLog  from "./transactionlog.js";
+import VirtualCanvas   from "./virtualcanvas.js";
+import ChangeTracker   from "./changetracker.js";
+import MomentReplay    from "./momentreplay.js";
+import MrPaintEngine   from "./mrpaintengine.js";
+import Input           from "./input.js";
+import Socket          from "./socket.js";
+import Toolbar         from "./toolbar.js";
+import LogManager      from "./logmanager.js";
+import TransferManager from "./transfermanager.js";
+import PresenceManager from "./presencemanager.js";
+import "./testfunctions.js";
 
-// import UserManager from "./usermanager.js";
-// import PreviewManager from "./previewManager.js";
+export const transactionLog  = new TransactionLog();
+export const virtualCanvas   = new VirtualCanvas();
+export const changeTracker   = new ChangeTracker();
+export const momentReplay    = new MomentReplay();
+export const toolbar         = new Toolbar();
+export const input           = new Input();
+export const mrPaintEngine   = new MrPaintEngine();
 
-// MAYHEM: There are some naming and conceptual things that need to be ironed out. The toolbar class seems to act not as just the toolbar but actually as the application front end for the input. Toolbar should be renamed to application/something to reflect that. Instead of passing in the transactionManager and the virtualcanvas into the socket you can just pass in the input since it should have both of those.
-
-// In summary toolbar provides high level control code which is controlled by the input class/the user. So it could be renamed
-const transactionLog = new TransactionLog();
-const virtualCanvas = new VirtualCanvas();
-const transactionManager = new TransactionManager(transactionLog, virtualCanvas);
-// const userManager = new UserManager();
-// const previewManager = new PreviewManager(virtualCanvas);
-const toolbar = new Toolbar(transactionLog, virtualCanvas); // Toolbar(transactionManager)
-const input = new Input(toolbar); //Input(toolbar)
-socket(input, transactionManager, virtualCanvas, transactionLog);
-
-//so since transactionManager has transactionLog & virtualCanvas, can't toolbar then just have Transactionmanager sent in?
+export const ws              = new Socket();
+export const logManager      = new LogManager();
+export const transferManager = new TransferManager();
+export const presenceManager = new PresenceManager();
