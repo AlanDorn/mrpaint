@@ -10,9 +10,9 @@ export function sanitizeName(text) {
 }
 
 export default class UserManager {
-  constructor(input, virtualCanvas) {
-    this.input = input;
+  constructor(virtualCanvas, input) {
     this.virtualCanvas = virtualCanvas;
+    this.input = input;
 
     this.userId = Math.floor(Math.random() * 256);
     this.color = this.input.toolbar.colorpicker.userColor;
@@ -61,6 +61,7 @@ export default class UserManager {
     clearTimeout(user.timeout);
     user.timeout = setTimeout(() => {
       this.removeUser(userId);
+      this.renderUserList();
     }, 5000);
     this.renderUserList();
   }

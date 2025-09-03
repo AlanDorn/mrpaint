@@ -13,9 +13,9 @@ import {
 } from "./transaction.js";
 
 export default class StraightLine {
-  constructor(virtualCanvas, transactionLog, previewManager, toolbar) {
-    this.virtualCanvas = virtualCanvas; // VirtualCanvas instance
+  constructor(transactionLog, virtualCanvas, previewManager, toolbar) {
     this.transactionLog = transactionLog;
+    this.virtualCanvas = virtualCanvas; // VirtualCanvas instance
     this.previewManager = previewManager;
     this.toolbar = toolbar;
     this.colorpicker = toolbar.colorpicker;
@@ -297,7 +297,7 @@ export default class StraightLine {
       )
     );
 
-    this.toolbar.undo.replaceTopWithCommit(this.opId, this, draft);
+    // this.toolbar.undo.replaceTopWithCommit(this.opId, this, draft);
 
     this.previewManager.localPreview = null;
     this.toolbar.presence?.clearLocalPreview?.(this.toolbar.presence.userId);

@@ -837,12 +837,15 @@ It follows the format of:
 
  z-index/zIndex records: 
   styles.css:
+    .cursor => 500
     #toolbar => 100
     #toolbar-left => 101
     #userList => 90
     .actual-dropdown-list-brushsize-box => 70
     #main-tools => 80
     .colorpalette-condensed .dropdown => 10
+    .adjuster => 2
+    .adjuster.centerBox => 1
 
   cursorManager.js: 
     makeEraserSquare() => 50
@@ -864,7 +867,7 @@ It follows the format of:
 }
 @media (max-width: 391px) {
   #toolbar-left {
-  padding-left: 1rem;
-}
+    padding-left: 1rem;
+  }
   
 }

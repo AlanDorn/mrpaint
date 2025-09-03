@@ -83,17 +83,17 @@ export default class ColorPicker {
     });
 
     // toggle open/close
-    toggle.addEventListener("click", (e) => {
-      e.stopPropagation();
+    toggle.addEventListener("click", (event) => {
+      event.stopPropagation();
       condensed.classList.toggle("active");
     });
 
     // keep it open if clicking inside
-    this.dropdown.addEventListener("click", (e) => e.stopPropagation());
+    this.dropdown.addEventListener("click", (event) => event.stopPropagation());
 
     // close when clicking anywhere else
-    document.addEventListener("click", (e) => {
-      if (!condensed.contains(e.target) && e.target !== toggle) {
+    document.addEventListener("click", (event) => {
+      if (!condensed.contains(event.target) && event.target !== toggle) {
         condensed.classList.remove("active");
       }
     });

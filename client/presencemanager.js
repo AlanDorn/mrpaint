@@ -3,33 +3,33 @@ import { encodePosition } from "./transaction.js";
 import UserManager from "./usermanager.js";
 
 export default class PresenceManager {
-  constructor(ws, input, previewManager, virtualCanvas) {
-    this.ws = ws;
-    this.input = input;
-    this.previewManager = previewManager;
+  constructor({virtualCanvas, previewManager, input, ws}) {
     this.virtualCanvas = virtualCanvas;
+    this.previewManager = previewManager;
+    this.input = input;
+    this.ws = ws;
 
-    this.userManager = new UserManager(input, virtualCanvas);
+    this.userManager = new UserManager(virtualCanvas, input);
     
     this.previewManager.attachUserManager(this.userManager);
 
     this.userId = this.userManager.userId;
 
     setInterval(() => {
-      if (!ws.open) return;
-      ws.send(
+      if (!this.ws.open) return;
+      this.ws.send(
         new Uint8Array([
           OP_TYPE.PRESENCE,
           OP_PRESENCE.MOUSE_POSITION,
           this.userId,
-          ...encodePosition(virtualCanvas.positionInCanvas(input.x, input.y)),
+          ...encodePosition(this.virtualCanvas.positionInCanvas(this.input.x, this.input.y)),
         ])
       );
     }, 1000 / 60);
 
     setInterval(() => {
-      if (!ws.open) return;
-      ws.send(
+      if (!this.ws.open) return;
+      this.ws.send(
         new Uint8Array([
           OP_TYPE.PRESENCE,
           OP_PRESENCE.USER_COLOR_UPDATE,
@@ -40,8 +40,8 @@ export default class PresenceManager {
     }, 1000 / 4);
 
     setInterval(() => {
-      if (!ws.open) return;
-      ws.send(
+      if (!this.ws.open) return;
+      this.ws.send(
         new Uint8Array([
           OP_TYPE.PRESENCE,
           OP_PRESENCE.USERNAME_UPDATE,
@@ -52,10 +52,10 @@ export default class PresenceManager {
     }, 1000 / 4);
 
     setInterval(() => {
-      if (!ws.open) return;
+      if (!this.ws.open) return;
       const previewData = this.previewManager.getPreviewData();
       if (previewData) {
-        ws.send(
+        this.ws.send(
           new Uint8Array([
             OP_TYPE.PRESENCE,
             OP_PRESENCE.PREVIEW_UPDATE,
@@ -65,6 +65,8 @@ export default class PresenceManager {
         );
       }
     }, 1000 / 60);
+
+    this.ws.socketSelector[OP_TYPE.PRESENCE] = (eventData) => this.handle(eventData.subarray(1));
   }
 
   handle(eventData) {

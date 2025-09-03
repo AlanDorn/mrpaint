@@ -1,0 +1,10 @@
+diff a/client/transactionlog.js b/client/transactionlog.js	(rejected hunks)
+@@ -170,7 +170,7 @@ export default class TransactionLog {
+    * @returns {[number, boolean]} Updated `[correctIndex, desyncFlag]`.
+    */
+   handleGeneric(tx, [correct, desync]) {
+-    if (tx.length < TOOLCODEINDEX) return correct;
++    if (tx.length < TOOLCODEINDEX) return correct; //4lan4debugging change: correct => [correct, desync];
+ 
+     const sortedPosition = this.transactionIndex(tx);
+     this.transactions.splice(sortedPosition, 0, tx);

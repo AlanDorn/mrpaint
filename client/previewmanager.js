@@ -1,8 +1,7 @@
 import { decodePreviewLine } from "./transaction.js";
-import { CROSSHAIR } from "./crosshair.js";
 
 export default class PreviewManager {
-  constructor(virtualCanvas) {
+  constructor({virtualCanvas}) {
     this.virtualCanvas = virtualCanvas;
 
     this.userManager = null;

@@ -1,0 +1,82 @@
+diff a/client/pencil.js b/client/pencil.js	(rejected hunks)
+@@ -1,7 +1,11 @@
+ import { operationId, pencilTransaction } from "./transaction.js";
+-import { virtualCanvas, transactionLog, toolbar } from "./client.js";
++// import { virtualCanvas, transactionLog, toolbar } from "./client.js";
+ export default class Pencil {
+-  constructor() {
++  constructor(transactionLog, virtualCanvas, toolbar) {
++    this.transactionLog = transactionLog;
++    this.virtualCanvas = virtualCanvas;
++    this.toolbar = toolbar;
++    
+     this.points = []; // Store the last three points for Catmull-Rom
+     this.isDrawing = false;
+     this.currentColor = [0, 0, 0];
+@@ -9,8 +13,8 @@ export default class Pencil {
+ 
+     const pencilButton = document.getElementById("pencil");
+     pencilButton.addEventListener("click", () => {
+-      toolbar.activeTool = this;
+-      toolbar.updateActiveButton(pencilButton);
++      this.toolbar.activeTool = this;
++      this.toolbar.updateActiveButton(pencilButton);
+     });
+   }
+ 
+@@ -23,19 +27,19 @@ export default class Pencil {
+   }
+ 
+   mouseDownLeft(input) {
+-    this.currentColor = toolbar.colorpicker.primarycolor;
++    this.currentColor = this.toolbar.colorpicker.primarycolor;
+     this.handleMouseDown(input);
+   }
+ 
+   mouseDownRight(input) {
+-    this.currentColor = toolbar.colorpicker.secondarycolor;
++    this.currentColor = this.toolbar.colorpicker.secondarycolor;
+     this.handleMouseDown(input);
+   }
+ 
+   mouseMove(input) {
+     if (!this.isDrawing) return;
+ 
+-    const newPoint = virtualCanvas.positionInCanvas(input.x, input.y);
++    const newPoint = this.virtualCanvas.positionInCanvas(input.x, input.y);
+     let samePoint = this.points.length > 0;
+     samePoint &&= newPoint[0] === this.points[this.points.length - 1][0];
+     samePoint &&= newPoint[1] === this.points[this.points.length - 1][1];
+@@ -47,10 +51,10 @@ export default class Pencil {
+     const transaction = pencilTransaction(
+       this.operationId,
+       this.currentColor,
+-      toolbar.brushsize.size,
++      this.toolbar.brushsize.size,
+       ...this.points
+     );
+-    transactionLog.pushClient(transaction);
++    this.transactionLog.pushClient(transaction);
+   }
+ 
+   handleMouseUp() {
+@@ -60,15 +64,15 @@ export default class Pencil {
+ 
+   handleMouseDown(input) {
+     this.isDrawing = true;
+-    const startPoint = virtualCanvas.positionInCanvas(input.x, input.y);
++    const startPoint = this.virtualCanvas.positionInCanvas(input.x, input.y);
+     this.points.push(startPoint, startPoint, startPoint);
+     this.operationId = operationId();
+-    toolbar.undo.pushOperation(this.operationId);
+-    transactionLog.pushClient(
++    this.toolbar.undo.pushOperation(this.operationId);
++    this.transactionLog.pushClient(
+       pencilTransaction(
+         this.operationId,
+         this.currentColor,
+-        toolbar.brushsize.size,
++        this.toolbar.brushsize.size,
+         ...this.points
+       )
+     );

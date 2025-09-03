@@ -1,0 +1,11 @@
+diff a/client/previewmanager.js b/client/previewmanager.js	(rejected hunks)
+@@ -1,8 +1,7 @@
+ import { decodePreviewLine } from "./transaction.js";
+-import { CROSSHAIR } from "./crosshair.js";
+ 
+ export default class PreviewManager {
+-  constructor(virtualCanvas) {
++  constructor({virtualCanvas}) {
+     this.virtualCanvas = virtualCanvas;
+ 
+     this.userManager = null;

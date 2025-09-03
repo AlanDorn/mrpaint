@@ -96,10 +96,6 @@ export default class Toolbar {
       if (this.activeReason === "mouseenter") this.activeSelector = null;
     });
 
-    this.drawingarea.addEventListener("click", () => {
-      this.activeSelector = null;
-    });
-
     this.viewport.widthAdjuster.addEventListener("mousedown", (event) => {
       if (this.activeTool == this.viewport) return;
       this.viewport.activeAdjuster = this.viewport.widthAdjuster;

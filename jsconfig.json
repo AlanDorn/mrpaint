@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "checkJs": false,
+    "allowJs": true
+  },
+  "typeAcquisition": {"enable": true},
+  "include": ["client"]
+}

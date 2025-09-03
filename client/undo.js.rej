@@ -1,0 +1,30 @@
+diff a/client/undo.js b/client/undo.js	(rejected hunks)
+@@ -1,7 +1,8 @@
+-import { transactionLog } from "./client.js";
++// import { transactionLog } from "./client.js";
+ import { redoTransaction, undoTransaction } from "./transaction.js";
+ export default class Undo {
+-  constructor() {
++  constructor(transactionLog) {
++    this.transactionLog = transactionLog;
+     this.undoList = [];
+     this.redoList = [];
+ 
+@@ -31,7 +32,7 @@ export default class Undo {
+       return;
+     }
+ 
+-    transactionLog.pushClient(undoTransaction(operationId.id));
++    this.transactionLog.pushClient(undoTransaction(operationId.id));
+     this.redoList.push(operationId);
+   };
+ 
+@@ -45,7 +46,7 @@ export default class Undo {
+       return;
+     }
+ 
+-    transactionLog.pushClient(redoTransaction(operationId.id));
++    this.transactionLog.pushClient(redoTransaction(operationId.id));
+     this.undoList.push(operationId);
+   };
+ 

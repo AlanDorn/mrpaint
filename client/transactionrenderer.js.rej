@@ -1,0 +1,38 @@
+diff a/client/transactionrenderer.js b/client/transactionrenderer.js	(rejected hunks)
+@@ -1,4 +1,4 @@
+-import { virtualCanvas, changeTracker, toolbar } from "./client.js";
++// import { virtualCanvas, changeTracker, toolbar } from "./client.js";
+ import {
+   decodeLargeNumber,
+   decodePosition,
+@@ -7,6 +7,12 @@ import {
+ } from "./transaction.js";
+ import { bresenhamLine, getCircleStamp, splinePixels } from "./util2d.js";
+ 
++let virtualCanvas, changeTracker, toolbar;
++
++export function setRenderContext(ctx) {
++  ({ virtualCanvas, changeTracker, toolbar } = ctx);
++}
++
+ // rendering can be extended from outside the class by adding to renderSelector
+ const buildNextTask = (tx) => renderSelector[tx[TOOLCODEINDEX]]?.(tx);
+ const renderSelector = {};
+@@ -348,11 +354,12 @@ renderSelector[toolCodes.straightLine[0]] = (transaction) => {
+   straightLineState.maxX = Math.max(startPoint[0], endPoint[0]) + halfBrush;
+   straightLineState.maxY = Math.max(startPoint[1], endPoint[1]) + halfBrush;
+   // choose set function like in pencil
+-  straightLineState.setFunction =
+-    straightLineState.brushsize <= 2
+-      ? virtualCanvas.setPixel
+-      : virtualCanvas.setPixelOutline;
+-  straightLineState.index = 0;
++  straightLineState.setFunction = virtualCanvas.setPixel;
++    // straightLineState.setFunction      
++    // straightLineState.brushsize <= 2   
++    //   ? virtualCanvas.setPixel         //the outline was annoying, should it be in SL?
++    //   : virtualCanvas.setPixelOutline; //makes sense for eraser but not so much SL
++  straightLineState.index = 0;            //TODO prob put it back l8r but do a lil intersection check 
+   return straightLineRender;
+ };
+ const straightLineRender = () => {

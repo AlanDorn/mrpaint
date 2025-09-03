@@ -1,0 +1,60 @@
+diff a/client/input.js b/client/input.js	(rejected hunks)
+@@ -1,5 +1,6 @@
+ export default class Input {
+-  constructor(toolbar) {
++  constructor({virtualCanvas, toolbar}) {
++    this.virtualCanvas = virtualCanvas;
+     this.toolbar = toolbar; //8/2/2025
+     this.x = 0;
+     this.y = 0;
+@@ -22,21 +23,21 @@ export default class Input {
+           this.mouseDown = true;
+           this.x = Math.round(event.clientX);
+           this.y = Math.round(event.clientY);
+-          toolbar.mouseDownLeft(this);
++          this.toolbar.mouseDownLeft(this);
+         }
+         if (event.button === 2 && event.pointerType === "mouse") {
+           this.mouseDown = true;
+           this.x = Math.round(event.clientX);
+           this.y = Math.round(event.clientY);
+-          toolbar.mouseDownRight(this);
++          this.toolbar.mouseDownRight(this);
+         }
+       }
+     });
+ 
+     document.addEventListener("pointerup", () => {
+       this.mouseDown = false;
+-      toolbar.mouseUpLeft(this);
+-      toolbar.mouseUpRight(this);
++      this.toolbar.mouseUpLeft(this);
++      this.toolbar.mouseUpRight(this);
+     });
+ 
+     let updateMouse = true;
+@@ -50,7 +51,7 @@ export default class Input {
+       this.x = Math.round(event.clientX);
+       this.y = Math.round(event.clientY);
+       if (updateMouse) {
+-        toolbar.mouseMove(this);
++        this.toolbar.mouseMove(this);
+         updateMouse = false;
+       }
+     });
+@@ -59,11 +60,11 @@ export default class Input {
+       "wheel",
+       (event) => {
+         event.preventDefault();
+-        //CALM: This should be handled by the toolbar instead of here.
+-        if (toolbar.activeSelector == null) {
+-          toolbar.viewport.handleWheel(event);
++        //CALM: This should be handled by the this.toolbar instead of here.
++        if (this.toolbar.activeSelector == null) {
++          this.toolbar.viewport.handleWheel(event);
+         } else {
+-          toolbar.brushsize.handleWheel(event);
++          this.toolbar.brushsize.handleWheel(event);
+         }
+       },
+       { passive: false } // Makes preventDefault() work

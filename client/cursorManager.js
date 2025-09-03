@@ -4,7 +4,7 @@ For tool changes, the cursor logic will reside here to toolbar, later the userMa
 */
 
 //gotta move adjuster stuff here with cursor interaction (grab)
-//eraser needs fine tuning for smaller sizes and maybe overall precision?
+//eraser needs fine tuning for smaller sizes and maybe overall precision? => //TODO snapToCanvas()
 //mess with the edge cases and remove border touching edge if eraser is being clipped,brain brr 
 
 export default class cursorManager {
@@ -119,27 +119,6 @@ export default class cursorManager {
     return `url("data:image/svg+xml;base64,${b64}") ${this.cursorPosition.x} ${this.cursorPosition.y}, auto`;
   }
 
-  makeEraserSquare() {
-    const div = document.createElement("div");
-    Object.assign(div.style, {
-      position: "fixed",
-      left: "0",
-      // right: "0",
-      top: "0",
-      // bottom: "0",
-      // transform: "0",
-      pointerEvents: "none",
-      // zIndex: 50,
-      border: "1px solid rgba(0, 0, 0, 1)",
-      borderRadius: "0", // 50% for circle
-      background: `rgb(${this.colorpicker.secondarycolor})`,
-      display: "none",
-      willChange: "transform,width,height",
-    });
-    document.body.appendChild(div);
-    return div;
-  }
-
   showEraser(force = true) {
     if (!this.lastEvent) return;
     if (this.animationframes) return;
@@ -150,6 +129,8 @@ export default class cursorManager {
 
       //shift or shwifty
       const s = Math.max(1, Math.round(this.brushsize.size * this.virtualCanvas.zoom)); //size + scale
+
+      // const {topLeftX, topLeftY, side } = this.snapToCanvas(this.lastEvent.clientX, this.lastEvent.clientY)
 
       //prob not needed idk
       // this.eraserSquare.style.width = s + "px";
@@ -205,6 +186,31 @@ export default class cursorManager {
         this.canvas.style.cursor = "default";
       }
     });
+  }
+  
+  makeEraserSquare() {
+    const div = document.createElement("div");
+    Object.assign(div.style, {
+      position: "fixed",
+      left: "0",
+      // right: "0",
+      top: "0",
+      // bottom: "0",
+      // transform: "0",
+      pointerEvents: "none",
+      // zIndex: 50,
+      border: "1px solid rgba(0, 0, 0, 1)",
+      borderRadius: "0", // 50% for circle
+      background: `rgb(${this.colorpicker.secondarycolor})`,
+      display: "none",
+      willChange: "transform,width,height",
+    });
+    document.body.appendChild(div);
+    return div;
+  }
+
+  snapToCanvas(x, y){
+    
   }
 
   edgeCheck(edgeCanvas, shiftedX, shiftedY, eraserSquareWidth, eraserSquareHeight){

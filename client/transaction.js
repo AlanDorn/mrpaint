@@ -21,7 +21,21 @@ export const toolCodeInverse = [
 export const TOUUIDLENGTH = 8;
 export const OPIDLENGTH = 8;
 export const TOOLCODEINDEX = TOUUIDLENGTH + OPIDLENGTH;
-export const toolLength = [10, 22, 8, 1, 1, 5, 26, 14].map((l) => l + TOOLCODEINDEX);
+// export const toolLength = [10, 22, 8, 1, 1, 5, 26, 14].map((l) => l + TOOLCODEINDEX);
+export const toolLayouts = [];
+
+toolLayouts[toolCodes["pixel"][0]] = [3, 2, 4];
+toolLayouts[toolCodes["pencil"][0]] = [3, 2, 4, 4, 4];
+toolLayouts[toolCodes["fill"][0]] = [3, 4];
+toolLayouts[toolCodes["undo"][0]] = [];
+toolLayouts[toolCodes["redo"][0]] = [];
+toolLayouts[toolCodes["resize"][0]] = [4];
+toolLayouts[toolCodes["eraser"][0]] = [1, 3, 3, 2, 4, 4, 4]; 
+toolLayouts[toolCodes["straightLine"][0]] = [3, 2, 4, 4];
+
+export const toolLength = toolLayouts.map(
+  (arr) => arr.reduce((a, b) => a + b, 0) + TOOLCODEINDEX + 1
+);
 
 export function pixelTransaction(operationId, color, brushsize, position) {
   return buildTransaction(
@@ -34,7 +48,7 @@ export function pixelTransaction(operationId, color, brushsize, position) {
   );
 }
 
-export function pencilTransaction(operationId, color, brushsize, p0, p1, p2, p3) {
+export function pencilTransaction(operationId, color, brushsize, p0, p1, p2) { //p3 is gone
   return buildTransaction(
     touuid(), //8 bytes
     operationId, //6 bytes
@@ -43,9 +57,8 @@ export function pencilTransaction(operationId, color, brushsize, p0, p1, p2, p3)
     encodeLargeNumber(brushsize), //2 bytes
     encodePosition(p0), //4 bytes
     encodePosition(p1), //4 bytes
-    encodePosition(p2), //4 bytes
-    encodePosition(p3) //4 bytes
-  );
+    encodePosition(p2) //4 bytes
+  );//p3 is gone
 }
 
 export function fillTransaction(operationId, color, position) {
@@ -83,31 +96,56 @@ export function resizeTransaction(operationId, position) {
   );
 }
 
+toolLayouts[toolCodes["eraser"][0]] = [1, 3, 3, 2, 4, 4, 4];
 export function eraserTransaction(
   operationId,
+  mode,
   color,
   primarycolor,
   brushsize,
   p0,
   p1,
   p2,
-  p3,
-  mode
 ) {
   return buildTransaction(
     touuid(), //8 bytes
     operationId, //6 bytes
     toolCodes["eraser"], //1 bytes
-    encodeColor(color), //3 bytes
-    encodeColor(primarycolor), //3 bytes
-    encodeLargeNumber(brushsize), //2 bytes
-    encodePosition(p0), //4 bytes
-    encodePosition(p1), //4 bytes
-    encodePosition(p2), //4 bytes
-    encodePosition(p3), //4 bytes
-    new Uint8Array([mode]) //1 bytes
+    new Uint8Array([mode]),        //1 bytes
+    encodeColor(color),            //3 bytes
+    encodeColor(primarycolor),     //3 bytes
+    encodeLargeNumber(brushsize),  //2 bytes
+    encodePosition(p0),            //4 bytes
+    encodePosition(p1),            //4 bytes
+    encodePosition(p2)             //4 bytes
   );
 }
+
+// export function eraserTransaction(
+//   operationId,
+//   color,
+//   primarycolor,
+//   brushsize,
+//   p0,
+//   p1,
+//   p2,
+//   p3,
+//   mode
+// ) {
+//   return buildTransaction(
+//     touuid(), //8 bytes
+//     operationId, //6 bytes
+//     toolCodes["eraser"], //1 bytes
+//     encodeColor(color), //3 bytes
+//     encodeColor(primarycolor), //3 bytes
+//     encodeLargeNumber(brushsize), //2 bytes
+//     encodePosition(p0), //4 bytes
+//     encodePosition(p1), //4 bytes
+//     encodePosition(p2), //4 bytes
+//     encodePosition(p3), //4 bytes
+//     new Uint8Array([mode]) //1 bytes
+//   );
+// }
 
 export function straightLineTransaction(
   operationId,
@@ -115,11 +153,10 @@ export function straightLineTransaction(
   brushsize,
   startPoint,
   endPoint,
-  mode
 ) {
   return buildTransaction(
     touuid(), //8 bytes
-    operationId, //6 bytes
+    operationId, //6 bytes   
     toolCodes["straightLine"], //1 bytes
     encodeColor(color), //3 bytes
     encodeLargeNumber(brushsize), //2 bytes

@@ -1,0 +1,45 @@
+diff a/client/ruler.js b/client/ruler.js	(rejected hunks)
+@@ -1,7 +1,8 @@
+-import { virtualCanvas } from "./client.js";
++// import { virtualCanvas } from "./client.js";
+ 
+ export default class Ruler {
+-  constructor() {
++  constructor(virtualCanvas) {
++    this.virtualCanvas = virtualCanvas;
+     this.top = document.getElementById("top-ruler");
+     this.left = document.getElementById("left-ruler");
+     this.topIndicator = document.getElementById("topIndicator");
+@@ -19,11 +20,11 @@ export default class Ruler {
+   }
+ 
+   set(input) {
+-    const rect = virtualCanvas.rect;
++    const rect = this.virtualCanvas.rect;
+ 
+     if (input) {
+-      const normalizedPosition = virtualCanvas.positionInScreen(
+-        ...virtualCanvas.positionInCanvas(input.x, input.y)
++      const normalizedPosition = this.virtualCanvas.positionInScreen(
++        ...this.virtualCanvas.positionInCanvas(input.x, input.y)
+       );
+       this.topIndicator.style.width =
+         Math.max(0, normalizedPosition[0] - rect.left) + "px";
+@@ -32,7 +33,7 @@ export default class Ruler {
+     }
+ 
+     const [topLeftInCanvas, bottomRightInCanvas] =
+-      virtualCanvas.getBoundsInCanvas();
++      this.virtualCanvas.getBoundsInCanvas();
+ 
+     const idealNumberOfTopSegments = rect.width / 100;
+     const idealNumberOfLeftSegments = rect.height / 100;
+@@ -62,7 +63,7 @@ export default class Ruler {
+     let startWidth = offsetWidth - canvasTopLength;
+     let startHeight = offsetHeight - canvasLeftLength;
+ 
+-    const margins = virtualCanvas.positionInScreen(
++    const margins = this.virtualCanvas.positionInScreen(
+       startWidth - 0.5,
+       startHeight - 0.5
+     );
