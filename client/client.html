@@ -71,15 +71,21 @@
             </svg>
           </button>
 
-          <button id="fillTool" title="fill tool">
-            <svg viewBox="0 -960 960 960">
+          <button id="fillTool" title="fill tool" cursor-type="svg">
+            <svg
+              viewBox="0 -960 960 960"
+              xmlns="http://www.w3.org/2000/svg"
+              version="1.1"
+              xmlns:xlink="http://www.w3.org/1999/xlink"
+              transform="matrix(-1,0,0,1,0,0)"
+            >
               <path
                 d="M346-140 100-386q-10-10-15-22t-5-25q0-13 5-25t15-22l230-229-106-106 62-65 400 400q10 10 14.5 22t4.5 25q0 13-4.5 25T686-386L440-140q-10 10-22 15t-25 5q-13 0-25-5t-22-15Zm47-506L179-432h428L393-646Zm399 526q-36 0-61-25.5T706-208q0-27 13.5-51t30.5-47l42-54 44 54q16 23 30 47t14 51q0 37-26 62.5T792-120Z"
-              />
+              ></path>
             </svg>
           </button>
 
-          <button id="pencil" title="pencil">
+          <button id="pencil" title="pencil" cursor-type="svg">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               height="24px"
@@ -93,7 +99,7 @@
             </svg>
           </button>
 
-          <button id="eraser" title="eraser">
+          <button id="eraser" title="eraser" cursor-type="eraser">
             <svg viewBox="0 -960 960 960">
               <path
                 d="M690-240h190v80H610l80-80Zm-500 80-85-85q-23-23-23.5-57t22.5-58l440-456q23-24 56.5-24t56.5 23l199 199q23 23 23 57t-23 57L520-160H190Zm296-80 314-322-198-198-442 456 64 64h262Zm-6-240Z"
@@ -101,7 +107,7 @@
             </svg>
           </button>
 
-          <button id="straightLine" title="straightLine">
+          <button id="straightLine" title="straightLine" cursor-type="crosshair">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               height="24px"
@@ -154,12 +160,14 @@
               />
             </svg>
           </button>
-          <div class="dropdown" id="paletteDropdown"></div>
+          <div class="dropdown palette-grid" id="paletteDropdown"></div>
         </div>
       </div>
 
       <div id="toolbar-right">
-        <input type="color" id="userColor" value="#6d6d6d" />
+        <input type="color" id="userColorPicker" value="#6d6d6d" />
+        <!-- -->
+
         <div id="username" class="custom-dropdown-username-box">
           <input
             type="text"
@@ -167,6 +175,15 @@
             value=""
             id="customInputUsernameBox"
           />
+        </div>
+
+        <div id="userListWrapper">
+          <div id="userListToggle">
+            <svg height="24px" viewBox="0 -960 960 960" width="24px">
+              <path d="M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z" />
+            </svg>
+          </div>
+          <ul id="userList" class="hidden"></ul>
         </div>
       </div>
     </div>

@@ -5,19 +5,21 @@
   --itemheight: calc(var(--toolheight) - 0.9rem);
   --statusheight: 1.25rem;
   --rulerheight: 1.25rem;
-  --purple2: light-dark(#ad87ed, #7443b6);
-  --purple: #ad87ed;
-  --font: "Hack"; /* Hack, "Courier New", Courier, monospace */
+  --purple2: light-dark(#e5c4ff, #650191);          /*--purple2: light-dark(#ad87ed, #7443b6); */
+  --purple: #b78fd8;          /* --purple: #ad87ed; */
+  --font: unifont; /* Hack, "Courier New", Courier, monospace */
   --fontsize: 14px;
+
   --top: 0.2rem;
-  --background: light-dark(#cececd, #454545);
-  --secondary: light-dark(#808080, #ababab);
-  --background-gradient: light-dark(#aeaeae, #575757);
+
+  --background: light-dark(#d1d1d1, #454545);
+  --secondary: light-dark(#6d6d6d, #ababab);
+  --background-gradient: light-dark(#ababab, rgb(87, 87, 87));
 }
 
 @font-face {
-  font-family: Hack;
-  src: url("./fonts/Hack-Regular.ttf");
+  font-family: unifont;
+  src: url("../fonts/unifont-16.0.04.otf");
 }
 
 * {
@@ -26,17 +28,13 @@
   overflow: hidden;
   font-size: var(--fontsize);
   font-family: var(--font);
-  -webkit-user-select: none; /* Safari/Chrome */
-  -moz-user-select: none; /* Firefox */
-  -ms-user-select: none; /* IE10+ */
-  user-select: none;
 }
 
 /* TODO Need to change some things to allow consistent viewing across different screen sizes like phone, 
 regular size monitor, wide/ultra wide */
 body {
-  height: 100dvh;
-  width: 100dvw;
+  height: 100svh;
+  width: 100svw;
   background: linear-gradient(
     135deg,
     var(--background) 0%,
@@ -50,43 +48,14 @@ body {
   background-color: var(--secondary);
   position: absolute;
   border: 1px black solid;
+
+  /*
   top: 0;
   left: 0;
   will-change: transform;
   transition: transform 32ms linear; /* adjust duration as needed */
+  */
 }
-/* .cursor {
-  width: 10px;               
-  height: 10px;
-  position: absolute;
-  border: 1px solid #000;    
-}
-.cursor-label {
-  position: absolute;
-  top: -16px;               
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 12px;
-  color: #fff;
-  text-shadow: 0 0 2px #000; 
-  white-space: nowrap;
-  pointer-events: none;     
-} */
-
-/* Nothing */
-/* #ribbon {
-  width: 100svw;
-  height: 1.5rem;
-  background-color: rgb(67, 46, 148);
-  overflow: visible;
-}
-
-#quicktoolbar {
-  width: 100svw;
-  height: 1.5rem;
-  background-color: rgb(147, 59, 59);
-  overflow: visible;
-} */
 
 /* main top UI  */
 #toolbar {
@@ -98,18 +67,26 @@ body {
   /* align-items: center; */
   margin-top: -0.3rem;
   /* margin-left: .1rem; */
+  z-index: 100;
 }
 
 #toolbar-left {
   /* width: 100svw; */
+  position: relative;
+  overflow-x: auto; /* make it scroll horizontally */
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
   height: var(--toolheight);
   overflow: visible;
   display: flex;
   /* margin-left: -0.4rem; */
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; /* keeper */
   margin-left: 0.05rem;
   gap: 0.1rem;
+  z-index: 101;
 }
 
 #toolbar-right {
@@ -134,9 +111,9 @@ body {
 
 /* in the name: drawing area */
 #drawingarea {
-  width: 100dvw;
+  width: 100svw;
   height: calc(
-    100dvh - var(--toolheight) - var(--rulerheight) - var(--statusheight)
+    100svh - var(--toolheight) - var(--rulerheight) - var(--statusheight)
   );
   touch-action: none; /* for screen users */
   grid-column: 2 / 3;
@@ -148,22 +125,165 @@ canvas {
   image-rendering: crisp-edges;
 }
 
-/* For the color pickers === primary/secondary/userColor */
+#myCanvas {
+  cursor: none;
+}
+
+/* For the color pickers === primary/secondary/userColorPicker */
 input[type="color"] {
+  -webkit-appearance: none;
+  appearance: none;
   width: 6rem;
   height: 6rem;
   border: 1px transparent;
   margin-top: 1px;
   margin-right: -0.25rem;
 
+  /* border-radius: 1px black; */
+
   background-color: transparent;
 }
 
-/* #primaryPicker,
-#secondaryPicker,
-#userColor {
+#userColorPicker {
+  border: none;
+  border-radius: 0%;
+  width: 5rem;
+  height: 5rem;
 
-} */
+  /* aspect-ratio: 1;
+  appearance: none;
+  padding: 0; */
+}
+
+#userColorPicker::-webkit-color-swatch-wrapper {
+  padding: 0; /* remove default inset */
+  border-radius: 50% 50%;
+}
+#userColorPicker::-webkit-color-swatch {
+  border: none;
+  border-radius: 50% 50%; /* swatch circle */
+}
+
+#userColorPicker::-moz-color-swatch {
+  border: none;
+  border-radius: 50% 50%;
+}
+
+#userListWrapper {
+  position: relative;
+  display: inline-block;
+  overflow: visible;
+}
+
+#userListToggle {
+  /*carrot on toolbar*/
+  cursor: pointer;
+  padding-top: 0.6rem;
+  fill: var(--secondary);
+}
+
+#userListToggle svg {
+  transition: transform 0.01s ease;
+  transform-origin: center center; /* rotate around its center */
+}
+
+/* when the toggle has the “open” class, flip the arrow */
+#userListToggle.open svg {
+  transform: rotate(180deg);
+}
+
+/* Figure out a way later to change this to be flexible and dynamic for ultimate customization */
+#userList {
+  position: fixed;
+  list-style: none;
+  width: max-content;
+  min-width: 29.6ch;
+  max-width: min(90ch, 90vw);
+  overflow-wrap: anywhere;
+
+  max-height: 50vh; /* never grow taller than the viewport */
+  overflow-y: auto; /* and show a scrollbar when it does  */
+  overscroll-behavior: contain;
+
+  top: 100%;
+  left: auto;
+  right: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--background);
+  border: 1px solid gray;
+
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+
+  cursor: move;
+  z-index: 90;
+}
+
+#userList li {
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fontsize);
+  font-family: var(--font);
+}
+
+#userList li span {
+  white-space: normal;
+}
+
+#userList .username {
+  font-family: monospace;
+  line-height: 1;
+}
+
+/* single-line names (span) should wrap anywhere if too long */
+#userList span.username {
+  white-space: normal; /* allow wrapping                */
+  overflow-wrap: anywhere; /* break even inside “ssssss…”   */
+}
+
+/* ASCII art (pre) keeps exact layout, scrolls horizontally if too wide */
+#userList pre.username {
+  white-space: pre; /* preserve spaces + \n          */
+  overflow-x: auto; /* let user scroll long rows     */
+}
+
+.user-color-indicator {
+  /* keep the browser from resizing or adding its own bevel */
+  appearance: none; /* modern */
+  -webkit-appearance: none; /* Safari/Chrome */
+  -moz-appearance: none; /* Firefox */
+
+  /* force a fixed square */
+  width: 1rem;
+  height: 1rem; /* add this line */
+  flex: 0 0 1rem; /* don’t let flexbox distort it */
+
+  border: 1px black solid;
+  padding: 0;
+  border-radius: 50% 50%;
+  box-sizing: border-box; /* include any borders in the 1 rem box */
+}
+
+.user-color-indicator::-webkit-color-swatch-wrapper {
+  padding: 0;
+  border-radius: 50% 50%;
+}
+
+.user-color-indicator::-webkit-color-swatch {
+  border: none;
+  border-radius: 50% 50%;
+}
+.user-color-indicator::-moz-color-swatch {
+  border: none;
+  border-radius: 50% 50%;
+}
+
+.hidden {
+  display: none;
+}
 
 #customInputUsernameBox {
   /* background-color: var(--background); */
@@ -183,13 +303,14 @@ input[type="color"] {
   font-size: var(--fontsize);
   font-family: var(--font);
   /* padding: 2px 4px; */
-  width: 11rem;
+  width: 10rem;
   height: var(--itemheight);
   margin-left: 0.3rem;
   /* margin-right: 2rem; */
   /* margin-right: .3rem; */
   text-align: left;
   border: 1px transparent solid;
+  position: relative;
 }
 
 .custom-dropdown-username-box input {
@@ -226,7 +347,7 @@ input[type="color"] {
   display: inline-block;
   /* height: var(--itemheight); */
   /* width: 175px; */
-  width: 12.5rem;
+  width: 10.5rem;
 
   /* margin-right: 17.5px; */
   /* margin-right: 8.5px; */
@@ -270,9 +391,9 @@ input[type="color"] {
   display: none; /* Hidden by default */
   position: absolute;
   /* top: 100%;  */
-  width: 100%;
+  /* width: 100%; */
 
-  /* width: 158px; */
+  width: 150px;
   /* border-top: 1px solid var(--secondary);
   border-left: 1px solid var(--secondary);
   border-right: 1px solid var(--secondary);
@@ -284,7 +405,7 @@ input[type="color"] {
 
   margin: 0;
   list-style: none;
-  z-index: 1; /* LUL */
+  z-index: 70; /* LUL */
 }
 
 .actual-dropdown-list-brushsize-box.show {
@@ -304,7 +425,7 @@ input[type="color"] {
   font-size: 14px;
   cursor: pointer;
   height: calc(var(--toolheight) / 4); /* Ensure consistent height */
-  width: 11.6rem;
+  width: 10.1rem;
 }
 
 .dropdown-item:hover {
@@ -316,7 +437,7 @@ input[type="color"] {
 
 .size-label {
   text-align: center; /* Align numbers in dropdown */
-  margin-right: 10px; /* Space between label and line preview */
+  margin-right: 12px; /* Space between label and line preview */
   width: 20px; /* Fixed width for numbers, handles up to 3 digits */
 }
 
@@ -324,7 +445,7 @@ input[type="color"] {
   background-color: var(--secondary); /* Line color */
   display: inline-block;
   /* margin-left: 3px; */
-  width: 131px; /* Consistent width for all line previews */
+  width: 114px; /* Consistent width for all line previews */
 }
 
 #main-tools {
@@ -339,7 +460,7 @@ input[type="color"] {
   /* margin-left: 0.25rem;
   padding-top: var(--top); */
   /* margin-right: -.2rem; super debateable option right here no kizzy no cappy */
-  z-index: 1;
+  z-index: 80;
   overflow: visible;
 }
 
@@ -418,13 +539,14 @@ input[type="color"] {
   justify-content: center;
   cursor: pointer;
   position: relative;
+  margin-left: 0.2rem;
 
-  width: 6rem;
-  height: 6rem;
-  /* padding: 1px;
-  margin-top: 0.2rem;
-  margin-right: 0.25em;
-  margin-left: 0.25em; */
+  width: 5.7rem;
+  height: 5.7rem;
+  /* /* padding: 1px; */
+  /* margin-top: -0.3rem;
+  margin-left: -0.4em;  */
+  /* margin-right: 0.25em; */
 
   /* border: var(--secondary) 2px solid; */
   background-color: transparent;
@@ -433,8 +555,14 @@ input[type="color"] {
 
 #paletteToggle svg {
   /* margin: auto; */
-  width: 6rem;
-  height: 6rem;
+  justify-content: center;
+  width: 5.7rem;
+  height: 5.7rem;
+  margin-top: -0.4rem;
+  margin-left: -0.6em;
+  margin-right: -0.6rem;
+  margin-bottom: -0.5rem;
+
   /* color: red;
   fill: red; */
   fill: var(--secondary);
@@ -453,27 +581,41 @@ input[type="color"] {
   fill: var(--purple);
 }
 
+.palette-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 22px);
+  grid-auto-rows: 22px;
+  /* optional padding if you want a little breathing room */
+  /* padding: 2px; */
+}
+
 .colorpalette-full {
   display: block;
 }
 
 .colorpalette-condensed {
+  overflow: visible;
   display: none;
   position: relative;
+  flex: 0 0 auto;
 }
 
 .colorpalette-condensed .dropdown {
+  /* overflow: visible; */
   display: none;
   position: absolute;
   top: 100%;
   left: 0;
   background: white;
   border: 1px solid gray;
-  z-index: 10;
+  z-index: 150;
+  width: max-content;
+  /* min-width: 260px; */
 }
 
 .colorpalette-condensed.active .dropdown {
-  display: block;
+  overflow: visible;
+  display: grid;
 }
 
 #colorpalette {
@@ -508,19 +650,52 @@ input[type="color"] {
   outline: 1px solid #b217fb;
 }
 
+.swatchEdit {
+  /* box-sizing:border-box; */
+  border: 0px solid var(--background);
+  outline: 1px solid var(--secondary);
+  cursor: pointer;
+  /* overflow: visible; */
+  margin-left: 1.5px;
+  margin-top: 1.5px;
+  margin-bottom: 1.5px;
+  margin-right: 1.5px;
+}
+
 .adjuster {
   background-color: var(--background);
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   position: absolute;
   border: var(--secondary) solid 2px;
+  /* border-radius: 50% 50%; */
   cursor: pointer;
+  z-index: 2;
+}
+
+.adjuster.centerBox {
+  background-color: var(--background);
+  width: 5px;
+  height: 5px;
+  position: absolute;
+  border: var(--secondary) solid 2px;
+  /* border-radius: 50% 50%; */
+  cursor: pointer;
+  z-index: 1;
+}
+
+.previewAdjuster {
+  /* image-rendering: pixelated; */
+  /* shape-rendering: crispEdges; */
+  /* vector-effect: non-scaling-stroke; */
+  position: absolute;
+  pointer-events: none;
 }
 
 #mainbody {
   margin: 0;
   display: grid;
-  height: calc(100dvh - var(--toolheight) - var(--statusheight));
+  height: calc(100svh - var(--toolheight) - var(--statusheight));
   grid-template-columns: auto 1fr;
   grid-template-rows: auto 1fr;
 }
@@ -528,25 +703,23 @@ input[type="color"] {
 #statusbar {
   height: var(--statusheight);
   padding: 0;
-  margin: 0;
   background-color: transparent;
   width: 100svw;
   display: flex;
-  justify-content: center;
 }
 
 .statusbarValue {
-  display: flex;
   height: 100%;
-  width: 100%;
+  width: 12rem;
   font-size: 1rem;
   padding-right: 0.125rem;
   padding-left: 0.125rem;
   color: var(--secondary);
-  border-right: 2px solid var(--secondary);
+  font-weight: 500;
 }
 
 #completionbarContainer {
+  border: var(--secondary) 1px solid;
   padding: 0;
   padding-bottom: 0.125rem;
 }
@@ -556,7 +729,6 @@ input[type="color"] {
   width: 0%;
   background-color: var(--secondary);
   transition: width 0.2s ease-out; /* Adjust duration and easing as needed */
-  color: var(--background);
 }
 
 #top-ruler {
@@ -583,7 +755,6 @@ input[type="color"] {
 }
 
 .topSegment {
-  box-sizing: border-box;
   border-right: var(--secondary) 1px solid;
   flex-shrink: 0;
 }
@@ -601,7 +772,6 @@ input[type="color"] {
   width: 100%;
   display: flex;
   padding: 0;
-  box-sizing: border-box;
 }
 
 .topSubtick {
@@ -628,7 +798,6 @@ input[type="color"] {
 }
 
 .leftSegment {
-  box-sizing: border-box;
   border-bottom: var(--secondary) 1px solid;
   display: flex;
   flex-shrink: 0;
@@ -648,7 +817,6 @@ input[type="color"] {
   height: 100%;
   width: 25%;
   padding: 0;
-  box-sizing: border-box;
 }
 
 .leftSubtick {
@@ -662,11 +830,48 @@ input[type="color"] {
   border-bottom: var(--secondary) 0px solid;
 }
 
-@media (max-width: 900px) {
+/* 
+idk why but I think its important to keep track of z-indexes/z-indices
+not sure if there is an easy way to automate this but im lazy and just going to leave this here
+
+Below is an attempt to keep track of the z-indexes/z-indices
+It follows the format of:
+
+  (file/location): 
+    (place/section) => (z-index/zIndex value)
+
+
+
+ z-index/zIndex records: 
+  styles.css:
+    #toolbar => 100
+    #toolbar-left => 101
+    #userList => 90
+    .actual-dropdown-list-brushsize-box => 70
+    #main-tools => 80
+    .colorpalette-condensed .dropdown => 10
+
+  cursorManager.js: 
+    makeEraserSquare() => 50
+
+
+*/
+@media (max-width: 885px) {
+  .custom-dropdown-username-box {
+    width: 9rem;
+  }
+}
+@media (max-width: 875px) {
   #colorpalette.colorpalette-full {
     display: none; /* !important */
   }
   .colorpalette-condensed {
     display: block;
   }
+}
+@media (max-width: 391px) {
+  #toolbar-left {
+  padding-left: 1rem;
+}
+  
 }
