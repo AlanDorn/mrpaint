@@ -1,10 +1,11 @@
-import {
-  virtualCanvas,
-  transactionLog,
-  momentReplay,
-  toolbar,
-} from "./client.js";
-import buildNextTask from "./transactionrenderer.js";
+// import {
+//   virtualCanvas,
+//   transactionLog,
+//   momentReplay,
+//   toolbar,
+// } from "./client.js";
+import buildNextTask, { setRenderContext } from "./transactionrenderer.js";
+import Compression from "./compression.js";
 
 const UPDATE_BUDGET_MS = 4;
 const MOMENT_INTERVAL_MS = 2;
@@ -27,7 +28,22 @@ export default class MrPaintEngine {
    * @property {boolean} initializing - Whether the engine is in the initial loading state.
    * @property {Function|null} currentTask - Current incremental rendering task function, or `null` if idle.
    */
-  constructor() {
+  constructor({transactionLog, virtualCanvas, changeTracker, momentReplay, toolbar}) {
+    this.transactionLog = transactionLog;
+    this.virtualCanvas = virtualCanvas;
+    this.changeTracker = changeTracker;
+    this.momentReplay = momentReplay;
+    this.toolbar = toolbar;
+
+    // this.compression = new Compression({virtualCanvas, momentReplay});
+
+    setRenderContext({
+      virtualCanvas: this.virtualCanvas,
+      changeTracker: this.changeTracker,
+      toolbar: this.toolbar
+    });
+
+                              
     this.msSinceLastSnapShot = 0;
     this.initializing = true;
     this.currentTask = null;
@@ -54,25 +70,25 @@ export default class MrPaintEngine {
 
     // Apply transactions and handle desync rollback
     if (!this.initializing) {
-      const desync = transactionLog.pushTransactions();
+      const desync = this.transactionLog.pushTransactions();
       if (desync) {
         this.currentTask = null;
-        momentReplay.rollback(desync);
+        this.momentReplay.rollback(desync);
       }
     }
 
     // Time slice rollback draw
-    if (momentReplay.rollbackChunks.length)
-      momentReplay.rollbackSlice(deadline);
+    if (this.momentReplay.rollbackChunks.length)
+      this.momentReplay.rollbackSlice(deadline);
 
     // Process tasks until time budget is exceeded
-    if (!momentReplay.rollbackChunks.length)
+    if (!this.momentReplay.rollbackChunks.length)
       while (now < deadline) {
         const processStartTime = now;
 
         // Build a new task if none is active and transactions remain
-        while (!this.currentTask && !transactionLog.finished()) {
-          const transaction = transactionLog.nextTransaction();
+        while (!this.currentTask && !this.transactionLog.finished()) {
+          const transaction = this.transactionLog.nextTransaction();
           if (transaction) this.currentTask = buildNextTask(transaction);
         }
 
@@ -85,7 +101,7 @@ export default class MrPaintEngine {
         let doSnapshot =
           !this.currentTask && this.msSinceLastSnapShot > MOMENT_INTERVAL_MS;
         if (doSnapshot) {
-          momentReplay.snapshot();
+          this.momentReplay.snapshot();
           this.msSinceLastSnapShot = 0;
         }
 
@@ -93,15 +109,15 @@ export default class MrPaintEngine {
         if (!doSnapshot) this.msSinceLastSnapShot += now - processStartTime;
       }
     // Update UI components
-    toolbar.ruler.set();
-    const ratio = transactionLog.getRenderRatio();
-    const left = transactionLog.getTransactionsLeft();
-    toolbar.statusbar.setCompletionBar(ratio, left);
+    this.toolbar.ruler.set();
+    const ratio = this.transactionLog.getRenderRatio();
+    const left = this.transactionLog.getTransactionsLeft();
+    this.toolbar.statusbar.setCompletionBar(ratio, left);
     
-    virtualCanvas.render();
+    this.virtualCanvas.render();
 
     // Handle desync state with timeout; otherwise, continue animation frames
-    if (transactionLog.desyncType !== transactionLog.DESYNC.NO)
+    if (this.transactionLog.desyncType !== this.transactionLog.DESYNC.NO)
       return setTimeout(this.nextFrame);
 
     requestAnimationFrame(this.nextFrame);

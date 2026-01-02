@@ -1,11 +1,13 @@
 import { operationId, resizeTransaction } from "./transaction.js";
 
 export default class Viewport {
-  constructor(virtualCanvas, transactionLog, toolbar) {
-    this.virtualCanvas = virtualCanvas;
-    this.virtualCanvas.viewport = this; // AGI: TransactionRenderer doesn't have access to the toolbar, only the virtualCanvas. So since we need to set the position of the adjuster after we receive a resize transaction, viewport needs to be on the virtualCanvas so that setAdjuster can be called.
-    this.toolbar = toolbar;
+  constructor(transactionLog, virtualCanvas, toolbar) {
     this.transactionLog = transactionLog;
+    this.virtualCanvas = virtualCanvas;
+    this.toolbar = toolbar;
+    
+    this.virtualCanvas.viewport = this; // AGI: TransactionRenderer doesn't have access to the toolbar, only the virtualCanvas. So since we need to set the position of the adjuster after we receive a resize transaction, viewport needs to be on the virtualCanvas so that setAdjuster can be called.
+    
 
     this.widthAdjuster = document.createElement("div");
     this.heightAdjuster = document.createElement("div");

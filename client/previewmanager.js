@@ -1,8 +1,7 @@
 import { decodePreviewLine } from "./transaction.js";
-import { CROSSHAIR } from "./crosshair.js";
 
 export default class PreviewManager {
-  constructor(virtualCanvas) {
+  constructor({virtualCanvas}) {
     this.virtualCanvas = virtualCanvas;
 
     this.userManager = null;
@@ -24,7 +23,6 @@ export default class PreviewManager {
 
     const old = this.remotePreviews.get(userId);
     if (old) this.removeHandles(old);
-
     // ✅ store the fresh preview
     this.remotePreviews.set(userId, { ...data, ts: performance.now() });
     this.redrawAll();

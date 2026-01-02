@@ -16,12 +16,12 @@ app.get("/", (req, res) => {
   let lobbyName = keyGen();
   while (lobbies.has(lobbyName.toLowerCase())) lobbyName = keyGen();
   lobbies.set(lobbyName.toLowerCase(), new CanvasLobby(lobbyName));
-  res.redirect(`./join-canvas/${lobbyName}`);
+  res.redirect(`./${lobbyName}`); //res.redirect(`./join-canvas/${lobbyName}`); add 4 l8r
 });
 
 const clientPath = path.join(__dirname, "../client", "client.html");
 const clientHTML = fs.readFileSync(clientPath, "utf8");
-app.get("/join-canvas/:lobby", (req, res) => {
+app.get("/:lobby", (req, res) => { //app.get("/join-canvas/:lobby", (req, res) => { add 4 l8r
   const lobbyName = req.params.lobby.toLowerCase();
   if (!lobbies.has(lobbyName)) return res.redirect("/");
   res.send(clientHTML.replaceAll("{{lobby}}", lobbyName));

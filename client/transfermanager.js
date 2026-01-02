@@ -1,21 +1,15 @@
-import {
-  transactionLog,
-  mrPaintEngine,
-  virtualCanvas,
-  momentReplay,
-  changeTracker,
-  ws,
-} from "./client.js";
+// import {
+//   transactionLog,
+//   virtualCanvas,
+//   changeTracker,
+//   momentReplay,
+//   mrPaintEngine,
+//   ws,
+// } from "./client.js";
 import { OP_TYPE, OP_SYNC } from "./shared/instructionset.js";
-import {
-  compressMoment,
-  decompressMoment,
-  decompressTransaction,
-  extendCompressedTransaction,
-} from "./compression.js";
+import Compression from "./compression.js";
 
-const { MOMENT_COUNT, MOMENTS, TRANSACTIONS, COMPRESSED_TRANSACTIONS } =
-  OP_SYNC;
+const { MOMENT_COUNT, MOMENTS, TRANSACTIONS, COMPRESSED_TRANSACTIONS } = OP_SYNC;
 
 /**
  * Coordinates state synchronization (snapshots/moments and transactions)
@@ -37,14 +31,23 @@ export default class TransferManager {
    * @property {Uint8Array|null} transactions - Raw (uncompressed) transaction bytes from remote.
    * @property {Uint8Array|null} compressedTransactions - Compressed transaction bytes from remote.
    */
-  constructor() {
+  constructor({transactionLog, virtualCanvas, changeTracker, momentReplay, mrPaintEngine, ws}) {
+    this.transactionLog = transactionLog;
+    this.virtualCanvas = virtualCanvas;
+    this.changeTracker = changeTracker;
+    this.momentReplay = momentReplay;
+    this.mrPaintEngine = mrPaintEngine;
+    this.ws = ws;
+
+    this.compression = new Compression({ virtualCanvas, momentReplay });
+    
     this.momentCount = -1;
     this.moments = [];
     this.transactions = null;
     this.compressedTransactions = null;
 
     // Register handler for SYNC opcode
-    ws.socketSelector[OP_TYPE.SYNC] = this.handle;
+    this.ws.socketSelector[OP_TYPE.SYNC] = this.handle;
   }
 
   /**
@@ -64,7 +67,7 @@ export default class TransferManager {
       }
       case MOMENTS: {
         console.log("MOMENTS: ", eventData[2]);
-        const [index, moment] = decompressMoment(eventData);
+        const [index, moment] = this.compression.decompressMoment(eventData);
         this.moments[index] = moment;
         break;
       }
@@ -123,60 +126,60 @@ export default class TransferManager {
     console.log("PROCESSING SYNC");
 
     // Replace local moments with synced moments
-    momentReplay.moments.length = 0;
-    momentReplay.moments.push(...this.moments);
+    this.momentReplay.moments.length = 0;
+    this.momentReplay.moments.push(...this.moments);
 
     // Preserve transactions created locally while syncing
-    const transactionsCaughtWhileSyncing = [...transactionLog.uninserted];
-    transactionLog.uninserted.length = 0;
+    const transactionsCaughtWhileSyncing = [...this.transactionLog.uninserted];
+    this.transactionLog.uninserted.length = 0;
 
     // Install decompressed transactions into log
-    const decompressed = decompressTransaction(this.compressedTransactions);
+    const decompressed = this.compression.decompressTransaction(this.compressedTransactions);
     for (let index = 0; index < decompressed.length; index++)
-      transactionLog.uninserted.push(decompressed[index]);
-    transactionLog.pushTransactions();
+      this.transactionLog.uninserted.push(decompressed[index]);
+    this.transactionLog.pushTransactions();
 
     if (this.momentCount === 0 || decompressed.length === 0) {
       // No moments or no decompressed transactions: just append server transactions
-      transactionLog.pushServer(this.transactions);
-      transactionLog.pushTransactions();
+      this.transactionLog.pushServer(this.transactions);
+      this.transactionLog.pushTransactions();
     } else {
       // We have moments and decompressed txs: redraw from last moment then append server txs
-      const { width, height } = virtualCanvas;
-      changeTracker.track(0, 0, width, height); // mark full canvas dirty
+      const { width, height } = this.virtualCanvas;
+      this.changeTracker.track(0, 0, width, height); // mark full canvas dirty
 
       const lastTransaction = this.moments[this.moments.length - 1].transaction;
-      momentReplay.rollback(lastTransaction);
+      this.momentReplay.rollback(lastTransaction);
 
-      transactionLog.pushServer(this.transactions);
-      const desyncTransaction = transactionLog.pushTransactions();
-      if (desyncTransaction) momentReplay.rollback(desyncTransaction);
+      this.transactionLog.pushServer(this.transactions);
+      const desyncTransaction = this.transactionLog.pushTransactions();
+      if (desyncTransaction) this.momentReplay.rollback(desyncTransaction);
     }
 
     // Paint current state
-    virtualCanvas.render();
+    this.virtualCanvas.render();
 
     // Prepare desync pointers to resume from the end
     const lastTransaction =
-      transactionLog.transactions[transactionLog.transactions.length - 1];
+      this.transactionLog.transactions[this.transactionLog.transactions.length - 1];
     if (lastTransaction) {
-      transactionLog.desyncType = transactionLog.DESYNC.COLLAB;
-      transactionLog.resyncMoment = lastTransaction;
-      transactionLog.resyncIndex =
-        transactionLog.transactionIndex(lastTransaction);
+      this.transactionLog.desyncType = this.transactionLog.DESYNC.COLLAB;
+      this.transactionLog.resyncMoment = lastTransaction;
+      this.transactionLog.resyncIndex =
+        this.transactionLog.transactionIndex(lastTransaction);
     }
 
     // Measure how long it takes to finish rendering the remaining transactions
-    const transactionsToRender = transactionLog.getTransactionsLeft();
+    const transactionsToRender = this.transactionLog.getTransactionsLeft();
     const startTime = performance.now();
 
     const endInitialization = setInterval(() => {
       // Wait until renderer is idle (no tasks, nothing left)
-      if (!transactionLog.finished() || mrPaintEngine.currentTask) return;
+      if (!this.transactionLog.finished() || this.mrPaintEngine.currentTask) return;
 
       // Send our state to peers post-initialization
       this.sendState();
-      transactionLog.desyncType = transactionLog.DESYNC.NO;
+      this.transactionLog.desyncType = this.transactionLog.DESYNC.NO;
 
       // Simple perf log
       const secondsToFinish = (performance.now() - startTime) / 1000;
@@ -190,10 +193,10 @@ export default class TransferManager {
       );
 
       // End initialization and restore locally-caught transactions
-      mrPaintEngine.initializing = false;
-      transactionLog.uninserted.push(...transactionsCaughtWhileSyncing);
-      const desycTransaction = transactionLog.pushTransactions();
-      if (desycTransaction) momentReplay.rollback(desycTransaction);
+      this.mrPaintEngine.initializing = false;
+      this.transactionLog.uninserted.push(...transactionsCaughtWhileSyncing);
+      const desycTransaction = this.transactionLog.pushTransactions();
+      if (desycTransaction) this.momentReplay.rollback(desycTransaction);
 
       clearInterval(endInitialization);
     }, 1000 / 10);
@@ -211,8 +214,8 @@ export default class TransferManager {
    * @returns {void}
    */
   sendState = () => {
-    if (!transactionLog.transactions.length) {
-      console.log("SNAPSHOT_COUNT SENT: ", momentReplay.moments.length);
+    if (!this.transactionLog.transactions.length) {
+      console.log("SNAPSHOT_COUNT SENT: ", this.momentReplay.moments.length);
 
       // MOMENT_COUNT (0)
       const momentCountPacket = new Uint8Array([
@@ -220,40 +223,46 @@ export default class TransferManager {
         OP_SYNC.MOMENT_COUNT,
         0,
       ]);
-      ws.send(momentCountPacket);
+      this.ws.send(momentCountPacket);
       console.log("BYTES SENT (MOMENT_COUNT):", momentCountPacket.length);
 
       // Empty PNG
       const emptyPngPacket = new Uint8Array([OP_TYPE.SYNC, OP_SYNC.PNG, 0, 0]);
       console.log("PNG SENT");
-      ws.send(emptyPngPacket);
+      this.ws.send(emptyPngPacket);
       console.log("BYTES SENT (PNG):", emptyPngPacket.length);
       return;
     }
 
     // Take a fresh snapshot before sending
-    momentReplay.snapshot();
+    this.momentReplay.snapshot();
 
     // MOMENT_COUNT
-    console.log("SNAPSHOT_COUNT SENT: ", momentReplay.moments.length);
+    console.log("SNAPSHOT_COUNT SENT: ", this.momentReplay.moments.length);
     const countPacket = new Uint8Array([
       OP_TYPE.SYNC,
       OP_SYNC.MOMENT_COUNT,
-      momentReplay.moments.length,
+      this.momentReplay.moments.length,
     ]);
-    ws.send(countPacket);
+    this.ws.send(countPacket);
 
     // SNAPSHOTS (compressed)
-    console.log("SNAPSHOTS SENT: ", momentReplay.moments.length);
+    // console.log("SNAPSHOTS SENT: ", this.momentReplay.moments.length);
+    // let snapshotbytes = 0;
+    // this.momentReplay.moments.map(this.compression.compressMoment).forEach((m, i) => {
+    //   this.ws.send(m);
+    //   snapshotbytes += m.length;
+    // });
+    console.log("SNAPSHOTS SENT: ", this.momentReplay.moments.length);
     let snapshotbytes = 0;
-    momentReplay.moments.map(compressMoment).forEach((m, i) => {
-      ws.send(m);
+    this.momentReplay.moments.map((moment, i) => this.compression.compressMoment(moment, i)).forEach((m) => {
+      this.ws.send(m);
       snapshotbytes += m.length;
     });
 
     // Rough comparison of pre-compression footprint vs sent bytes
     let precompSnapshotbytes = 0;
-    momentReplay.moments.forEach((moment) => {
+    this.momentReplay.moments.forEach((moment) => {
       precompSnapshotbytes += 128 * 128 * 4 * moment.changedChunks.size;
     });
     console.log(
@@ -263,8 +272,27 @@ export default class TransferManager {
     );
 
     // PNG of current offscreen canvas
-    virtualCanvas.offscreenCanvas
-      .convertToBlob({ type: "image/png" })
+    // this.virtualCanvas.offscreenCanvas
+    //   .convertToBlob({ type: "image/png" })
+    //   .then((blob) => blob.arrayBuffer())
+    //   .then((buf) => {
+    //     const pngBytes = new Uint8Array(buf);
+    //     const packet = new Uint8Array(2 + pngBytes.length);
+    //     packet[0] = OP_TYPE.SYNC;
+    //     packet[1] = OP_SYNC.PNG;
+    //     packet.set(pngBytes, 2);
+    //     this.ws.send(packet);
+    //     console.log("BYTES SENT (PNG):", formatBytes(packet.length));
+    //   });
+
+    const canvas = this.virtualCanvas.offscreenCanvas;
+    const blobPromise = canvas.convertToBlob
+      ? canvas.convertToBlob({ type: "image/png" })
+      : new Promise((resolve, reject) =>
+          canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob() returned null"))), "image/png")
+        );
+      
+    blobPromise
       .then((blob) => blob.arrayBuffer())
       .then((buf) => {
         const pngBytes = new Uint8Array(buf);
@@ -272,16 +300,17 @@ export default class TransferManager {
         packet[0] = OP_TYPE.SYNC;
         packet[1] = OP_SYNC.PNG;
         packet.set(pngBytes, 2);
-        ws.send(packet);
+        this.ws.send(packet);
         console.log("BYTES SENT (PNG):", formatBytes(packet.length));
-      });
+      })
+      .catch((err) => console.error("PNG send failed:", err));
 
     // Compressed transactions, extended with any new raw transactions
-    const txPacket = extendCompressedTransaction(
+    const txPacket = this.compression.extendCompressedTransaction(
       this.compressedTransactions,
       this.transactions
     );
-    ws.send(txPacket);
+    this.ws.send(txPacket);
     console.log(
       "BYTES SENT (COMPRESSED TRANSACTIONS):",
       formatBytes(txPacket.length)

@@ -1,9 +1,9 @@
-import {
-  virtualCanvas,
-  transactionLog,
-  changeTracker,
-  toolbar,
-} from "./client.js";
+// import {
+//   transactionLog,
+//   virtualCanvas,
+//   changeTracker,
+//   toolbar,
+// } from "./client.js";
 import { compareTouuid } from "./transaction.js";
 
 const CHUNK_SIZE_POWER = 7;
@@ -32,7 +32,12 @@ export default class MomentReplay {
    * @property {RollbackEntry[]} rollbackChunks - List of chunks queued for redraw after rollback.
    * @property {OffscreenCanvas} whiteChunk - Pre-filled white chunk used as fallback when resetting.
    */
-  constructor() {
+  constructor({transactionLog, virtualCanvas, changeTracker, toolbar}) {
+    this.transactionLog = transactionLog;
+    this.virtualCanvas = virtualCanvas;
+    this.changeTracker = changeTracker;
+    this.toolbar = toolbar;
+
     this.chunkPool = [];
     this.moments = [];
     this.rollbackChunks = [];
@@ -74,19 +79,19 @@ export default class MomentReplay {
    * @returns {void}
    */
   snapshot() {
-    const { transactions } = transactionLog;
-    const transaction = transactions[transactionLog.rendered - 1];
-    const time = transactionLog.rendered - 1;
+    const { transactions } = this.transactionLog;
+    const transaction = transactions[this.transactionLog.rendered - 1];
+    const time = this.transactionLog.rendered - 1;
     const changedChunks = new Map();
 
-    for (const pos of changeTracker) {
+    for (const pos of this.changeTracker) {
       const row = (pos >> MAX_CHUNK_POWER) * CHUNK_SIZE;
       const col = (pos & ((1 << MAX_CHUNK_POWER) - 1)) * CHUNK_SIZE;
       const chunk = this.newChunk();
       chunk
         .getContext("2d")
         .drawImage(
-          virtualCanvas.offscreenCanvas,
+          this.virtualCanvas.offscreenCanvas,
           col,
           row,
           CHUNK_SIZE,
@@ -98,16 +103,16 @@ export default class MomentReplay {
         );
       changedChunks.set(pos, chunk);
     }
-    changeTracker.clear();
+    this.changeTracker.clear();
 
     this.moments.push({
       transaction,
       time,
       changedChunks,
-      width: virtualCanvas.width,
-      height: virtualCanvas.height,
-      col: Math.ceil(virtualCanvas.width / CHUNK_SIZE),
-      row: Math.ceil(virtualCanvas.height / CHUNK_SIZE),
+      width: this.virtualCanvas.width,
+      height: this.virtualCanvas.height,
+      col: Math.ceil(this.virtualCanvas.width / CHUNK_SIZE),
+      row: Math.ceil(this.virtualCanvas.height / CHUNK_SIZE),
     });
 
     // Compact moments to avoid storing redundant snapshots
@@ -158,11 +163,11 @@ export default class MomentReplay {
 
     // If no valid moments remain, reset entirely
     if (!this.moments.length) {
-      virtualCanvas.reset();
-      toolbar.viewport.setAdjusters();
-      toolbar.statusbar.setCanvasSize();
-      transactionLog.rendered = 0;
-      changeTracker.clear();
+      this.virtualCanvas.reset();
+      this.toolbar.viewport.setAdjusters();
+      this.toolbar.statusbar.setCanvasSize();
+      this.transactionLog.rendered = 0;
+      this.changeTracker.clear();
       for (const { changedChunks } of desyncedMoments)
         for (const [, chunk] of changedChunks) this.oldChunk(chunk);
       return;
@@ -174,8 +179,8 @@ export default class MomentReplay {
     const rollbackCol = rollbackMoment.col;
 
     const locationOfChanges = new Set();
-    let minDesyncRow = Math.ceil(virtualCanvas.height / CHUNK_SIZE);
-    let minDesyncCol = Math.ceil(virtualCanvas.width / CHUNK_SIZE);
+    let minDesyncRow = Math.ceil(this.virtualCanvas.height / CHUNK_SIZE);
+    let minDesyncCol = Math.ceil(this.virtualCanvas.width / CHUNK_SIZE);
 
     // Collect all changes from desynced moments
     for (const { changedChunks, row, col } of desyncedMoments) {
@@ -200,12 +205,12 @@ export default class MomentReplay {
       }
 
     // Track unsnapshotted changes
-    for (const pos of changeTracker) {
+    for (const pos of this.changeTracker) {
       let inside = pos >> MAX_CHUNK_POWER < rollbackRow;
       inside &&= (pos & ((1 << MAX_CHUNK_POWER) - 1)) < rollbackCol;
       if (inside) locationOfChanges.add(pos);
     }
-    changeTracker.clear();
+    this.changeTracker.clear();
 
     // Track unrollbacked changes
     for (const [pos] of this.rollbackChunks) {
@@ -228,11 +233,11 @@ export default class MomentReplay {
     }
 
     // Apply rollback moment to the canvas
-    virtualCanvas.setSize(rollbackMoment.width, rollbackMoment.height);
-    toolbar.viewport.setAdjusters();
-    toolbar.statusbar.setCanvasSize();
-    transactionLog.rendered =
-      transactionLog.transactionIndex(rollbackMoment.transaction) + 1;
+    this.virtualCanvas.setSize(rollbackMoment.width, rollbackMoment.height);
+    this.toolbar.viewport.setAdjusters();
+    this.toolbar.statusbar.setCanvasSize();
+    this.transactionLog.rendered =
+      this.transactionLog.transactionIndex(rollbackMoment.transaction) + 1;
   }
 
   /**
@@ -248,7 +253,7 @@ export default class MomentReplay {
         const [pos, chunk] = this.rollbackChunks.pop();
         const row = pos >> MAX_CHUNK_POWER;
         const col = pos & ((1 << MAX_CHUNK_POWER) - 1);
-        virtualCanvas.offscreenCtx.drawImage(
+        this.virtualCanvas.offscreenCtx.drawImage(
           chunk,
           col * CHUNK_SIZE,
           row * CHUNK_SIZE

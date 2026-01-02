@@ -1,4 +1,4 @@
-import { momentReplay, virtualCanvas } from "./client.js";
+// import { momentReplay, virtualCanvas } from "./client.js";
 import {
   decodeLargeNumber,
   encodeLargeNumber,
@@ -14,8 +14,15 @@ import {
 import { OP_TYPE, OP_SYNC } from "./shared/instructionset.js";
 import { qoiDecode, qoiEncode } from "./qoi.js";
 
-export const decompressMoment = (eventData) => {
-  const { CHUNK_SIZE } = virtualCanvas;
+export default class Compression {
+  constructor({virtualCanvas, momentReplay}){
+    this.virtualCanvas = virtualCanvas;
+    this.momentReplay = momentReplay;
+  }
+
+
+/* export const */decompressMoment = (eventData) => {
+  const { CHUNK_SIZE } = this.virtualCanvas;
   let inc = 2;
   const momentIndex = eventData[inc++];
   const width = decodeLargeNumber(eventData.subarray(inc, (inc += 2)));
@@ -35,7 +42,7 @@ export const decompressMoment = (eventData) => {
   const changedChunks = new Map();
   //split into changedChunks
   for (let index = 0; index < count; index++) {
-    const chunk = momentReplay.newChunk();
+    const chunk = this.momentReplay.newChunk();
     const ctx = chunk.getContext("2d");
     const start = index * pixelCount;
     const end = (index + 1) * pixelCount;
@@ -58,8 +65,8 @@ export const decompressMoment = (eventData) => {
   ];
 };
 
-export const compressMoment = (moment, index) => {
-  const { CHUNK_SIZE } = virtualCanvas;
+/*export const */compressMoment = (moment, index) => {
+  const { CHUNK_SIZE } = this.virtualCanvas;
 
   const opType = OP_TYPE.SYNC; // 1 byte
   const opSync = OP_SYNC.MOMENTS; // 1 byte
@@ -77,7 +84,7 @@ export const compressMoment = (moment, index) => {
   let offset = 0;
   for (const [pos, canvas] of moment.changedChunks) {
     positionsEncoded.push(encodeExtraLargeNumber(Number(pos)));
-    const u8 = readUint8FromCanvas(canvas); // must be length == bytesPerChunk
+    const u8 = this.readUint8FromCanvas(canvas); // must be length == bytesPerChunk
     joinedChunks.set(u8, offset);
     offset += u8.length;
   }
@@ -125,31 +132,31 @@ export const compressMoment = (moment, index) => {
   return out;
 };
 
-const readUint8FromCanvas = (canvas) =>
+readUint8FromCanvas = (canvas) =>
   canvas
     .getContext("2d")
-    .getImageData(0, 0, virtualCanvas.CHUNK_SIZE, virtualCanvas.CHUNK_SIZE)
+    .getImageData(0, 0, this.virtualCanvas.CHUNK_SIZE, this.virtualCanvas.CHUNK_SIZE)
     .data; // Uint8ClampedArray
 
 // Utility: shallow byte equality for TypedArrays (Uint8Array, Uint8ClampedArray)
-const equalBytes = (a, b) => {
+equalBytes = (a, b) => {
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
   return true;
 };
 
 // Utility: normalize to Uint8Array for consistent comparisons
-const toU8 = (typed) =>
+toU8 = (typed) =>
   typed instanceof Uint8Array
     ? typed
     : new Uint8Array(typed.buffer, typed.byteOffset, typed.byteLength);
 
 // Utility: read raw RGBA bytes from a canvas chunk
-const readChunkRGBA = (canvas) =>
-  toU8(
+readChunkRGBA = (canvas) =>
+  this.toU8(
     canvas
       .getContext("2d")
-      .getImageData(0, 0, virtualCanvas.CHUNK_SIZE, virtualCanvas.CHUNK_SIZE)
+      .getImageData(0, 0, this.virtualCanvas.CHUNK_SIZE, this.virtualCanvas.CHUNK_SIZE)
       .data
   );
 
@@ -165,7 +172,7 @@ const readChunkRGBA = (canvas) =>
  *   decoded?: any
  * }}
  */
-export function validateMomentRoundTrip(moment, index) {
+/*export function */validateMomentRoundTrip(moment, index) {
   const mismatches = [];
 
   // 1) Encode
@@ -204,9 +211,9 @@ export function validateMomentRoundTrip(moment, index) {
     mismatches.push(`time mismatch: ${decoded.time} != ${moment.time}`);
 
   // 5) Transaction bytes
-  const txA = toU8(moment.transaction);
-  const txB = toU8(decoded.transaction);
-  if (!equalBytes(txA, txB))
+  const txA = this.toU8(moment.transaction);
+  const txB = this.toU8(decoded.transaction);
+  if (!this.equalBytes(txA, txB))
     mismatches.push(
       `transaction bytes mismatch (len ${txA.length} vs ${txB.length})`
     );
@@ -228,7 +235,7 @@ export function validateMomentRoundTrip(moment, index) {
 
   // Pixel-by-pixel equality for each position
   if (mismatches.length === 0) {
-    const { CHUNK_SIZE } = virtualCanvas;
+    const { CHUNK_SIZE } = this.virtualCanvas;
     const expectedLen = CHUNK_SIZE * CHUNK_SIZE * 4;
 
     for (const [pos, origCanvas] of moment.changedChunks) {
@@ -250,7 +257,7 @@ export function validateMomentRoundTrip(moment, index) {
           `decoded RGBA length at ${key} is ${b.length}, expected ${expectedLen}`
         );
 
-      if (!equalBytes(a, b))
+      if (!this.equalBytes(a, b))
         mismatches.push(`pixel data mismatch at position ${key.toString()}`);
     }
   }
@@ -276,7 +283,7 @@ export function validateMomentRoundTrip(moment, index) {
 //                                            MM
 //                                          .JMML.
 
-export const encodeVarint = (value) => {
+/*export const */encodeVarint = (value) => {
   let n = typeof value === "bigint" ? value : BigInt(value);
   if (n < 0n) throw new RangeError("encodeVarint non-negative integers only");
   const bytes = [];
@@ -288,7 +295,7 @@ export const encodeVarint = (value) => {
   return Uint8Array.from(bytes);
 };
 
-export const decodeVarint = (buf, ptr) => {
+/*export const */decodeVarint = (buf, ptr) => {
   let shift = 0n,
     result = 0n;
   let byte;
@@ -300,7 +307,7 @@ export const decodeVarint = (buf, ptr) => {
   return [result, ptr];
 };
 
-export const encodeSignedVarInt = (value) => {
+/*export const */encodeSignedVarInt = (value) => {
   // 1) zig‑zag map signed → unsigned
   const n = typeof value === "bigint" ? value : BigInt(value);
   const zz = n >= 0n ? n << 1n : (-n << 1n) - 1n;
@@ -316,7 +323,7 @@ export const encodeSignedVarInt = (value) => {
   return Uint8Array.from(bytes);
 };
 
-export const decodeSignedVarInt = (buf, ptr = 0) => {
+/*export const */decodeSignedVarInt = (buf, ptr = 0) => {
   // 1) varint‑decode to get unsigned zig‑zagged integer
   let shift = 0n;
   let result = 0n;
@@ -333,7 +340,7 @@ export const decodeSignedVarInt = (buf, ptr = 0) => {
   return [signed, ptr];
 };
 
-const bytesToBigInt = (bytes) => {
+bytesToBigInt = (bytes) => {
   let n = 0n;
   for (let b of bytes) {
     n = (n << 8n) | BigInt(b);
@@ -341,7 +348,7 @@ const bytesToBigInt = (bytes) => {
   return n;
 };
 
-const bigIntToBytes8 = (n) => {
+bigIntToBytes8 = (n) => {
   const bytes = new Uint8Array(8);
   for (let i = 0; i < 8; i++) {
     // byte 0 is most‑significant
@@ -350,24 +357,24 @@ const bigIntToBytes8 = (n) => {
   return bytes;
 };
 
-export const extendCompressedTransaction = (compressed, transactions) => {
+extendCompressedTransaction = (compressed, transactions) => {
   if (compressed.length < 3) {
     if (transactions.length < 16)
       return new Uint8Array([OP_TYPE.SYNC, OP_SYNC.COMPRESSED_TRANSACTIONS, 0]);
     return buildTransaction(
       [OP_TYPE.SYNC, OP_SYNC.COMPRESSED_TRANSACTIONS],
-      compressTransaction(transactions)
+      this.compressTransaction(transactions)
     );
   }
 
-  const lastTime = bytesToBigInt(compressed.subarray(compressed.length - 8));
+  const lastTime = this.bytesToBigInt(compressed.subarray(compressed.length - 8));
   const base = compressed.subarray(0, compressed.length - 8);
   if (transactions.length < 16)
     return buildTransaction(
       [OP_TYPE.SYNC, OP_SYNC.COMPRESSED_TRANSACTIONS],
       base
     );
-  const extension = compressTransaction(transactions, lastTime);
+  const extension = this.compressTransaction(transactions, lastTime);
   return buildTransaction(
     [OP_TYPE.SYNC, OP_SYNC.COMPRESSED_TRANSACTIONS],
     base,
@@ -381,7 +388,7 @@ export const extendCompressedTransaction = (compressed, transactions) => {
   Extra compression is obtained by using time and position diffs.
 */
 
-export const compressTransaction = (transactions, lastTime = 0n) => {
+compressTransaction = (transactions, lastTime = 0n) => {
   const t0 = performance.now();
 
   const txs = [];
@@ -397,8 +404,8 @@ export const compressTransaction = (transactions, lastTime = 0n) => {
   for (let tx of txs) {
     const timeBytes = tx.subarray(0, 8);
     const opBytes = tx.subarray(8, 16);
-    const opKey = bytesToBigInt(opBytes);
-    const timeVal = bytesToBigInt(timeBytes);
+    const opKey = this.bytesToBigInt(opBytes);
+    const timeVal = this.bytesToBigInt(timeBytes);
     if (!groups.has(opKey)) groups.set(opKey, []);
     groups.get(opKey).push({ tx, time: timeVal });
   }
@@ -456,9 +463,9 @@ export const compressTransaction = (transactions, lastTime = 0n) => {
 
   for (const opGroup of splitGroups) {
     const tx = opGroup.shift();
-    const curTime = bytesToBigInt(tx.subarray(0, 8));
+    const curTime = this.bytesToBigInt(tx.subarray(0, 8));
     lastTimeBytes = tx.subarray(0, 8);
-    compTxs.push(encodeSignedVarInt(curTime - lastTime));
+    compTxs.push(this.encodeSignedVarInt(curTime - lastTime));
     compTxs.push(tx.subarray(8, 17));
     lastTime = curTime;
 
@@ -474,17 +481,17 @@ export const compressTransaction = (transactions, lastTime = 0n) => {
       lay[length - 1] === 4 && lay[length - 2] === 4 && lay[length - 3] === 4;
     if (!isSpline) continue;
 
-    compTxs.push(encodeVarint(opGroup.length));
+    compTxs.push(this.encodeVarint(opGroup.length));
     let lastPosition = decodePosition(tx.subarray(tx.length - 4));
     for (const tx of opGroup) {
-      const curTime = bytesToBigInt(tx.subarray(0, 8));
+      const curTime = this.bytesToBigInt(tx.subarray(0, 8));
       lastTimeBytes = tx.subarray(0, 8);
-      compTxs.push(encodeSignedVarInt(curTime - lastTime));
+      compTxs.push(this.encodeSignedVarInt(curTime - lastTime));
       lastTime = curTime;
 
       const position = decodePosition(tx.subarray(tx.length - 4));
-      compTxs.push(encodeSignedVarInt(position[0] - lastPosition[0]));
-      compTxs.push(encodeSignedVarInt(position[1] - lastPosition[1]));
+      compTxs.push(this.encodeSignedVarInt(position[0] - lastPosition[0]));
+      compTxs.push(this.encodeSignedVarInt(position[1] - lastPosition[1]));
       lastPosition = position;
     }
   }
@@ -519,7 +526,7 @@ export const compressTransaction = (transactions, lastTime = 0n) => {
   return compressed;
 };
 
-export const decompressTransaction = (compressed) => {
+decompressTransaction = (compressed) => {
   if (compressed.length < 16) return [];
   const txs = [];
   let ptr = 0;
@@ -527,7 +534,7 @@ export const decompressTransaction = (compressed) => {
 
   //8 short since last bytes are time bytes used for extension.
   while (ptr < compressed.length - 8) {
-    const [dt, ptrAfterTime] = decodeSignedVarInt(compressed, ptr);
+    const [dt, ptrAfterTime] = this.decodeSignedVarInt(compressed, ptr);
     ptr = ptrAfterTime;
     const curTime = lastTime + dt;
     lastTime = curTime;
@@ -536,7 +543,7 @@ export const decompressTransaction = (compressed) => {
     const toolCode = compressed[ptr + 8];
     ptr += 9;
 
-    const timeBytes = bigIntToBytes8(curTime);
+    const timeBytes = this.bigIntToBytes8(curTime);
     const header = new Uint8Array(8 + 8 + 1);
     header.set(timeBytes, 0);
     header.set(opKeyBytes, 8);
@@ -566,7 +573,7 @@ export const decompressTransaction = (compressed) => {
       L >= 3 && lay[L - 1] === 4 && lay[L - 2] === 4 && lay[L - 3] === 4;
     if (!isSpline) continue;
 
-    const [groupCount, ptrAfterCount] = decodeVarint(compressed, ptr);
+    const [groupCount, ptrAfterCount] = this.decodeVarint(compressed, ptr);
     ptr = ptrAfterCount;
 
     const prefixSegs = staticSegs.slice(0, -3);
@@ -575,17 +582,17 @@ export const decompressTransaction = (compressed) => {
       .map((seg) => decodePosition(seg)); // each is [x,y]
 
     for (let i = 0; i < Number(groupCount); i++) {
-      const [dt, p1] = decodeSignedVarInt(compressed, ptr);
+      const [dt, p1] = this.decodeSignedVarInt(compressed, ptr);
       ptr = p1;
       lastTime += dt;
 
-      const [dx, p2] = decodeSignedVarInt(compressed, ptr);
-      const [dy, p3] = decodeSignedVarInt(compressed, p2);
+      const [dx, p2] = this.decodeSignedVarInt(compressed, ptr);
+      const [dy, p3] = this.decodeSignedVarInt(compressed, p2);
       ptr = p3;
 
       const newC = [prevC[0] + Number(dx), prevC[1] + Number(dy)];
 
-      const timeBytes2 = bigIntToBytes8(lastTime);
+      const timeBytes2 = this.bigIntToBytes8(lastTime);
       const header2 = new Uint8Array(17);
       header2.set(timeBytes2, 0);
       header2.set(opKeyBytes, 8);
@@ -626,20 +633,20 @@ export const decompressTransaction = (compressed) => {
 
   return txs;
 };
-
+}
 /**
  * Compare two transactions by their first 16 bytes:
  *   – first 8 bytes = timestamp (big‑endian)
  *   – next 8 bytes  = opId    (big‑endian)
  */
 function compareTx(a, b) {
-  const tA = bytesToBigInt(a.subarray(0, 8));
-  const tB = bytesToBigInt(b.subarray(0, 8));
+  const tA = this.bytesToBigInt(a.subarray(0, 8));
+  const tB = this.bytesToBigInt(b.subarray(0, 8));
   if (tA < tB) return -1;
   if (tA > tB) return 1;
 
-  const opA = bytesToBigInt(a.subarray(8, 16));
-  const opB = bytesToBigInt(b.subarray(8, 16));
+  const opA = this.bytesToBigInt(a.subarray(8, 16));
+  const opB = this.bytesToBigInt(b.subarray(8, 16));
   if (opA < opB) return -1;
   if (opA > opB) return 1;
 
@@ -652,9 +659,9 @@ const compressAndConcat = (txs) => {
   const firstHalf = txs.slice(0, mid);
   const secondHalf = txs.slice(mid);
 
-  const compressedFirst = compressTransaction(firstHalf);
+  const compressedFirst = this.compressTransaction(firstHalf);
 
-  return extendCompressedTransaction(compressedFirst, secondHalf);
+  return this.extendCompressedTransaction(compressedFirst, secondHalf);
 };
 
 /**
@@ -663,7 +670,7 @@ const compressAndConcat = (txs) => {
  */
 export function validateCompression(txs) {
   const compressed = compressAndConcat(txs);
-  const decompressed = decompressTransaction(compressed);
+  const decompressed = this.decompressTransaction(compressed);
 
   if (decompressed.length !== txs.length) {
     console.error(

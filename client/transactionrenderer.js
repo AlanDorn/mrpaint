@@ -1,11 +1,12 @@
-import { virtualCanvas, changeTracker, toolbar } from "./client.js";
-import {
-  decodeLargeNumber,
-  decodePosition,
-  TOOLCODEINDEX,
-  toolCodes,
-} from "./transaction.js";
+// import { virtualCanvas, changeTracker, toolbar } from "./client.js";
+import {decodeLargeNumber, decodePosition, TOOLCODEINDEX, toolCodes} from "./transaction.js";
 import { bresenhamLine, getCircleStamp, splinePixels } from "./util2d.js";
+
+let virtualCanvas, changeTracker, toolbar;
+
+export function setRenderContext(ctx) {
+  ({ virtualCanvas, changeTracker, toolbar } = ctx);
+}
 
 // rendering can be extended from outside the class by adding to renderSelector
 const buildNextTask = (tx) => renderSelector[tx[TOOLCODEINDEX]]?.(tx);
@@ -109,8 +110,11 @@ renderSelector[toolCodes.fill[0]] = (transaction) => {
   fillState.height = height;
   fillState.ctx = ctx;
   if (startX < 0 || startX >= width || startY < 0 || startY >= height) return;
-  const imageData = ctx.getImageData(0, 0, width, height);
-  const data = imageData.data;
+
+  // const imageData = ctx.getImageData(0, 0, width, height);
+  // const data = imageData.data;
+  const data = virtualCanvas.buff;
+
   fillState.data = data; // Uint8ClampedArray, 4 bytes per pixel
   if (matchesColor(fillState.data, width, startX, startY, color)) return;
   const pos = startY * width + startX;
@@ -231,9 +235,12 @@ renderSelector[toolCodes.eraser[0]] = (transaction) => {
   eraserState.y1 = y1;
   eraserState.w = w;
   eraserState.h = h;
-  const imageData = ctx.getImageData(x0, y0, w, h);
-  eraserState.imageData = imageData;
-  eraserState.data = imageData.data;
+  // const imageData = ctx.getImageData(x0, y0, w, h);   //replacing getImageData with something else for brave users, pls pls pls
+  // eraserState.imageData = imageData;
+  // eraserState.data = imageData.data;
+  const startIndex = (y0 * virtualCanvas.width + x0) * 4;
+  eraserState.data = virtualCanvas.buff.subarray(startIndex, startIndex + w*h*4);
+
   // Precompute mask: mode===1 => outline(1) + subpixel(2)
   eraserState.brushMask = buildBrushMask(
     eraserState.brushsize,
@@ -348,12 +355,13 @@ renderSelector[toolCodes.straightLine[0]] = (transaction) => {
   straightLineState.maxX = Math.max(startPoint[0], endPoint[0]) + halfBrush;
   straightLineState.maxY = Math.max(startPoint[1], endPoint[1]) + halfBrush;
   // choose set function like in pencil
-  straightLineState.setFunction =
-    straightLineState.brushsize <= 2
-      ? virtualCanvas.setPixel
-      : virtualCanvas.setPixelOutline;
-  straightLineState.index = 0;
-  return straightLineRender;
+  straightLineState.setFunction = virtualCanvas.setPixel;
+    // straightLineState.setFunction      
+    // straightLineState.brushsize <= 2   
+    //   ? virtualCanvas.setPixel         
+    //   : virtualCanvas.setPixelOutline; //the outline was annoying, should it be in SL?                  
+  straightLineState.index = 0;            //makes sense for eraser but not so much SL?                  
+  return straightLineRender;              //TODO prob put it back l8r but do a lil intersection check     
 };
 const straightLineRender = () => {
   const s = straightLineState;

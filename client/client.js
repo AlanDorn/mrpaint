@@ -1,58 +1,55 @@
 //Combined version of old&new:
-//healthy balance, more free than version1 but less hectic than version2
+//healthy balance?, more free than version1 but less abstract than version2
 
+import TransactionLog   from "./transactionlog.js";
+import VirtualCanvas    from "./virtualcanvas.js";
+import ChangeTracker    from "./changetracker.js";
+import Toolbar          from "./toolbar.js";
+import MomentReplay     from "./momentreplay.js";
+import MrPaintEngine    from "./mrpaintengine.js";
+import Input            from "./input.js";
+import Socket           from "./socket.js";
+import TransferManager  from "./transfermanager.js";
+import LogManager       from "./logmanager.js";
+import PresenceManager  from "./presencemanager.js";
+import PreviewManager   from "./previewmanager.js";
+import Test             from "./testfunctions.js";
 
-import TransactionLog  from "./transactionlog.js";
-import VirtualCanvas   from "./virtualcanvas.js";
-import ChangeTracker   from "./changetracker.js";
-import Toolbar         from "./toolbar.js";
-import MomentReplay    from "./momentreplay.js";
-import MrPaintEngine   from "./mrpaintengine.js";
-import Input           from "./input.js";
-import Socket          from "./socket.js";
-import TransferManager from "./transfermanager.js";
-import LogManager      from "./logmanager.js";
-import PresenceManager from "./presencemanager.js";
-import PreviewManager from "./previewmanager.js"
-// import "./testfunctions.js";
-
-export function startup({wsUrl, canvasEl, dev = false} = {}) {
-
+export function startup({dev = false} = {}) {
     const transactionLog = new TransactionLog();
     const virtualCanvas = new VirtualCanvas();
-
     const changeTracker = new ChangeTracker({
-    virtualCanvas,
+        virtualCanvas,
     });
-
+    const previewManager = new PreviewManager({
+        virtualCanvas,
+    });
     const toolbar = new Toolbar({
         transactionLog,
         virtualCanvas,
+        previewManager,
     });
-
     const momentReplay = new MomentReplay({
         transactionLog,
         virtualCanvas,
         changeTracker,
         toolbar,
     });
-    
     const mrPaintEngine = new MrPaintEngine({
         transactionLog,
-        virtualCanvas,        
+        virtualCanvas,
         changeTracker,
+        momentReplay,
         toolbar,
     });
-
     const input = new Input({
         virtualCanvas,
         toolbar,
     }); 
-
     const ws = new Socket({
-        url: wsUrl,
+        transactionLog,
+        toolbar,
     });
-
     const transferManager = new TransferManager({
         transactionLog,
         virtualCanvas,
@@ -61,25 +58,20 @@ export function startup({wsUrl, canvasEl, dev = false} = {}) {
         mrPaintEngine,
         ws,
     });
-
     const logManager = new LogManager({
         transactionLog,
         ws,
     });
-
     const presenceManager = new PresenceManager({
         virtualCanvas,
+        previewManager,
         input,
-        ws,
+        ws,        
     });
 
-    const previewManager = new PreviewManager({
-        virtualCanvas,
-    });
-
-    ws.onopen();
-
-    if (dev) TestFunctions({ mrPaintEngine, transactionLog, ws });
+    if (dev){
+        const test = new Test({ transactionLog, virtualCanvas });
+    }
 
     return{
         transactionLog,
@@ -93,21 +85,14 @@ export function startup({wsUrl, canvasEl, dev = false} = {}) {
         transferManager,
         logManager,
         presenceManager,
-        previewManager,
-        destroy(){
-            ws.onclose();
-            input.destroy();
-            //other listeners
-        },        
+        previewManager,        
     };
 }
 
-function TestFunctions() {
-    import("./testfunctions.js").then();
-}
-
-
-
+const app = startup({ dev: true }); //switch to false if production type shii
+// // (or however you’re calling it)
+window.MP = app; // <-- add this temporarily for debugging
+console.log("[BOOT] MP ready:", !!window.MP);
 
 //OLD1
 //too loose, too free, hard to tell where I am & what is needed
@@ -140,7 +125,7 @@ function TestFunctions() {
 
 
 //OLD2 
-//too tight, too coupled, hard to breathe
+//too tight, too coupled, hard to breathe&think
 
 // import TransactionLog from "./transactionlog.js";
 // import VirtualCanvas from "./virtualcanvas.js";

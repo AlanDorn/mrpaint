@@ -1,4 +1,4 @@
-import { virtualCanvas } from "./client.js";
+// import { virtualCanvas } from "./client.js";
 
 const CHUNK_SIZE_POWER = 7;
 const CHUNK_SIZE = 2 ** CHUNK_SIZE_POWER;
@@ -12,6 +12,10 @@ const MAX_CHUNK_POWER = 15 - CHUNK_SIZE_POWER;
  * - Encoded keys: `(row << MAX_CHUNK_POWER) | col`.
  */
 export default class ChangeTracker extends Set {
+  constructor({virtualCanvas}){
+    super();
+    this.virtualCanvas = virtualCanvas;
+  }
   /**
    * Mark all chunks touched by a rectangular region as changed.
    *
@@ -25,10 +29,10 @@ export default class ChangeTracker extends Set {
    * @returns {void}
    */
   track(startX, startY, endX, endY) {
-    const x1 = Math.min(virtualCanvas.width, endX) - 1;
-    const y1 = Math.min(virtualCanvas.height, endY) - 1;
     const x0 = Math.max(0, startX);
     const y0 = Math.max(0, startY);
+    const x1 = Math.min(this.virtualCanvas.width, endX) - 1;
+    const y1 = Math.min(this.virtualCanvas.height, endY) - 1;
     if (x1 < 0 || y1 < 0 || x0 > x1 || y0 > y1) return;
 
     const startCol = x0 >> CHUNK_SIZE_POWER;
@@ -60,8 +64,8 @@ export default class ChangeTracker extends Set {
    * @returns {void}
    */
   resize(newWidth, newHeight) {
-    const oldWidth = virtualCanvas.width;
-    const oldHeight = virtualCanvas.height;
+    const oldWidth = this.virtualCanvas.width;
+    const oldHeight = this.virtualCanvas.height;
 
     const oldRows = Math.ceil(oldHeight / CHUNK_SIZE);
     const oldCols = Math.ceil(oldWidth / CHUNK_SIZE);

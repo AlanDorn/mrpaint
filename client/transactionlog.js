@@ -94,7 +94,7 @@ export default class TransactionLog {
    * @param {Uint8Array} tx - Transaction to push.
    */
   pushClient = (tx) => {
-    this.unsent.push(tx);
+    this.unsent.push(tx);     //shit gets tracked by logManager
     this.uninserted.push(tx);
   };
 
@@ -170,7 +170,7 @@ export default class TransactionLog {
    * @returns {[number, boolean]} Updated `[correctIndex, desyncFlag]`.
    */
   handleGeneric(tx, [correct, desync]) {
-    if (tx.length < TOOLCODEINDEX) return correct;
+    if (tx.length < TOOLCODEINDEX) return [correct, desync]; //4debugging change: correct => [correct, desync]; made things easier
 
     const sortedPosition = this.transactionIndex(tx);
     this.transactions.splice(sortedPosition, 0, tx);
@@ -213,8 +213,7 @@ export default class TransactionLog {
       if (compareTouuid(undoRedo, prevUndoRedo) <= 0) return [correct, desync];
       this.lastUndoRedo.set(operationId, undoRedo);
 
-      const lastUndoRedoIsSame =
-        undoRedo[TOOLCODEINDEX] === prevUndoRedo[TOOLCODEINDEX];
+      const lastUndoRedoIsSame = undoRedo[TOOLCODEINDEX] === prevUndoRedo[TOOLCODEINDEX];
       // ignore, it's the same type as the existing undoredo
       if (lastUndoRedoIsSame) return [correct, desync];
     } else {

@@ -1,13 +1,16 @@
 import { fillTransaction, operationId } from "./transaction.js";
-import { virtualCanvas, transactionLog, toolbar } from "./client.js";
+// import { virtualCanvas, transactionLog, toolbar } from "./client.js";
 export default class FillTool {
-  constructor() {
-    const fillToolButton = document.getElementById("fillTool");
+  constructor(transactionLog, virtualCanvas, toolbar) {
+    this.transactionLog = transactionLog;
+    this.virtualCanvas = virtualCanvas;
+    this.toolbar = toolbar;
+    // const fillToolButton = document.getElementById("fillTool");
 
-    fillToolButton.addEventListener("click", () => {
-      toolbar.activeTool = this;
-      toolbar.updateActiveButton(fillToolButton);
-    });
+    // fillToolButton.addEventListener("click", () => {
+    //   toolbar.activeTool = this;
+    //   toolbar.updateActiveButton(fillToolButton);
+    // });
   }
   mouseMove() {}
 
@@ -16,22 +19,22 @@ export default class FillTool {
   mouseUpRight() {}
 
   mouseDownLeft(input) {
-    const position = virtualCanvas.positionInCanvas(input.x, input.y);
-    this.fill(position, toolbar.colorpicker.primarycolor);
+    const position = this.virtualCanvas.positionInCanvas(input.x, input.y);
+    this.fill(position, this.toolbar.colorpicker.primarycolor);
   }
 
   mouseDownRight(input) {
-    const position = virtualCanvas.positionInCanvas(input.x, input.y);
-    this.fill(position, toolbar.colorpicker.secondarycolor);
+    const position = this.virtualCanvas.positionInCanvas(input.x, input.y);
+    this.fill(position, this.toolbar.colorpicker.secondarycolor);
   }
 
   fill(position, newColor) {
     if (position[0] < 0 || position[1] < 0) return; // or handle the out-of-bounds case appropriately
 
     const currentOperationId = operationId();
-    transactionLog.pushClient(
+    this.transactionLog.pushClient(
       fillTransaction(currentOperationId, newColor, position)
     );
-    toolbar.undo.pushOperation(currentOperationId);
+    this.toolbar.undo.pushOperation(currentOperationId);
   }
 }

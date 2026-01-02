@@ -14,7 +14,7 @@ import Ruler from "./ruler.js";
 
 // Toolbar should be split up into components, so the brush size and the color picker are in a way there own components.
 // There are the general tools like eraser fill and pencil, there will also
-// be  selection tools which will be it's own component.
+// be selection tools which will be it's own component.
 
 // Currently toolbar is both the switcher and the general tools
 // How this will work is through a seperate classes: ToolSwitcher, General Tools, brushsize, color picker.
@@ -33,14 +33,19 @@ import Ruler from "./ruler.js";
 // const listener = () => {}
 // obj.listeners.push(listener); adds listener
 // obj.listeners.splice(obj.listeners.indexOf(listener), 1) remove listener
-
 export default class Toolbar {
-  constructor(transactionLog, virtualCanvas, previewManager) {
-    this.virtualCanvas = virtualCanvas;
+  // /** @type {import('./transactionlog.js').default} */ transactionLog;
+  // /** @type {import('./virtualcanvas.js').default} */ virtualCanvas;
+  // /** @type {import('./previewmanager.js').default} */ previewManager;
+
+  constructor({transactionLog, virtualCanvas, previewManager}) {
+    this.transactionLog = transactionLog; 
+    this.virtualCanvas = virtualCanvas; 
     this.previewManager = previewManager;
 
     this.colorpicker = new ColorPicker();
     this.brushsize = new BrushSize();
+    
     this.pencil = new Pencil(transactionLog, virtualCanvas, this);
     this.eraser = new Eraser(transactionLog, virtualCanvas, this);
     this.fillTool = new FillTool(transactionLog, virtualCanvas, this);
@@ -57,10 +62,17 @@ export default class Toolbar {
     this.activeSelector = null;
     this.setupToolSwitcher();
 
+    this.activeWheel = this.viewport;
     this.activeTool = this.pencil;
     this.updateActiveButton(this.pencilButton);
     this.cursor.setCanvasCursor(this.pencilButton, {x:3, y:20}); //3,20 idfk
 
+    this.drawingarea = document.getElementById("drawingarea");
+
+    this.drawingarea.addEventListener("click", () => {
+      this.activeSelector = null;
+      this.activeWheel = this.viewport;
+    });
   }
 
   setupToolSwitcher() {
@@ -70,7 +82,7 @@ export default class Toolbar {
     this.undoButton = document.getElementById("undo");
     this.redoButton = document.getElementById("redo");
     this.brushSizeSelector = document.getElementById("brushsize");
-    this.drawingarea = document.getElementById("drawingarea");
+    // this.drawingarea = document.getElementById("drawingarea");
     this.straightLineButton = document.getElementById("straightLine");
 
     this.undoButton.addEventListener("click", () => {
@@ -99,7 +111,7 @@ export default class Toolbar {
       this.cursor.setCanvasCursor(this.straightLineButton, {x:0, y:0});
     });
 
-    fillToolButton.addEventListener("click", () => {
+    this.fillToolButton.addEventListener("click", () => {
       this.activeTool = this.fillTool;
       this.updateActiveButton(this.fillToolButton);
       this.cursor.setCanvasCursor(this.fillToolButton, {x:2, y:21});
@@ -117,10 +129,6 @@ export default class Toolbar {
 
     this.brushSizeSelector.addEventListener("mouseleave", () => {
       if (this.activeReason === "mouseenter") this.activeSelector = null;
-    });
-
-    this.drawingarea.addEventListener("click", () => {
-      this.activeSelector = null;
     });
 
     this.viewport.widthAdjuster.addEventListener("mousedown", (event) => {
@@ -157,7 +165,7 @@ export default class Toolbar {
   }
 
 
-  /*
+  
 updateActiveButton(activeButton) {
     const buttons = document.querySelectorAll("#toolbar button");
     const svgs = document.querySelectorAll("#toolbar button svg");
@@ -170,20 +178,21 @@ updateActiveButton(activeButton) {
 
     activeSvg.classList.add("active");
   }
-  */
+  
 
-  updateActiveButton(activeButton) {
-    document
-      .querySelectorAll("#toolbar button, #toolbar button svg")
-      .forEach((button) => button.classList.remove("active"));
-    activeButton.classList.add("active");
-    activeButton.querySelector("svg").classList.add("active");
-  }
+  // updateActiveButton(activeButton) {
+  //   document
+  //     .querySelectorAll("#toolbar button, #toolbar button svg")
+  //     .forEach((button) => button.classList.remove("active"));
+  //   activeButton.classList.add("active");
+  //   activeButton.querySelector("svg").classList.add("active");
+  // }
 
   mouseMove = (input) => {
     this.activeTool.mouseMove(input);
     this.statusbar.setMousePosition(input);
     this.ruler.set(input);
+
   };
 
   mouseDownLeft = (input) => this.activeTool.mouseDownLeft(input);

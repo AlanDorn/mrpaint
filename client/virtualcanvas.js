@@ -1,25 +1,48 @@
 const white = [255, 255, 255];
+const START_HEIGHT = 540;
+const START_WIDTH = 960;
+
+const CHUNK_SIZE_POWER = 7;
+const CHUNK_SIZE = 2 ** CHUNK_SIZE_POWER;
+const MAX_CHUNK_POWER = 15 - CHUNK_SIZE_POWER;
 export default class VirtualCanvas {
   constructor() {
-    this.height = 500;
-    this.width = 700;
+    this.CHUNK_SIZE_POWER = CHUNK_SIZE_POWER;
+    this.CHUNK_SIZE = CHUNK_SIZE;
+    this.MAX_CHUNK_POWER = MAX_CHUNK_POWER;
+    this.START_HEIGHT = START_HEIGHT;
+    this.START_WIDTH = START_WIDTH;
+
+    this.height = START_HEIGHT;//this.START_HEIGHT //500;  //540
+    this.width = START_WIDTH;//this.START_WIDTH //700;   //960
     this.zoomExp = 0;
     this.zoom = 1; // Default zoom level
     this.offset = [0, 0]; // Default offset [x, y]
     this.fillGeneration = [];
 
-    this.virtualCanvas = Array.from({ length: this.height }, () =>
-      Array(this.width).fill(white)
-    );
+    this.buff   = new Uint8ClampedArray(this.width * this.height * 4);
+    this.view32 = new Uint32Array(this.buff.buffer);
+    this.imgD8a = new ImageData(this.buff, this.width, this.height);
+
+    // this.virtualCanvas = Array.from({ length: this.height }, () =>
+    //   Array(this.width).fill(white)
+    // );
 
     this.drawingarea = document.getElementById("drawingarea");
     this.rect = this.drawingarea.getBoundingClientRect();
-    this.offscreenCanvas = document.createElement("canvas");
-    this.offscreenCanvas.width = this.width;
-    this.offscreenCanvas.height = this.height;
-    this.offscreenCtx = this.offscreenCanvas.getContext("2d");
-    this.fillImageData();
+    
+    // this.offscreenCanvas = document.createElement("canvas");
+    // this.offscreenCanvas.width = this.width;
+    // this.offscreenCanvas.height = this.height;
+    this.offscreenCanvas = new OffscreenCanvas(this.width, this.height);
 
+    this.offscreenCtx = this.offscreenCanvas.getContext("2d"); 
+    //, {willreadfrequently: true, colorspace: 'display-p3', alpha: true}
+    this.offscreenCtx.fillStyle = "white";
+    this.offscreenCtx.fillRect(0, 0, this.width, this.height);
+
+    // while (this.fillGeneration.length) this.fill();
+    
     this.canvas = document.getElementById("myCanvas");
     this.ctx = this.canvas.getContext("2d");
     this.setCanvasSize();
@@ -36,10 +59,13 @@ export default class VirtualCanvas {
     this.selfPreviewCtx = this.selfPreviewCanvas.getContext("2d");
 
     this.onCanvasMove = new Set();
+
+    this.setPixel = this.setPixel.bind(this);
+    this.setPixelOutline = this.setPixelOutline.bind(this);
   }
 
   render() {
-    const renderLowRez = this.zoom <= -2;
+    const renderLowRez = this.zoom <= 1;//-2;
     this.ctx.imageSmoothingEnabled = renderLowRez;
     this.ctx.mozImageSmoothingEnabled = renderLowRez;
     this.ctx.webkitImageSmoothingEnabled = renderLowRez;
@@ -54,8 +80,8 @@ export default class VirtualCanvas {
       0,
       this.width,
       this.height,
-      this.offset[0],
-      this.offset[1],
+      Math.floor(this.offset[0]),
+      Math.floor(this.offset[1]),
       Math.ceil(this.width * this.zoom),
       Math.ceil(this.height * this.zoom)
     );
@@ -67,8 +93,8 @@ export default class VirtualCanvas {
       0,
       this.otherPreviewCanvas.width,
       this.otherPreviewCanvas.height,
-      this.offset[0],
-      this.offset[1],
+      Math.floor(this.offset[0]),
+      Math.floor(this.offset[1]),
       Math.ceil(this.width * this.zoom),
       Math.ceil(this.height * this.zoom)
     );
@@ -80,25 +106,18 @@ export default class VirtualCanvas {
       0,
       this.selfPreviewCanvas.width,
       this.selfPreviewCanvas.height,
-      this.offset[0],
-      this.offset[1],
+      Math.floor(this.offset[0]),
+      Math.floor(this.offset[1]),
       Math.ceil(this.width * this.zoom),
       Math.ceil(this.height * this.zoom)
     );
   }
 
-  fill() {
-    if (this.fillGeneration.length > 0) this.fillGeneration.pop()();
-  }
+  // fill() {
+  //   if (this.fillGeneration.length > 0) this.fillGeneration.pop()();
+  // }
 
-  setPixel(x, y, color, thickness) {
-    if (thickness === 1 && x >= 0 && y >= 0 && x < this.width && y < this.height) {
-      this.offscreenCtx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, 1)`;
-      this.offscreenCtx.fillRect(x, y, thickness, thickness);
-      this.virtualCanvas[y][x] = color;
-      return;
-    }
-
+  setPixel = (x, y, color, thickness) => {
     const halfThickness = Math.floor(thickness / 2);
     this.offscreenCtx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, 1)`;
     this.offscreenCtx.fillRect(
@@ -107,88 +126,139 @@ export default class VirtualCanvas {
       thickness,
       thickness
     );
+  };
+  // setPixel(x, y, color, thickness) {
+  //   if (thickness === 1 && x >= 0 && y >= 0 && x < this.width && y < this.height) {
+  //     this.offscreenCtx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, 1)`;
+  //     this.offscreenCtx.fillRect(x, y, thickness, thickness);
+  //     this.virtualCanvas[y][x] = color;
+  //     return;
+  //   }
 
-    for (let dy = 0; dy < thickness; dy++) {
-      for (let dx = 0; dx < thickness; dx++) {
-        const newX = x - halfThickness + dx;
-        const newY = y - halfThickness + dy;
-        if (newX >= 0 && newY >= 0 && newX < this.width && newY < this.height)
-          this.virtualCanvas[newY][newX] = color;
-      }
-    }
-  }
+  //   const halfThickness = Math.floor(thickness / 2);
+  //   this.offscreenCtx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, 1)`;
+  //   this.offscreenCtx.fillRect(
+  //     x - halfThickness,
+  //     y - halfThickness,
+  //     thickness,
+  //     thickness
+  //   );
 
-  setPixelOutline(x, y, color, thickness) {
+  //   for (let dy = 0; dy < thickness; dy++) {
+  //     for (let dx = 0; dx < thickness; dx++) {
+  //       const newX = x - halfThickness + dx;
+  //       const newY = y - halfThickness + dy;
+  //       if (newX >= 0 && newY >= 0 && newX < this.width && newY < this.height)
+  //         this.virtualCanvas[newY][newX] = color;
+  //     }
+  //   }
+  // }
+
+  setPixelOutline = (x, y, color, thickness) => {
     const halfThickness = Math.floor(thickness / 2);
-
     this.offscreenCtx.strokeStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, 1)`;
     this.offscreenCtx.lineWidth = 1;
-
     this.offscreenCtx.strokeRect(
       x - halfThickness + 1 / 2,
       y - halfThickness + 1 / 2,
       thickness - 1,
       thickness - 1
     );
+  };
 
-    for (let dy = 0; dy < thickness; dy++) {
-      for (let dx = 0; dx < thickness; dx++) {
-        const newX = x - halfThickness + dx;
-        const newY = y - halfThickness + dy;
-        if (
-          (dx === 0 || dy === 0 || dx === thickness - 1 || dy === thickness - 1) &&
-          newX >= 0 &&
-          newY >= 0 &&
-          newX < this.width &&
-          newY < this.height
-        )
-          this.virtualCanvas[newY][newX] = color;
-      }
-    }
-  }
+  // setPixelOutline(x, y, color, thickness) {
+  //   const halfThickness = Math.floor(thickness / 2);
+
+  //   this.offscreenCtx.strokeStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, 1)`;
+  //   this.offscreenCtx.lineWidth = 1;
+
+  //   this.offscreenCtx.strokeRect(
+  //     x - halfThickness + 1 / 2,
+  //     y - halfThickness + 1 / 2,
+  //     thickness - 1,
+  //     thickness - 1
+  //   );
+
+  //   for (let dy = 0; dy < thickness; dy++) {
+  //     for (let dx = 0; dx < thickness; dx++) {
+  //       const newX = x - halfThickness + dx;
+  //       const newY = y - halfThickness + dy;
+  //       if (
+  //         (dx === 0 || dy === 0 || dx === thickness - 1 || dy === thickness - 1) &&
+  //         newX >= 0 &&
+  //         newY >= 0 &&
+  //         newX < this.width &&
+  //         newY < this.height
+  //       )
+  //         this.virtualCanvas[newY][newX] = color;
+  //     }
+  //   }
+  // }
 
   setSize(width, height, forcePrint = false) {
     const heightChanged = height !== this.height;
-    if (heightChanged)
-      if (height > this.height)
-        for (let index = 0; index < height - this.height; index++)
-          this.virtualCanvas.push(Array(this.width).fill(white));
-      else this.virtualCanvas.length = height;
-
     this.height = height;
-
     const widthChanged = width !== this.width;
-    if (widthChanged)
-      if (width > this.width)
-        for (let index = 0; index < this.height; index++)
-          this.virtualCanvas[index].push(...Array(width - this.width).fill(white));
-      else
-        for (let index = 0; index < this.height; index++)
-          this.virtualCanvas[index].length = width;
-
     this.width = width;
 
     if (heightChanged || widthChanged || forcePrint) {
-      this.offscreenCanvas.width = this.width;
-      this.offscreenCanvas.height = this.height;
-      this.resizePreviewCanvas(
-        this.offscreenCanvas,
-        this.selfPreviewCanvas,
-        this.otherPreviewCanvas
-      );
-
-      this.fillImageData();
-      while (this.fillGeneration.length > 0) this.fill();
+      const temp = new OffscreenCanvas(this.width, this.height);
+      this.offscreenCtx = temp.getContext("2d");
+      this.offscreenCtx.fillStyle = "white"; // this will be a parameter
+      this.offscreenCtx.fillRect(0, 0, this.width, this.height);
+      this.offscreenCtx.drawImage(this.offscreenCanvas, 0, 0);
+      this.offscreenCanvas = temp;
+      this.resizePreviewCanvas(this.offscreenCanvas, this.selfPreviewCanvas, this.otherPreviewCanvas);
     }
 
     this.onCanvasMove.forEach((cb) => {
       //when SL (straight Line) is in preview mode, and canvas is adjusted, keeps SL preview shown on instead of disappearing
       if (typeof cb === "function") cb();
     });
-
-    this.viewport.setAdjusters();
-    this.statusbar.setCanvasSize();
   }
+
+  // setSize(width, height, forcePrint = false) {
+  //   const heightChanged = height !== this.height;
+  //   if (heightChanged)
+  //     if (height > this.height)
+  //       for (let index = 0; index < height - this.height; index++)
+  //         this.virtualCanvas.push(Array(this.width).fill(white));
+  //     else this.virtualCanvas.length = height;
+
+  //   this.height = height;
+
+  //   const widthChanged = width !== this.width;
+  //   if (widthChanged)
+  //     if (width > this.width)
+  //       for (let index = 0; index < this.height; index++)
+  //         this.virtualCanvas[index].push(...Array(width - this.width).fill(white));
+  //     else
+  //       for (let index = 0; index < this.height; index++)
+  //         this.virtualCanvas[index].length = width;
+
+  //   this.width = width;
+
+  //   if (heightChanged || widthChanged || forcePrint) {
+  //     this.offscreenCanvas.width = this.width;
+  //     this.offscreenCanvas.height = this.height;
+  //     this.resizePreviewCanvas(
+  //       this.offscreenCanvas,
+  //       this.selfPreviewCanvas,
+  //       this.otherPreviewCanvas
+  //     );
+
+  //     this.fillImageData();
+  //     while (this.fillGeneration.length > 0) this.fill();
+  //   }
+
+  //   this.onCanvasMove.forEach((cb) => {
+  //     //when SL (straight Line) is in preview mode, and canvas is adjusted, keeps SL preview shown on instead of disappearing
+  //     if (typeof cb === "function") cb();
+  //   });
+
+  //   if (this.viewport?.setAdjusters) this.viewport.setAdjusters();
+  //   if (this.statusbar?.setCanvasSize) this.statusbar.setCanvasSize();
+  // }
 
   fillImageData() {
     const widthChunkSize = Math.floor(this.width / Math.ceil(this.width / 256)); // Size of each square chunk
@@ -233,10 +303,20 @@ export default class VirtualCanvas {
     }
   }
 
+  // reset() {
+  //   for (let y = 0; y < this.height; y++)
+  //     for (let x = 0; x < this.width; x++) this.virtualCanvas[y][x] = white;
+  //   this.setSize(700, 500, true);
+  // }
+
   reset() {
-    for (let y = 0; y < this.height; y++)
-      for (let x = 0; x < this.width; x++) this.virtualCanvas[y][x] = white;
-    this.setSize(700, 500, true);
+    this.width = START_WIDTH;
+    this.height = START_HEIGHT;
+    this.offscreenCanvas.width = this.width;
+    this.offscreenCanvas.height = this.height;
+    this.offscreenCtx.fillStyle = "white";
+    this.offscreenCtx.fillRect(0, 0, this.width, this.height);
+    this.setSize(this.width, this.height, true);
   }
 
   set(newVirtualCanvas) {
@@ -246,6 +326,8 @@ export default class VirtualCanvas {
     ) {
       this.offscreenCanvas.width = newVirtualCanvas[0].length;
       this.offscreenCanvas.height = newVirtualCanvas.length;
+
+      this.resizePreviewCanvas(this.offscreenCanvas, this.selfPreviewCanvas, this.otherPreviewCanvas);
 
       this.resizePreviewCanvas(
         this.offscreenCanvas,
@@ -347,12 +429,12 @@ export default class VirtualCanvas {
   }
 
   // TODO: promote to class + other layers
-  clearPreview(previewCanvas) {
-    previewCanvas.clearRect(
+  clearPreview(thePreviewCanvas) {
+    thePreviewCanvas.clearRect(
       0,
       0,
-      previewCanvas.canvas.width,
-      previewCanvas.canvas.height
+      thePreviewCanvas.canvas.width,
+      thePreviewCanvas.canvas.height
     );
   }
 
@@ -386,6 +468,36 @@ export default class VirtualCanvas {
 
     return x >= left && y >= top && x < right && y < bottom;
   }
+
+  getBoundsInCanvas() {
+    const topLeftInCanvas = this.positionInCanvasFloat(
+      this.rect.left,
+      this.rect.top
+    );
+    const bottomRightInCanvas = this.positionInCanvasFloat(
+      this.rect.right,
+      this.rect.bottom
+    );
+    return [topLeftInCanvas, bottomRightInCanvas];
+  }
+
+  positionInCanvasFloat(clientX, clientY) {
+    const x = (clientX - this.rect.left - this.offset[0]) / this.zoom - 0.5;
+    const y = (clientY - this.rect.top - this.offset[1]) / this.zoom - 0.5;
+    return [x, y];
+  }
+
+  getPngBytes = () => {
+    const c = this.offscreenCanvas;
+    const p = c.convertToBlob
+      ? c.convertToBlob({ type: "image/png" })
+      : new Promise((resolve, reject) =>
+          c.toBlob
+            ? c.toBlob(b => b ? resolve(b) : reject(new Error("toBlob null")), "image/png")
+            : reject(new Error("toBlob missing"))
+        );
+    return p.then(b => b.arrayBuffer()).then(buf => new Uint8Array(buf));
+  };
 }
 
 //OLD1
@@ -514,43 +626,43 @@ export default class VirtualCanvas {
     });
   }
 
-  reset() {
-    this.width = START_WIDTH;
-    this.height = START_HEIGHT;
-    this.offscreenCanvas.width = this.width;
-    this.offscreenCanvas.height = this.height;
-    this.offscreenCtx.fillStyle = "white";
-    this.offscreenCtx.fillRect(0, 0, this.width, this.height);
-    this.setSize(this.width, this.height, true);
-  }
+  // reset() {
+  //   this.width = START_WIDTH;
+  //   this.height = START_HEIGHT;
+  //   this.offscreenCanvas.width = this.width;
+  //   this.offscreenCanvas.height = this.height;
+  //   this.offscreenCtx.fillStyle = "white";
+  //   this.offscreenCtx.fillRect(0, 0, this.width, this.height);
+  //   this.setSize(this.width, this.height, true);
+  // }
 
-  getBoundsInCanvas() {
-    const topLeftInCanvas = this.positionInCanvasFloat(
-      this.rect.left,
-      this.rect.top
-    );
-    const bottomRightInCanvas = this.positionInCanvasFloat(
-      this.rect.right,
-      this.rect.bottom
-    );
-    return [topLeftInCanvas, bottomRightInCanvas];
-  }
+  // getBoundsInCanvas() {
+  //   const topLeftInCanvas = this.positionInCanvasFloat(
+  //     this.rect.left,
+  //     this.rect.top
+  //   );
+  //   const bottomRightInCanvas = this.positionInCanvasFloat(
+  //     this.rect.right,
+  //     this.rect.bottom
+  //   );
+  //   return [topLeftInCanvas, bottomRightInCanvas];
+  // }
 
-  positionInCanvas(clientX, clientY) {
-    const x = Math.round(
-      (clientX - this.rect.left - this.offset[0]) / this.zoom - 0.5
-    );
-    const y = Math.round(
-      (clientY - this.rect.top - this.offset[1]) / this.zoom - 0.5
-    );
-    return [x, y];
-  }
+  // positionInCanvas(clientX, clientY) {
+  //   const x = Math.round(
+  //     (clientX - this.rect.left - this.offset[0]) / this.zoom - 0.5
+  //   );
+  //   const y = Math.round(
+  //     (clientY - this.rect.top - this.offset[1]) / this.zoom - 0.5
+  //   );
+  //   return [x, y];
+  // }
 
-  positionInCanvasFloat(clientX, clientY) {
-    const x = (clientX - this.rect.left - this.offset[0]) / this.zoom - 0.5;
-    const y = (clientY - this.rect.top - this.offset[1]) / this.zoom - 0.5;
-    return [x, y];
-  }
+  // positionInCanvasFloat(clientX, clientY) {
+  //   const x = (clientX - this.rect.left - this.offset[0]) / this.zoom - 0.5;
+  //   const y = (clientY - this.rect.top - this.offset[1]) / this.zoom - 0.5;
+  //   return [x, y];
+  // }
 
   positionInScreen(x, y) {
     const clientX = (x + 0.5) * this.zoom + this.offset[0] + this.rect.left;

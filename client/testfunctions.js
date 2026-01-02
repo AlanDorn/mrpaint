@@ -1,5 +1,7 @@
-import { transactionLog, virtualCanvas } from "./client.js";
+// import { transactionLog, virtualCanvas } from "./client.js";
 import { operationId, pencilTransaction } from "./transaction.js";
+
+export default function Test({ transactionLog, virtualCanvas }) {
 
 const START_INTERVAL = 1000 / 60; // ≈16.66ms per frame
 
@@ -53,8 +55,12 @@ function nextPosition(state) {
   state.x += state.vx;
   state.y += state.vy;
 
+  console.log(`${virtualCanvas.width}`);
+
   const W = virtualCanvas.width;
   const H = virtualCanvas.height;
+
+  
   if (state.x < 0) state.x += W;
   if (state.y < 0) state.y += H;
   if (state.x >= W) state.x -= W;
@@ -142,3 +148,4 @@ window.stopRandomDrawing = (id) => {
 
   return `Stopped random drawing id=${id}.`;
 };
+}

@@ -1,69 +1,13 @@
-import { transactionLog } from "./client.js";
 import { redoTransaction, undoTransaction } from "./transaction.js";
-export default class Undo {
-  constructor() {
-    this.undoList = [];
-    this.redoList = [];
 
-    document.addEventListener("keydown", (event) => {
-      if (event.ctrlKey && event.key.toLowerCase() === "z") {
-        event.preventDefault();
-        this.undo();
-      }
-
-      if (event.ctrlKey && event.key.toLowerCase() === "y") {
-        event.preventDefault();
-        this.redo();
-      }
-    });
-
-    document.getElementById("undo").addEventListener("click", this.undo);
-    document.getElementById("redo").addEventListener("click", this.redo);
-  }
-
-  undo = () => {
-    const operationId = this.undoList.pop();
-    if (!operationId) return;
-
-    if (operationId.draft) {
-      operationId.tool.discardDraft();
-      this.redoList.push(operationId);
-      return;
-    }
-
-    transactionLog.pushClient(undoTransaction(operationId.id));
-    this.redoList.push(operationId);
-  };
-
-  redo = () => {
-    const operationId = this.redoList.pop();
-    if (!operationId) return;
-
-    if (operationId.draft) {
-      operationId.tool.restoreDraft(operationId.draft);
-      this.undoList.push(operationId);
-      return;
-    }
-
-    transactionLog.pushClient(redoTransaction(operationId.id));
-    this.undoList.push(operationId);
-  };
-
-  pushOperation(operationId) {
-    this.undoList.push({ id: operationId });
-    this.redoList.length = 0;
-  }
-
-  pushDraft(tool, draft) {
-    this.undoList.push({ draft, tool });
-    this.redoList.length = 0;
-  }
-}
-
-
-//OLD2
-/*
-import { redoTransaction, undoTransaction } from "./transaction.js";
+// Undo logic 
+//
+//      There is one stack that holds the information of the user's actions
+//          actions are using a tool to make a change to the canvas (resize, draw, previews)
+//      
+//          The resize + draw are fairly straight forward but the preview logic has some flexibility and some nuances
+//
+//
 
 export default class Undo {
   constructor(transactionLog) {
@@ -104,8 +48,8 @@ export default class Undo {
   }
 
   // called **once** inside StraightLine.commit()
-      to turn the live draft into a commit‑entry that
-      still keeps the draft + tool for re‑edit 
+      // to turn the live draft into a commit‑entry that
+      // still keeps the draft + tool for re‑edit 
   replaceTopWithCommit(opId, toolRef, draft) {
     if (!this.undoList.length || !this.undoList.at(-1).draft) return;
     this.undoList[this.undoList.length - 1] = {
@@ -181,4 +125,71 @@ export default class Undo {
   }
 }
 
+
+//OLD1
+/*
+
+// import { transactionLog } from "./client.js";
+import { redoTransaction, undoTransaction } from "./transaction.js";
+export default class Undo {
+  constructor(transactionLog) {
+    this.transactionLog = transactionLog;
+    this.undoList = [];
+    this.redoList = [];
+
+    document.addEventListener("keydown", (event) => {
+      if (event.ctrlKey && event.key.toLowerCase() === "z") {
+        event.preventDefault();
+        this.undo();
+      }
+
+      if (event.ctrlKey && event.key.toLowerCase() === "y") {
+        event.preventDefault();
+        this.redo();
+      }
+    });
+
+    document.getElementById("undo").addEventListener("click", this.undo);
+    document.getElementById("redo").addEventListener("click", this.redo);
+  }
+
+  undo = () => {
+    const operationId = this.undoList.pop();
+    if (!operationId) return;
+
+    if (operationId.draft) {
+      operationId.tool.discardDraft();
+      this.redoList.push(operationId);
+      return;
+    }
+
+    this.transactionLog.pushClient(undoTransaction(operationId.id));
+    this.redoList.push(operationId);
+    console.log(`${this.undoList}`);
+  };
+
+  redo = () => {
+    const operationId = this.redoList.pop();
+    if (!operationId) return;
+
+    if (operationId.draft) {
+      operationId.tool.restoreDraft(operationId.draft);
+      this.undoList.push(operationId);
+      return;
+    }
+
+    this.transactionLog.pushClient(redoTransaction(operationId.id));
+    this.undoList.push(operationId);
+  };
+
+  pushOperation(operationId) {
+    this.undoList.push({ id: operationId });
+    this.redoList.length = 0;
+  }
+
+  pushDraft(tool, draft) {
+    this.undoList.push({ draft, tool });
+    this.redoList.length = 0;
+  }
+}
 */
